@@ -21,6 +21,10 @@ Requires Node.js (installed here via nvm — run `. ~/.nvm/nvm.sh` first in a ne
 
 There is no test suite yet.
 
+## Documentation practice
+
+Decisions and plans get written to a Markdown file in [docs/](docs/), not left to live only in chat history. When a session produces a real plan, architecture decision, or analysis worth remembering, save it there (topic-named file, dated inside the doc) instead of treating the conversation as the record. [docs/arquitectura-migracion.md](docs/arquitectura-migracion.md) is the first of these — the plan to move the site, store, and intranet off WordPress onto this stack.
+
 ## Architecture
 
 - **`src/data/house.ts`** — all facts about the house as typed constants (`ROOMS`, `COMMON_ES`/`COMMON_EN`, `NOT_ES`/`NOT_EN`, `DIST`, `SCORES`, `VS`, `ADDRESS`), ported 1:1 from the prototype's `js/casa-randa.js`. Edit these, not JSX, to change facts about the property.
@@ -42,6 +46,6 @@ There is no test suite yet.
 - No `/en` route exists yet — the `alternates.languages` entry in `layout.tsx` points to it in anticipation of real per-locale routing (see the i18n note above).
 - 2 of 8 photos in `public/images/` are reused across rooms in the original content; several rooms and a comedor-for-14 shot are still missing photography.
 
-## Porting target (unchanged from the prototype)
+## Direction: replacing WordPress, not porting into it
 
-This is itself meant to be hand-ported into a WordPress theme (`casa-randa-code-067-date-picker` on staging) once finished: bilingual pairs become `casa_randa_text(en, es)` calls in `front-page.php`, and the `RATE` constant is replaced by a call to the `casa_randa_preview_quote` endpoint. See [legacy-static/LEEME.md](legacy-static/LEEME.md) for the full original port checklist.
+Earlier plans (including the original static prototype's own README) assumed this would be hand-ported *into* the existing WordPress theme (`casa-randa-code-067-date-picker` on `staging.randahome.com`). That's reversed: the actual `staging.randahome.com` WordPress site — a full site + WooCommerce store + a custom intranet (reservations, accounting, bank reconciliation, ops checklists, analytics) — is being **replaced** by this stack, not the other way around. See [docs/arquitectura-migracion.md](docs/arquitectura-migracion.md) for the full plan: Supabase for data, a Next.js monorepo for the public site/store and the intranet, PriceLabs and Airbnb/Vrbo iCal sync as background jobs, Yappy/PagueloFacil for payments (not Stripe — it doesn't settle directly to Panama). The WordPress intranet stays the source of truth for real money (accounting, reconciliation) until its equivalent here is built and proven.

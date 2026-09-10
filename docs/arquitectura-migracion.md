@@ -1,0 +1,81 @@
+# Arquitectura Casa Randa — plan de migración fuera de WordPress
+
+> Documentado el 2026-09-10. Registra el análisis y las decisiones de esa sesión de trabajo — no vive solo en el chat, por convención del proyecto (ver [CLAUDE.md](../CLAUDE.md)).
+
+## Contexto
+
+`staging.randahome.com` corre hoy sobre WordPress: sitio público (tema `casa-randa-code-067-date-picker`), tienda (WooCommerce) e intranet operativa (plugin `Casa Randa Core` + `Casa Randa Puente`). La intención es migrar las tres piezas a un stack propio, hosteado en Vercel y/o Railway, sin WordPress.
+
+## Lo verificado en vivo, no asumido
+
+El 10/09/2026 se recorrió `staging.randahome.com/intranet/` (sesión ya autenticada) para confirmar qué hay realmente detrás del resumen de backend, no solo leerlo. Esto es más que un "back-office" típico — es un sistema financiero en producción:
+
+- **Contabilidad**: 69 reservas registradas, con reparto de comisión entre dos personas (Marquelda, anfitriona local; Iván, propietario), liquidaciones mensuales exportables, anticipos de comisión con saldo pendiente calculado, e importación de CSV de Airbnb/Vrbo que actualiza por código sin duplicar. Ingreso neto acumulado 2026: USD 42,825.99.
+- **Conciliación bancaria**: cruce manual entre depósitos de Banco General y reservas esperadas (hoy sin importación automática del estado de cuenta).
+- **Operación**: 33 tareas de check-in/check-out/limpieza generadas automáticamente a partir de las reservas activas.
+- **Análisis y planificación**: comparativo año a año, plan anual de compras/reparaciones con prioridad y estado, códigos de descuento con vigencia y cupo de usos.
+- **Calendario**: 12 bloqueos sincronizados desde Airbnb, con sincronización reciente — el motor de iCal descrito en la documentación del backend sí está corriendo.
+
+**Conclusión:** esto no es una migración de contenido, es una migración de un sistema que ya mueve dinero real. La contabilidad y la conciliación bancaria son el tramo de mayor riesgo de todo el plan.
+
+## Son tres sistemas, no una migración
+
+| Sistema | Qué hace | Naturaleza | Riesgo si se hace mal |
+|---|---|---|---|
+| Sitio público | Portada, disponibilidad, cotizador de reserva directa | Contenido + UI, sin estado que perder | Bajo — ya en marcha en Next.js |
+| Tienda | Vino, café, desayuno y extras que el huésped compra antes de llegar | Catálogo pequeño + checkout, sin inventario complejo | Medio — dinero real, bajo volumen |
+| Intranet | Reservas, calendario, operación, contabilidad, conciliación, análisis | Mini-ERP con lógica financiera real | Alto — errores mueven mal el dinero de comisiones |
+
+Tratarlas como una sola migración es la forma más común de estancarse a mitad de camino.
+
+## Stack recomendado, capa por capa
+
+| Capa | Elección | Por qué |
+|---|---|---|
+| Frontend | Next.js en monorepo (Turborepo): apps `web` (sitio + tienda pública) e `intranet` (privada) | Comparten un paquete de datos/tipos/lógica de precio, para que el cotizador y las tarifas nunca se desincronicen entre el sitio y la intranet. Ya es la base del sitio actual. |
+| Datos | Supabase | Postgres real (necesario para contabilidad y conciliación), autenticación con roles integrada (administrador / dueño / empleado, igual a los tres paneles que ya existen en WordPress), seguridad a nivel de fila. |
+| Contenido editorial | Sanity — opcional | Solo para copy que alguien sin acceso a código necesite editar (guía de Panamá, fotos). Nunca para reservas, precios ni contabilidad — eso vive en Supabase. |
+| Tienda | Catálogo propio sobre Supabase + checkout (Stripe Checkout / Yappy) | El catálogo real es pequeño. Un motor de comercio completo como Medusa exige servidor Node persistente + Redis + su propia base — sobrecostoso para esto. Reevaluar Medusa solo si el catálogo crece a variantes, stock por ubicación o múltiples canales. |
+| Panel de administración | Refine.dev para reservas / operación / planificación | Framework open source para paneles CRUD sobre Postgres — acelera las pantallas de listado/edición. La contabilidad queda fuera: se construye y se prueba a mano. |
+| Calendarios (iCal) | `node-ical` + `ics` para sincronizar · `react-day-picker` en el sitio · FullCalendar en la intranet | Mismo patrón que ya corre en WordPress: traer los dos feeds de entrada, fusionar rangos, publicar un feed de salida por canal que excluye su propia fuente para no generar bucles. |
+| Tarifa dinámica | PriceLabs API, cacheada en una tabla | Job diario que llama a `listing_prices`, guarda fecha→tarifa en Supabase; el cotizador la lee en vez de usar la tarifa plana de respaldo. Igual contrato que `cri_pricelabs_quote_rates` hoy (ok/lodging/extra_guests, o caída silenciosa a la tarifa plana). |
+| Jobs de fondo | Railway | Sincronización de iCal, consulta diaria a PriceLabs y cualquier proceso con estado o de larga duración, donde una función serverless de Vercel se queda corta. |
+| Pagos | Yappy (principal) · PagueloFacil (alternativa) | Yappy es de Banco General — el banco donde ya concilian hoy —, con botón de pago integrable y comisión de 1% + ITBMS. PagueloFacil cubre tarjeta internacional si Yappy no basta. |
+
+### Sobre Stripe
+
+Verificado por búsqueda al momento de escribir este documento: Stripe no opera directo para negocios domiciliados en Panamá. Exige abrir una LLC en Estados Unidos y cobrar a través de ella — un desvío contrario a "el dinero debe llegar a Panamá". Descartado para este caso salvo que se decida abrir esa entidad.
+
+## Herramientas propuestas por Ivan, con veredicto
+
+| Herramienta | Para qué se propuso | Veredicto |
+|---|---|---|
+| Supabase | Base de datos | **Usar** como fuente única de verdad para las tres apps |
+| Sanity | CMS | **Con matiz** — solo contenido editorial, nunca datos transaccionales |
+| Stripe | Pasarela de pago | **No usar** sin entidad en EE. UU. — no liquida directo a Panamá |
+| Medusa | Motor de tienda | **Esperar** — el catálogo actual no lo justifica; reevaluar si crece |
+| CMS open source genérico | Contenido / intranet | **No usar** para la intranet — la lógica financiera no es "contenido" |
+
+## Fases (orden de dependencia, no de prioridad de negocio)
+
+Cada fase debe correr en paralelo a WordPress antes de apagar la pieza equivalente allá.
+
+0. **Fundaciones compartidas** — esquema de Supabase, autenticación con los tres roles, monorepo Next.js, y el cotizador ya conectado a una tabla de tarifas en vez de la constante fija.
+1. **Sitio público** — ya en marcha. Extenderlo para leer disponibilidad real y tarifa dinámica desde Supabase.
+2. **Sincronización de calendarios y PriceLabs** — job de iCal (Airbnb ↔ Vrbo, sin bucles) y puente de PriceLabs, corriendo en Railway con cron real, no dependiente de visitas al sitio (el defecto D1 del motor actual). **Bloqueante para reservas reales.**
+3. **Intranet — reservas, calendario, operación** — el tramo de menor riesgo financiero, buen candidato para Refine.dev.
+4. **Intranet — contabilidad y conciliación bancaria** — reparto de comisiones, anticipos, importación idempotente de reportes, conciliación contra Banco General. Se construye a mano, con pruebas. **Mayor riesgo financiero.**
+5. **Tienda, administrada desde la intranet** — catálogo sobre la misma base de Supabase, checkout Yappy/PagueloFacil, gestión de productos integrada al panel — no una tienda aparte con su propio login.
+
+## Riesgos críticos a vigilar
+
+- **El defecto D2 sigue abierto**: las reservas directas confirmadas hoy no entran al feed de salida de iCal — la sincronización las borra. Activar pagos reales antes de resolver esto en el nuevo motor arriesga overbooking.
+- **La pasarela de pago condiciona el diseño del checkout**: decidir Yappy vs. PagueloFacil temprano, no al final — el flujo de pago (botón vs. redirección, moneda, webhook de confirmación) toca tanto el cotizador del sitio como la tienda.
+- **Migrar datos reales no es solo migrar código**: 69 reservas, gastos por categoría, anticipos de comisión y códigos de descuento activos tienen que exportarse de WordPress antes de apagarlo.
+- **WordPress sigue siendo la fuente de verdad del dinero** hasta que la Fase 4 esté probada. No cortar contabilidad y conciliación de un salto.
+
+## Pendiente
+
+- Publicar este plan como página compartible (Artifact) para la persona técnica que da feedback — ofrecido, no confirmado aún.
+- Decidir Yappy vs. PagueloFacil como pasarela principal.
+- Definir el esquema inicial de Supabase (tablas: reservas, comisiones, anticipos, gastos, conciliación, tarifas, códigos de descuento, planificación de compras).
