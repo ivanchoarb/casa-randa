@@ -3,6 +3,7 @@
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { useBooking } from "@/lib/booking/BookingProvider";
 import { PaxSelect } from "@/components/ui/PaxSelect";
+import { openDatePickerOnClick, openDatePickerOnKey } from "@/lib/dom/openDatePicker";
 
 const fieldLabel = "font-[var(--font-display)] text-xs tracking-wide text-[var(--on-dark-2)]";
 const fieldInput =
@@ -24,6 +25,8 @@ export function AvailabilityBar() {
             type="date"
             value={checkIn}
             onChange={(e) => setCheckIn(e.target.value)}
+            onClick={openDatePickerOnClick}
+            onKeyDown={openDatePickerOnKey}
             className={`${fieldInput} cursor-pointer`}
           />
         </div>
@@ -36,6 +39,8 @@ export function AvailabilityBar() {
             type="date"
             value={checkOut}
             onChange={(e) => setCheckOut(e.target.value)}
+            onClick={openDatePickerOnClick}
+            onKeyDown={openDatePickerOnKey}
             className={`${fieldInput} cursor-pointer`}
           />
         </div>

@@ -5,6 +5,7 @@ import { MIN_NIGHTS, RATE, computeQuote, type CancellationPolicy, type PaymentPl
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { useBooking } from "@/lib/booking/BookingProvider";
 import { PaxSelect } from "@/components/ui/PaxSelect";
+import { openDatePickerOnClick, openDatePickerOnKey } from "@/lib/dom/openDatePicker";
 
 const fieldLabel = "font-[var(--font-display)] text-xs tracking-wide text-[var(--ink-2)]";
 const fieldInput =
@@ -43,7 +44,9 @@ export function QuoteCalculator() {
                   type="date"
                   value={checkIn}
                   onChange={(e) => setCheckIn(e.target.value)}
-                  className={fieldInput}
+                  onClick={openDatePickerOnClick}
+                  onKeyDown={openDatePickerOnKey}
+                  className={`${fieldInput} cursor-pointer`}
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -55,7 +58,9 @@ export function QuoteCalculator() {
                   type="date"
                   value={checkOut}
                   onChange={(e) => setCheckOut(e.target.value)}
-                  className={fieldInput}
+                  onClick={openDatePickerOnClick}
+                  onKeyDown={openDatePickerOnKey}
+                  className={`${fieldInput} cursor-pointer`}
                 />
               </div>
               <div className="flex flex-col gap-1">
