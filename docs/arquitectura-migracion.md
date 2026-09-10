@@ -89,9 +89,14 @@ Cada fase debe correr en paralelo a WordPress antes de apagar la pieza equivalen
 - **Migrar datos reales no es solo migrar código**: 69 reservas, gastos por categoría, anticipos de comisión y códigos de descuento activos tienen que exportarse de WordPress antes de apagarlo.
 - **WordPress sigue siendo la fuente de verdad del dinero** hasta que la Fase 4 esté probada. No cortar contabilidad y conciliación de un salto.
 
+## Tareas de producción
+
+Marcadas por Ivan el 2026-09-11 como trabajo de ejecución, no decisiones abiertas — listas para hacerse cuando arranque la implementación.
+
+- [ ] Escribir el esquema SQL de Supabase — las entidades ya están mapeadas en [logica-negocio-y-flujos.md](logica-negocio-y-flujos.md), falta convertirlas en tablas.
+- [ ] Crear las cuentas de comercio en PagueloFacil y Yappy, obtener credenciales de API para ambas, y confirmar si PagueloFacil notifica por webhook o hay que consultar su API periódicamente.
+- [ ] Activar el servicio de SMTP transaccional de Dongee para el envío automático desde `booking@randahome.com`.
+
 ## Pendiente
 
 - Publicar este plan como página compartible (Artifact) para la persona técnica que da feedback — ofrecido, no confirmado aún.
-- Escribir el esquema SQL de Supabase — las entidades ya están mapeadas en [logica-negocio-y-flujos.md](logica-negocio-y-flujos.md), falta convertirlas en tablas.
-- Crear las cuentas de comercio en PagueloFacil y Yappy, obtener credenciales de API, y confirmar si PagueloFacil notifica por webhook o hay que consultar su API periódicamente.
-- Activar el servicio de SMTP transaccional de Dongee para el envío automático desde `booking@randahome.com`.

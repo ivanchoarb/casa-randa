@@ -2,6 +2,112 @@
 
 > Documentado el 2026-09-11. Complementa [arquitectura-migracion.md](arquitectura-migracion.md) (qué herramientas usamos) con **cómo se conecta todo**: las entidades, los flujos de principio a fin, y el mapa de integraciones externas. Sin esto, el esquema de Supabase de la Fase 0 no se puede escribir con confianza.
 
+## Diagrama completo (verificado que renderiza sin errores)
+
+```mermaid
+flowchart TD
+    subgraph GUEST["Huésped"]
+        G1["Ve disponibilidad y cotiza"]
+        G2["Envía solicitud de reserva directa"]
+        G3["Reserva en Airbnb o Vrbo"]
+        G4["Compra en la tienda"]
+    end
+
+    subgraph OTA["Canales OTA (externos)"]
+        AIRBNB[("Airbnb")]
+        VRBO[("Vrbo")]
+    end
+
+    subgraph PAY["Pasarelas de pago"]
+        PF["PagueloFacil (principal)"]
+        YP["Yappy (secundaria, solo Panamá)"]
+    end
+
+    subgraph JOBS["Jobs de fondo (Railway)"]
+        SYNC["Sync iCal Airbnb + Vrbo"]
+        PLJOB["Fetch diario PriceLabs"]
+        RECONJOB["Poll historial PagueloFacil / Yappy"]
+    end
+
+    subgraph DATA["Datos (Supabase)"]
+        REQ[("Solicitud")]
+        RES[("Reserva")]
+        BLK[("Bloqueo de calendario")]
+        RATE[("Tarifa diaria")]
+        ORD[("Pedido de tienda")]
+        MOV[("Movimiento bancario")]
+        TASK[("Tarea de operación")]
+        ACC[("Asiento de contabilidad")]
+    end
+
+    subgraph INTRANET["Intranet (Next.js + Refine)"]
+        I_RES["Reservas"]
+        I_CAL["Calendario y disponibilidad"]
+        I_OPS["Operación"]
+        I_ACC["Contabilidad"]
+        I_BANK["Conciliación bancaria"]
+        I_AN["Análisis y planificación"]
+    end
+
+    subgraph MAIL["Correo (Dongee)"]
+        M_BOOK["booking@randahome.com"]
+        M_PUR["purchases@randahome.com"]
+    end
+
+    BANK["Banco General (sin API, manual)"]
+
+    PLJOB -->|"tarifa por fecha"| RATE
+    RATE --> G1
+    BLK -.->|"disponibilidad"| G1
+
+    G1 --> G2
+    G2 --> REQ
+    REQ --> I_RES
+    I_RES -->|"admin aprueba"| PF
+    I_RES -->|"admin aprueba"| YP
+    PF -->|"pago confirmado"| RES
+    YP -->|"pago confirmado"| RES
+    REQ -.->|"se convierte en"| RES
+
+    G3 --> AIRBNB
+    G3 --> VRBO
+    AIRBNB --> SYNC
+    VRBO --> SYNC
+    SYNC --> BLK
+    AIRBNB -.->|"reporte CSV, manual"| I_ACC
+    VRBO -.->|"reporte CSV, manual"| I_ACC
+    I_ACC --> RES
+
+    RES --> BLK
+    BLK -->|"feed de salida, sin su propia fuente"| AIRBNB
+    BLK -->|"feed de salida, sin su propia fuente"| VRBO
+    RES --> TASK
+    RES --> ACC
+    RES -->|"confirmación"| M_BOOK
+
+    G4 -->|"requiere reserva confirmada"| RES
+    G4 --> ORD
+    ORD --> PF
+    ORD --> YP
+    ORD --> TASK
+    ORD --> ACC
+    ORD -->|"confirmación"| M_BOOK
+
+    PF --> RECONJOB
+    YP --> RECONJOB
+    RECONJOB -->|"crea movimiento esperado"| MOV
+    MOV --> I_BANK
+    I_BANK -->|"confirma depósito, manual"| BANK
+
+    RES --> I_RES
+    BLK --> I_CAL
+    TASK --> I_OPS
+    ACC --> I_ACC
+    ACC --> I_AN
+
+    I_AN -->|"plan de compras de la casa"| M_PUR
+```
+
 ## Entidades (modelo de negocio, no el SQL todavía)
 
 | Entidad | Campos clave | Notas |
