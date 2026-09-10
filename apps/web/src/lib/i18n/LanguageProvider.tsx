@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import type { Bilingual } from "@/types/house";
+import type { Bilingual } from "@casa-randa/data";
 
 export type Lang = "es" | "en";
 

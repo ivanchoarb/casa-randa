@@ -6,6 +6,8 @@
       "runtimeExecutable": "/Users/ivandario/.nvm/versions/node/v24.21.0/bin/node",
       "runtimeArgs": [
         "/Users/ivandario/.nvm/versions/node/v24.21.0/lib/node_modules/corepack/dist/pnpm.js",
+        "--filter",
+        "@casa-randa/web",
         "dev"
       ],
       "port": 3000

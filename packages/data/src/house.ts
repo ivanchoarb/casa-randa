@@ -1,4 +1,4 @@
-import type { Comparison, Distance, Room, Score } from "@/types/house";
+import type { Comparison, Distance, Room, Score } from "./types";
 
 /**
  * Facts about the house. Edit these constants, not the markup, to change

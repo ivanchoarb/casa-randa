@@ -1,4 +1,4 @@
-import { ADDRESS } from "@/data/house";
+import { ADDRESS } from "@casa-randa/data";
 
 /**
  * Structured data for search engines and AI answer engines (schema.org

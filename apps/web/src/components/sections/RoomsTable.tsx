@@ -1,8 +1,8 @@
 "use client";
 
-import { ROOMS } from "@/data/house";
+import { ROOMS } from "@casa-randa/data";
+import type { Room } from "@casa-randa/data";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import type { Room } from "@/types/house";
 
 function bedsLabel(room: Room, lang: "es" | "en") {
   return room.beds

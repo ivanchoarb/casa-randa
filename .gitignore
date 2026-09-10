@@ -1,5 +1,5 @@
 # deps
-/node_modules
+node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -9,14 +9,17 @@
 !.yarn/versions
 
 # testing
-/coverage
+coverage
 
 # next.js
-/.next/
-/out/
+.next/
+out/
+
+# turborepo
+.turbo
 
 # production
-/build
+build
 
 # misc
 .DS_Store
