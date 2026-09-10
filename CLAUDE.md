@@ -13,7 +13,7 @@ The original static HTML/CSS/JS prototype — still the source of truth for cont
 ```
 apps/
   web/            The public site (Next.js, App Router) — what was the whole repo before it became a monorepo
-  intranet/       Reservations/accounting/ops back office — not started yet, see docs/
+  intranet/       Reservations/accounting/ops back office — scaffolded (Next.js + Refine + Supabase), see below
 packages/
   data/           @casa-randa/data — house facts (ROOMS, DIST, SCORES, VS, ADDRESS, ...) and their types, shared by every app
   pricing/        @casa-randa/pricing — the direct-booking pricing engine (computeQuote), shared by every app
@@ -59,7 +59,15 @@ Decisions and plans get written to a Markdown file in [docs/](docs/), not left t
 
 ## Architecture — `apps/intranet`
 
-Not started. Will be a Refine (`@refinedev/core`, MIT) + Next.js app consuming the same `@casa-randa/data` and `@casa-randa/pricing` packages, backed by Supabase. See `docs/logica-negocio-y-flujos.md` for the entities it manages (Reserva, Solicitud, Bloqueo de calendario, Movimiento bancario, etc.) and `docs/arquitectura-migracion.md` for the phased build order — accounting/reconciliation is flagged there as the highest-risk part, built last and by hand.
+Scaffolded 2026-09-11: Next.js (App Router) + [Refine](https://github.com/refinedev/refine) (`@refinedev/core`, MIT — not the same product as the paid "Refine AI" app generator on `refine.dev/pricing`, see the decisions log in `docs/arquitectura-migracion.md`), backed by Supabase via `@refinedev/supabase`. Auth-gated: unauthenticated visits to any route under `(app)/` redirect to `/login`.
+
+- **`src/lib/supabase-client.ts`** / **`src/lib/auth-provider.ts`** — the Supabase client and a hand-written Refine `AuthProvider` (the `@refinedev/supabase` package ships a data provider but not an auth provider). Needs real credentials in `.env.local` (copy from `.env.example`) — without them the app still builds and runs, but every data call fails; see `supabase/README.md`.
+- **`src/app/providers.tsx`** — the `<Refine>` setup: router (`@refinedev/nextjs-router/app`), data provider, auth provider, and one `resource` per module (`reservas`, `bloqueos_calendario`, `tareas_operacion`, `gastos`, `movimientos_bancarios`, `plan_compras`, `perfiles`), matching the tables in `supabase/migrations/`.
+- **`src/app/(app)/`** — the protected route group (`layout.tsx` wraps children in `<Authenticated>` + `AppShell`). `reservas/page.tsx` is the one module actually wired to real data (`useTable`) — the reference pattern for the rest. `calendario`, `operacion`, `contabilidad`, `conciliacion`, `analisis`, `usuarios` are intentionally labeled stubs, not generated CRUD — `contabilidad`/`conciliacion` say explicitly why (Fase 4 in `docs/arquitectura-migracion.md`: highest financial risk, built by hand, not with a low-code generator).
+- **`src/components/layout/AppShell.tsx`** — sidebar (from Refine's `useMenu()`), identity (`useGetIdentity()`), logout (`useLogout()`).
+- Root `layout.tsx` wraps `<Providers>` in `<Suspense>` — required because `@refinedev/nextjs-router`'s `RouteChangeHandler` calls `useSearchParams()` internally, which otherwise breaks static generation of Next's built-in `/_not-found` page.
+- Spanish-only, one typeface (Archivo, no Source Serif) — see the comment in its `globals.css`: this is an "Operate" surface (internal tool), not a marketing page, so it doesn't share `apps/web`'s bilingual/serif treatment.
+- The exact permissions for the "empleado" role in `supabase/migrations/0006_rls.sql` are a first-pass guess, not confirmed against the real WordPress `portal-de-empleados` role — flagged in `supabase/README.md`.
 
 ## Known-incomplete parts
 
@@ -69,4 +77,4 @@ Not started. Will be a Refine (`@refinedev/core`, MIT) + Next.js app consuming t
 - `RATE` in `@casa-randa/pricing` is a fixed example value, not the real PriceLabs price.
 - No `/en` route exists yet — the `alternates.languages` entry in `layout.tsx` points to it in anticipation of real per-locale routing (see the i18n note above).
 - 2 of 8 photos in `apps/web/public/images/` are reused across rooms in the original content; several rooms and a comedor-for-14 shot are still missing photography.
-- `apps/intranet` doesn't exist yet.
+- `apps/intranet`: no real Supabase project connected yet (placeholder env vars only); 6 of 7 modules are unbuilt stubs (see above); RLS employee-role permissions are unconfirmed; no CSV import, iCal sync job, or PriceLabs bridge exists yet (those are Fase 2, not started).

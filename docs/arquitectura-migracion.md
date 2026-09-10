@@ -76,12 +76,12 @@ Verificado por búsqueda al momento de escribir este documento: Stripe no opera 
 
 Cada fase debe correr en paralelo a WordPress antes de apagar la pieza equivalente allá.
 
-0. **Fundaciones compartidas** — esquema de Supabase, autenticación con los tres roles, monorepo Next.js, y el cotizador ya conectado a una tabla de tarifas en vez de la constante fija.
-1. **Sitio público** — ya en marcha. Extenderlo para leer disponibilidad real y tarifa dinámica desde Supabase.
-2. **Sincronización de calendarios y PriceLabs** — job de iCal (Airbnb ↔ Vrbo, sin bucles) y puente de PriceLabs, corriendo en Railway con cron real, no dependiente de visitas al sitio (el defecto D1 del motor actual). **Bloqueante para reservas reales.**
-3. **Intranet — reservas, calendario, operación** — el tramo de menor riesgo financiero, buen candidato para Refine.
-4. **Intranet — contabilidad y conciliación bancaria** — reparto de comisiones, anticipos, importación idempotente de reportes, conciliación contra Banco General. Se construye a mano, con pruebas. **Mayor riesgo financiero.**
-5. **Tienda, administrada desde la intranet** — catálogo sobre la misma base de Supabase, checkout PagueloFacil (principal) con Yappy como opción local, gestión de productos integrada al panel — no una tienda aparte con su propio login.
+0. **Fundaciones compartidas** — 🟡 en marcha (2026-09-11): monorepo Next.js hecho (`apps/web` + `apps/intranet` + `packages/data`/`packages/pricing`), esquema de Supabase escrito (`supabase/migrations/`, ver `docs/logica-negocio-y-flujos.md`) pero **no aplicado a un proyecto real todavía** — no hay Supabase CLI/Docker en esta máquina para probarlo en vivo. Falta: crear el proyecto de Supabase real, aplicar las migraciones, y conectar el cotizador a `tarifas_diarias` en vez de la constante fija.
+1. **Sitio público** — en marcha, en otra sesión de trabajo (frontend).
+2. **Sincronización de calendarios y PriceLabs** — no empezado. Job de iCal (Airbnb ↔ Vrbo, sin bucles) y puente de PriceLabs, corriendo en Railway con cron real, no dependiente de visitas al sitio (el defecto D1 del motor actual). **Bloqueante para reservas reales.**
+3. **Intranet — reservas, calendario, operación** — 🟡 en marcha: `apps/intranet` escafoldado (Next.js + Refine + Supabase, login funcionando, rutas protegidas). Solo el módulo de Reservas está conectado a datos reales (`useTable`); Calendario y Operación son esqueletos sin lógica todavía. Ver la sección "Architecture — apps/intranet" en `CLAUDE.md`.
+4. **Intranet — contabilidad y conciliación bancaria** — no empezado, a propósito (ver esqueletos marcados en `apps/intranet/src/app/(app)/contabilidad` y `/conciliacion`). Reparto de comisiones, anticipos, importación idempotente de reportes, conciliación contra Banco General. Se construye a mano, con pruebas. **Mayor riesgo financiero.**
+5. **Tienda, administrada desde la intranet** — no empezado. Catálogo sobre la misma base de Supabase (tablas ya existen: `productos_tienda`/`pedidos_tienda`), checkout PagueloFacil (principal) con Yappy como opción local, gestión de productos integrada al panel — no una tienda aparte con su propio login.
 
 ## Riesgos críticos a vigilar
 
