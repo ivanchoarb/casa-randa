@@ -2,6 +2,13 @@
 
 > Documentado el 2026-09-10. Registra el análisis y las decisiones de esa sesión de trabajo — no vive solo en el chat, por convención del proyecto (ver [CLAUDE.md](../CLAUDE.md)).
 
+## Decisiones aprobadas por Ivan
+
+| Fecha | Decisión | Detalle |
+|---|---|---|
+| 2026-09-11 | Framework de panel: **Refine** ([github.com/refinedev/refine](https://github.com/refinedev/refine)) | Aprobado tras confirmar que el precio de $0.99–$20/mes visible en `refine.dev/pricing` es de "Refine AI" (un generador de apps aparte), no del framework — ver nota en la tabla de stack. |
+| 2026-09-11 | Pasarela de pago: **PagueloFacil principal, Yappy secundaria** | Yappy solo sirve para pagos locales de personas con cuenta en Panamá (residentes) — no cubre a huéspedes internacionales, que son la mayoría de las reservas. PagueloFacil, que sí procesa tarjeta internacional, queda como la ruta principal del checkout; Yappy se ofrece además para quien paga desde Panamá. |
+
 ## Contexto
 
 `staging.randahome.com` corre hoy sobre WordPress: sitio público (tema `casa-randa-code-067-date-picker`), tienda (WooCommerce) e intranet operativa (plugin `Casa Randa Core` + `Casa Randa Puente`). La intención es migrar las tres piezas a un stack propio, hosteado en Vercel y/o Railway, sin WordPress.
@@ -40,7 +47,7 @@ Tratarlas como una sola migración es la forma más común de estancarse a mitad
 | Calendarios (iCal) | `node-ical` + `ics` para sincronizar · `react-day-picker` en el sitio · FullCalendar en la intranet | Mismo patrón que ya corre en WordPress: traer los dos feeds de entrada, fusionar rangos, publicar un feed de salida por canal que excluye su propia fuente para no generar bucles. |
 | Tarifa dinámica | PriceLabs API, cacheada en una tabla | Job diario que llama a `listing_prices`, guarda fecha→tarifa en Supabase; el cotizador la lee en vez de usar la tarifa plana de respaldo. Igual contrato que `cri_pricelabs_quote_rates` hoy (ok/lodging/extra_guests, o caída silenciosa a la tarifa plana). |
 | Jobs de fondo | Railway | Sincronización de iCal, consulta diaria a PriceLabs y cualquier proceso con estado o de larga duración, donde una función serverless de Vercel se queda corta. |
-| Pagos | Yappy (principal) · PagueloFacil (alternativa) | Yappy es de Banco General — el banco donde ya concilian hoy —, con botón de pago integrable y comisión de 1% + ITBMS. PagueloFacil cubre tarjeta internacional si Yappy no basta. |
+| Pagos | **PagueloFacil (principal) · Yappy (secundaria)** — aprobado 2026-09-11 | PagueloFacil procesa tarjeta internacional, necesaria porque la mayoría de los huéspedes no son residentes en Panamá. Yappy es de Banco General — el banco donde ya concilian hoy —, con botón de pago integrable y comisión de 1% + ITBMS, pero solo funciona para quien tiene cuenta/Yappy en Panamá, así que queda como opción adicional para pagos locales (tienda, huéspedes o proveedores panameños), no como ruta principal del checkout. |
 
 ### Sobre Stripe
 
@@ -53,8 +60,11 @@ Verificado por búsqueda al momento de escribir este documento: Stripe no opera 
 | Supabase | Base de datos | **Usar** como fuente única de verdad para las tres apps |
 | Sanity | CMS | **Con matiz** — solo contenido editorial, nunca datos transaccionales |
 | Stripe | Pasarela de pago | **No usar** sin entidad en EE. UU. — no liquida directo a Panamá |
+| PagueloFacil | Pasarela de pago | **Usar, principal** — aprobado 2026-09-11, procesa tarjeta internacional |
+| Yappy | Pasarela de pago | **Usar, secundaria** — aprobado 2026-09-11, solo pagos locales (residentes en Panamá) |
 | Medusa | Motor de tienda | **Esperar** — el catálogo actual no lo justifica; reevaluar si crece |
 | CMS open source genérico | Contenido / intranet | **No usar** para la intranet — la lógica financiera no es "contenido" |
+| Refine (`@refinedev/core`) | Framework de panel de administración | **Usar** — aprobado 2026-09-11, MIT y gratis; no confundir con "Refine AI", el generador de apps de pago |
 
 ## Fases (orden de dependencia, no de prioridad de negocio)
 
@@ -63,19 +73,19 @@ Cada fase debe correr en paralelo a WordPress antes de apagar la pieza equivalen
 0. **Fundaciones compartidas** — esquema de Supabase, autenticación con los tres roles, monorepo Next.js, y el cotizador ya conectado a una tabla de tarifas en vez de la constante fija.
 1. **Sitio público** — ya en marcha. Extenderlo para leer disponibilidad real y tarifa dinámica desde Supabase.
 2. **Sincronización de calendarios y PriceLabs** — job de iCal (Airbnb ↔ Vrbo, sin bucles) y puente de PriceLabs, corriendo en Railway con cron real, no dependiente de visitas al sitio (el defecto D1 del motor actual). **Bloqueante para reservas reales.**
-3. **Intranet — reservas, calendario, operación** — el tramo de menor riesgo financiero, buen candidato para Refine.dev.
+3. **Intranet — reservas, calendario, operación** — el tramo de menor riesgo financiero, buen candidato para Refine.
 4. **Intranet — contabilidad y conciliación bancaria** — reparto de comisiones, anticipos, importación idempotente de reportes, conciliación contra Banco General. Se construye a mano, con pruebas. **Mayor riesgo financiero.**
-5. **Tienda, administrada desde la intranet** — catálogo sobre la misma base de Supabase, checkout Yappy/PagueloFacil, gestión de productos integrada al panel — no una tienda aparte con su propio login.
+5. **Tienda, administrada desde la intranet** — catálogo sobre la misma base de Supabase, checkout PagueloFacil (principal) con Yappy como opción local, gestión de productos integrada al panel — no una tienda aparte con su propio login.
 
 ## Riesgos críticos a vigilar
 
 - **El defecto D2 sigue abierto**: las reservas directas confirmadas hoy no entran al feed de salida de iCal — la sincronización las borra. Activar pagos reales antes de resolver esto en el nuevo motor arriesga overbooking.
-- **La pasarela de pago condiciona el diseño del checkout**: decidir Yappy vs. PagueloFacil temprano, no al final — el flujo de pago (botón vs. redirección, moneda, webhook de confirmación) toca tanto el cotizador del sitio como la tienda.
+- **El checkout necesita soportar dos pasarelas desde el diseño inicial**, no solo una: PagueloFacil (tarjeta, principal) y Yappy (local, secundaria) tienen flujos distintos — botón vs. redirección, moneda, webhook de confirmación — y ambos tocan tanto el cotizador del sitio como la tienda.
 - **Migrar datos reales no es solo migrar código**: 69 reservas, gastos por categoría, anticipos de comisión y códigos de descuento activos tienen que exportarse de WordPress antes de apagarlo.
 - **WordPress sigue siendo la fuente de verdad del dinero** hasta que la Fase 4 esté probada. No cortar contabilidad y conciliación de un salto.
 
 ## Pendiente
 
 - Publicar este plan como página compartible (Artifact) para la persona técnica que da feedback — ofrecido, no confirmado aún.
-- Decidir Yappy vs. PagueloFacil como pasarela principal.
 - Definir el esquema inicial de Supabase (tablas: reservas, comisiones, anticipos, gastos, conciliación, tarifas, códigos de descuento, planificación de compras).
+- Crear las cuentas de comercio en PagueloFacil y Yappy y obtener credenciales de API para ambas.
