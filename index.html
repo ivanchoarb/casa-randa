@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Casa Randa · Casa completa de 6 habitaciones en Ciudad de Panamá</title>
+<meta name="description" content="Casa de la antigua Zona del Canal en Diablo Heights, Ancón. Seis habitaciones con baño privado, hasta 16 huéspedes. Reserva directa sin comisión de plataforma.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=Source+Serif+4:opsz,wght@8..60,400..600&amp;display=swap">
+<link rel="stylesheet" href="css/casa-randa.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="mark" href="#top">CASA RANDA <span>PANAMÁ</span></a>
+    <nav>
+      <a href="#casa" data-en="The house">La casa</a>
+      <a href="#reservar" data-en="Direct booking">Reserva directa</a>
+      <a href="#barrio" data-en="Diablo Heights">Diablo Heights</a>
+      <a href="#resenas" data-en="Reviews">Reseñas</a>
+    </nav>
+    <div class="lang" role="group" aria-label="Idioma / Language">
+      <button type="button" id="lang-es" aria-pressed="true">ES</button>
+      <button type="button" id="lang-en" aria-pressed="false">EN</button>
+    </div>
+    <a class="btn" href="#reservar" data-en="Check dates">Ver fechas</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ============ HERO: seis puertas, una llave ============ -->
+  <div class="hero">
+    <div class="hero-bg"><img src="img/sala-principal.jpg" alt="Sala principal de Casa Randa con ventanales de madera hacia el jardín"></div>
+    <div class="wrap">
+      <div class="hero-head">
+        <h1>
+          <span class="k" data-en="Six bedrooms.">Seis habitaciones.</span>
+          <span class="k" data-en="Six bathrooms.">Seis baños.</span>
+          <span class="k" data-en="One key.">Una sola llave.</span>
+        </h1>
+        <p class="hero-sub" data-en="A former Canal Zone house in Diablo Heights, rented whole and only to your group. <b>Fourteen sleep comfortably, sixteen at most.</b>">Una casa de la antigua Zona del Canal en Diablo Heights, que se alquila entera y solo a su grupo. <b>Catorce duermen cómodos, dieciséis como máximo.</b></p>
+      </div>
+
+      <ul class="facts">
+        <li><b class="num">6</b><span data-en="bedrooms">habitaciones</span></li>
+        <li><b class="num">6</b><span data-en="private bathrooms">baños privados</span></li>
+        <li><b class="num">12</b><span data-en="beds">camas</span></li>
+        <li><b class="num">14</b><span data-en="guests, 16 at most">huéspedes cómodos, 16 máximo</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============ disponibilidad ============ -->
+  <div class="avail">
+    <div class="wrap">
+      <div class="field">
+        <label for="in" data-en="Check-in">Entrada</label>
+        <input type="date" id="in" value="2026-11-20">
+      </div>
+      <div class="field">
+        <label for="out" data-en="Check-out">Salida</label>
+        <input type="date" id="out" value="2026-11-23">
+      </div>
+      <div class="field">
+        <label for="pax" data-en="Guests">Huéspedes</label>
+        <select id="pax"></select>
+      </div>
+      <a class="btn" href="#reservar" data-en="See what it costs">Ver cuánto cuesta</a>
+    </div>
+  </div>
+
+  <!-- ============ la casa ============ -->
+  <section id="casa">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 data-en="Nobody shares anything">Aquí nadie comparte nada</h2>
+        <p data-en="Twelve beds across six rooms, each with its own bathroom, air conditioning, ceiling fan, TV, minibar and a desk with an office chair. The whole house is yours: there are no other guests.">Doce camas en seis habitaciones, cada una con baño propio, aire acondicionado, ventilador de techo, TV, minibar y escritorio con silla de oficina. La casa entera es suya: no hay otros huéspedes.</p>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <caption data-en="Beds by room. Comfortable for 14; 15 and 16 sleep on extra beds at $40 per guest per night.">Camas por habitación. Cómoda para 14; el 15 y el 16 duermen en camas adicionales, con cargo de 40 USD por huésped y noche.</caption>
+          <thead>
+            <tr>
+              <th scope="col" data-en="Room">Habitación</th>
+              <th scope="col" data-en="Beds">Camas</th>
+              <th scope="col" data-en="Sleeps">Duerme</th>
+              <th scope="col" data-en="Bathroom">Baño</th>
+            </tr>
+          </thead>
+          <tbody id="roomsTable"></tbody>
+        </table>
+      </div>
+
+      <div class="cols">
+        <div>
+          <h3 data-en="Shared by your group only">De su grupo y de nadie más</h3>
+          <ul class="list" id="commonList"></ul>
+        </div>
+        <div>
+          <h3 data-en="What the house does not have">Lo que la casa no tiene</h3>
+          <ul class="list no" id="notList"></ul>
+          <p style="margin-top:14px;font-size:.9rem;color:var(--ink-2)" data-en="Better to know before you book than after you arrive.">Mejor saberlo antes de reservar que al llegar.</p>
+        </div>
+      </div>
+
+      <div class="strip" style="margin-top:52px">
+        <figure class="g1"><img src="img/cocina-comedor.jpg" alt="Cocina abierta al comedor con pisos de caoba"><figcaption data-en="Kitchen open to the dining room">Cocina abierta al comedor</figcaption></figure>
+        <figure class="g2"><img src="img/patio-cubierto.jpg" alt="Patio cubierto iluminado de noche con mesa para el grupo"><figcaption data-en="Covered patio and barbecue">Patio cubierto y área de BBQ</figcaption></figure>
+        <figure class="g3"><img src="img/habitacion-1-king.jpg" alt="Habitación con cama king, baño privado y escritorio"><figcaption data-en="Room 1, king bed">Habitación 1, cama king</figcaption></figure>
+        <figure class="g4"><img src="img/habitacion-individuales.jpg" alt="Habitación con dos camas individuales"><figcaption data-en="Twin rooms">Habitaciones de individuales</figcaption></figure>
+        <figure class="g5"><img src="img/balcon-hamaca.jpg" alt="Balcón de madera con hamaca y sillas"><figcaption data-en="Balcony with hammock">Balcón con hamaca</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ reserva directa ============ -->
+  <section id="reservar" class="direct">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 data-en="Book it here, not through a platform">Resérvela aquí, no por una plataforma</h2>
+        <p data-en="Same calendar as Airbnb and Vrbo, same house, same hosts. Booking direct is what lets us hold a rate without the platform's cut, split the payment, and answer you ourselves.">El mismo calendario de Airbnb y Vrbo, la misma casa, los mismos anfitriones. Reservar directo es lo que permite sostener la tarifa sin la comisión de la plataforma, partir el pago y responderle nosotros mismos.</p>
+      </div>
+
+      <div class="quote">
+        <div>
+          <div class="controls">
+            <div class="field">
+              <label for="q-in" data-en="Check-in">Entrada</label>
+              <input type="date" id="q-in" value="2026-11-20">
+            </div>
+            <div class="field">
+              <label for="q-out" data-en="Check-out">Salida</label>
+              <input type="date" id="q-out" value="2026-11-23">
+            </div>
+            <div class="field">
+              <label for="q-pax" data-en="Guests">Huéspedes</label>
+              <select id="q-pax"></select>
+            </div>
+            <div class="field">
+              <label for="q-cancel" data-en="Cancellation">Cancelación</label>
+              <select id="q-cancel">
+                <option value="flex" data-en="Flexible, +3%">Flexible, +3 %</option>
+                <option value="nr" data-en="Non-refundable, −5%">No reembolsable, −5 %</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label for="q-plan" data-en="Payment">Pago</label>
+              <select id="q-plan">
+                <option value="30" data-en="30% deposit now, balance 7 days before arrival">Anticipo del 30 % ahora, saldo 7 días antes de llegar</option>
+                <option value="100" data-en="Pay 100% now">Pagar el 100 % ahora</option>
+              </select>
+            </div>
+          </div>
+
+          <table class="vs" style="min-width:0">
+            <thead>
+              <tr>
+                <th scope="col"></th>
+                <th scope="col" data-en="Direct">Directo</th>
+                <th scope="col" data-en="Airbnb / Vrbo">Airbnb / Vrbo</th>
+              </tr>
+            </thead>
+            <tbody id="vsTable"></tbody>
+          </table>
+        </div>
+
+        <aside class="ticket" id="ticket">
+          <h3 data-en="Your quote">Su cotización</h3>
+          <p class="fine" id="q-head"></p>
+          <dl id="q-lines"></dl>
+          <p class="fine" id="q-note"></p>
+          <a class="btn" href="#" style="margin-top:18px;width:100%" data-en="Request these dates">Solicitar estas fechas</a>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ barrio ============ -->
+  <section id="barrio">
+    <div class="wrap">
+      <div class="barrio">
+        <div>
+          <h2 data-en="Diablo Heights, the old Canal Zone">Diablo Heights, la antigua Zona del Canal</h2>
+          <p style="margin-top:18px" data-en="The house is one of the wooden quarters the Canal administration built on the hills above the locks: sage siding, white trim, mahogany floors and windows that open onto the trees. It is a residential township, not a hotel strip — and it sits between the Canal and the old city.">La casa es una de las quintas de madera que la administración del Canal levantó en las colinas sobre las esclusas: entablado verde, molduras blancas, pisos de caoba y ventanas que dan a los árboles. Es un barrio residencial, no una zona hotelera, y está entre el Canal y la ciudad vieja.</p>
+          <ul class="dist" id="distList"></ul>
+          <p style="font-size:.82rem;color:var(--ink-2);margin-top:14px" data-en="Straight-line distances from the house at Calle Hecker 5624.">Distancias en línea recta desde la casa, en Calle Hecker 5624.</p>
+        </div>
+        <figure>
+          <img src="img/fachada-diablo-heights.jpg" alt="Fachada de madera de Casa Randa en Diablo Heights, con entablado verde y cerca de caoba">
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ reseñas ============ -->
+  <section id="resenas" class="rep">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 data-en="What sixteen groups said">Lo que dijeron dieciséis grupos</h2>
+        <p data-en="Ratings from Airbnb, where Diana has hosted for three years as a Superhost and the listing carries the Guest Favourite badge. Marquelda meets guests at the door; the smart lock is the backup for late arrivals.">Calificaciones de Airbnb, donde Diana lleva tres años como Superanfitriona y el anuncio tiene el distintivo Favorito entre huéspedes. Marquelda recibe en la puerta; la cerradura inteligente es el respaldo para llegadas tardías.</p>
+      </div>
+      <div class="score">
+        <div class="big">4,94 <small data-en="16 reviews on Airbnb">16 reseñas en Airbnb</small></div>
+        <div class="bars" id="bars"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ extras ============ -->
+  <section>
+    <div class="wrap">
+      <div class="extras">
+        <div>
+          <h2 style="font-size:var(--s-xl)" data-en="Arrive to a house already stocked">Llegue a una casa ya surtida</h2>
+          <p style="margin-top:14px" data-en="Pick the wine, the coffee and the breakfast before you travel and it will be waiting in the kitchen. Our Panama guide — what to do, where to eat, how to get there — comes with the booking.">Elija el vino, el café y el desayuno antes de viajar y estarán en la cocina al llegar. La guía de Panamá que escribimos nosotros, con qué hacer, dónde comer y cómo llegar, va incluida con la reserva.</p>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <a class="btn btn-quiet" href="#" data-en="Open the shop">Ver la tienda</a>
+          <a class="btn btn-quiet" href="#" data-en="Open the Panama guide">Ver la guía de Panamá</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <h4 data-en="The house">La casa</h4>
+        <p>Calle Hecker 5624<br>Diablo Heights, Ancón<br>Ciudad de Panamá</p>
+      </div>
+      <div>
+        <h4 data-en="Bookings">Reservas</h4>
+        <p><a href="mailto:booking@randahome.com">booking@randahome.com</a></p>
+        <p data-en="WhatsApp, 7 a.m. to 10 p.m. Panama time">WhatsApp, de 7 a. m. a 10 p. m. hora de Panamá</p>
+      </div>
+      <div>
+        <h4 data-en="Registration">Registro</h4>
+        <p class="reg">HAES 4182283</p>
+        <p data-en="Check-in 3–9 p.m. · Check-out by noon">Entrada de 3 a 9 p. m. Salida hasta las 12 m.</p>
+      </div>
+      <div>
+        <h4 data-en="Follow">Síganos</h4>
+        <p><a href="#">@casaranda_panama</a></p>
+      </div>
+    </div>
+    <div class="colofon">
+      <span>© 2026 Casa Randa</span>
+      <span data-en="Prototype — direct booking is by request and quote">Prototipo — la reserva directa es por solicitud y cotización</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/casa-randa.js"></script>
+</body>
+</html>
