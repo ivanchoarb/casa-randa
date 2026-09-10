@@ -1,5 +1,126 @@
 @import "tailwindcss";
 
+/* Lenis smooth scroll (see SmoothScrollProvider.tsx) — recommended
+   baseline styles so it doesn't fight the browser's own scroll-behavior
+   or overscroll handling. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+html.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+html.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+html.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/*
+ * ---------- Micro-interactions ----------
+ * Small, purposeful responses to input — not blanket scroll-triggered
+ * fades on every element. Timing uses a couple of deliberate, distinct
+ * curves rather than one default ease everywhere.
+ */
+
+/* Nav links: underline grows from the left instead of swapping color
+   instantly. */
+.nav-link {
+  position: relative;
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  height: 1px;
+  background: var(--lamp-fill);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-link:hover::after,
+.nav-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* Secondary/outline buttons (Extras): the fill sweeps in from the left
+   on a diagonal-feeling ease instead of a flat background swap. */
+.btn-sweep {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-sweep::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+  z-index: -1;
+}
+.btn-sweep:hover::before,
+.btn-sweep:focus-visible::before {
+  transform: scaleX(1);
+}
+.btn-sweep {
+  transition: color 0.25s ease 0.05s;
+}
+.btn-sweep:hover,
+.btn-sweep:focus-visible {
+  color: var(--panel);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-link::after {
+    transition: none !important;
+  }
+  .btn-sweep::before {
+    transition: none !important;
+  }
+}
+
+/* Section entrance: one considered rise-and-fade (or scale-and-fade for
+   photography) per content block — heading+copy together, a table as a
+   whole, a gallery as a whole — triggered once via useInView (see
+   Reveal.tsx). Deliberately NOT applied per list item/row: every bullet
+   cascading in on its own is the one entrance pattern everyone's seen a
+   hundred times on template-generated sites. */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-scale.is-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-scale {
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 /*
  * Design tokens, taken from the house itself (see legacy-static/LEEME.md):
  * the green siding, white trim, mahogany floors and fence, and the amber
@@ -64,10 +185,17 @@ body {
  * every movement.
  */
 
-/* Fluid hero heading: scales continuously with the viewport instead of
-   jumping between two Tailwind breakpoints. */
+/* Fluid headings: scale continuously with the viewport instead of jumping
+   between Tailwind breakpoints. Three tiers — hero (h1), section titles
+   (h2), and the smaller Extras heading. */
 .text-fluid-hero {
   font-size: clamp(2.25rem, 1.5rem + 4vw, 4.75rem);
+}
+.text-fluid-h2 {
+  font-size: clamp(1.875rem, 1.3rem + 2.2vw, 2.5rem);
+}
+.text-fluid-h2-sm {
+  font-size: clamp(1.5rem, 1.05rem + 1.7vw, 2rem);
 }
 
 @media (prefers-reduced-motion: no-preference) {

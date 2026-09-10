@@ -4,6 +4,7 @@ import Image from "next/image";
 import { COMMON_EN, COMMON_ES, NOT_EN, NOT_ES } from "@casa-randa/data";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { RoomsTable } from "@/components/sections/RoomsTable";
+import { Reveal } from "@/components/ui/Reveal";
 
 const GALLERY = [
   {
@@ -43,8 +44,8 @@ export function House() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-20">
-      <div className="grid gap-5 sm:grid-cols-2 sm:items-end">
-        <h2 className="font-[var(--font-display)] text-3xl font-bold sm:text-4xl">
+      <Reveal className="grid gap-5 sm:grid-cols-2 sm:items-end">
+        <h2 className="text-fluid-h2 font-[var(--font-display)] font-bold">
           {lang === "es" ? "Aquí nadie comparte nada" : "Nobody shares anything"}
         </h2>
         <p className="text-[var(--ink-2)]">
@@ -52,13 +53,13 @@ export function House() {
             ? "Doce camas en seis habitaciones, cada una con baño propio, aire acondicionado, ventilador de techo, TV, minibar y escritorio con silla de oficina. La casa entera es suya: no hay otros huéspedes."
             : "Twelve beds across six rooms, each with its own bathroom, air conditioning, ceiling fan, TV, minibar and a desk with an office chair. The whole house is yours: there are no other guests."}
         </p>
-      </div>
+      </Reveal>
 
-      <div className="mt-10">
+      <Reveal className="mt-10" delayMs={100}>
         <RoomsTable />
-      </div>
+      </Reveal>
 
-      <div className="mt-12 grid gap-10 sm:grid-cols-2 sm:gap-12">
+      <Reveal className="mt-12 grid gap-10 sm:grid-cols-2 sm:gap-12">
         <div>
           <h3 className="font-[var(--font-display)] text-lg font-semibold">
             {lang === "es" ? "De su grupo y de nadie más" : "Shared by your group only"}
@@ -89,9 +90,9 @@ export function House() {
               : "Better to know before you book than after you arrive."}
           </p>
         </div>
-      </div>
+      </Reveal>
 
-      <div className="mt-13 grid grid-cols-12 gap-2.5">
+      <Reveal scale className="mt-13 grid grid-cols-12 gap-2.5">
         {GALLERY.map((photo) => (
           <figure key={photo.src} className={`gallery-photo relative m-0 overflow-hidden bg-[var(--ink)]/5 ${photo.span}`}>
             <Image src={photo.src} alt={photo.alt} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" />
@@ -100,7 +101,7 @@ export function House() {
             </figcaption>
           </figure>
         ))}
-      </div>
+      </Reveal>
     </div>
   );
 }

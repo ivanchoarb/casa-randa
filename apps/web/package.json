@@ -12,6 +12,7 @@
     "@casa-randa/data": "workspace:*",
     "@casa-randa/pricing": "workspace:*",
     "gsap": "^3.15.0",
+    "lenis": "^1.3.26",
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"

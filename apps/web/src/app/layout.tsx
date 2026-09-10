@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Archivo, Source_Serif_4 } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
+import { SmoothScrollProvider } from "@/lib/scroll/SmoothScrollProvider";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -54,7 +55,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" className={`${archivo.variable} ${sourceSerif.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <LanguageProvider>{children}</LanguageProvider>
+        <SmoothScrollProvider>
+          <LanguageProvider>{children}</LanguageProvider>
+        </SmoothScrollProvider>
       </body>
     </html>
   );

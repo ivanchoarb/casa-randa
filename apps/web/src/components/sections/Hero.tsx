@@ -2,6 +2,12 @@
 
 import Image from "next/image";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { useCountUp } from "@/lib/useCountUp";
+
+function HeroStat({ value }: { value: number }) {
+  const display = useCountUp(value, true, 1100);
+  return <b className="block text-3xl font-[var(--font-display)] tabular-nums">{Math.round(display)}</b>;
+}
 
 export function Hero() {
   const { lang } = useLanguage();
@@ -16,19 +22,19 @@ export function Hero() {
       ? "Una casa de la antigua Zona del Canal en Diablo Heights, que se alquila entera y solo a su grupo. Catorce duermen cómodos, dieciséis como máximo."
       : "A former Canal Zone house in Diablo Heights, rented whole and only to your group. Fourteen sleep comfortably, sixteen at most.";
 
-  const facts =
+  const facts: [number, string][] =
     lang === "es"
       ? [
-          ["6", "habitaciones"],
-          ["6", "baños privados"],
-          ["12", "camas"],
-          ["14", "huéspedes cómodos, 16 máximo"],
+          [6, "habitaciones"],
+          [6, "baños privados"],
+          [12, "camas"],
+          [14, "huéspedes cómodos, 16 máximo"],
         ]
       : [
-          ["6", "bedrooms"],
-          ["6", "private bathrooms"],
-          ["12", "beds"],
-          ["14", "guests, 16 at most"],
+          [6, "bedrooms"],
+          [6, "private bathrooms"],
+          [12, "beds"],
+          [14, "guests, 16 at most"],
         ];
 
   return (
@@ -58,7 +64,7 @@ export function Hero() {
         <ul className="mt-10 flex flex-wrap gap-8">
           {facts.map(([num, label]) => (
             <li key={label} className="hero-fact-item">
-              <b className="block text-3xl font-[var(--font-display)]">{num}</b>
+              <HeroStat value={num} />
               <span className="text-sm opacity-80">{label}</span>
             </li>
           ))}

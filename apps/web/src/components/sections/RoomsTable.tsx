@@ -43,8 +43,14 @@ export function RoomsTable() {
         </thead>
         <tbody>
           {ROOMS.map((room) => (
-            <tr key={room.n} className="border-b border-[var(--ink)]/10 align-top">
-              <th scope="row" className="py-3 pr-4 font-[var(--font-display)] font-semibold">
+            <tr
+              key={room.n}
+              className="group border-b border-[var(--ink)]/10 align-top transition-colors duration-200 hover:bg-[var(--caoba)]/5"
+            >
+              <th
+                scope="row"
+                className="py-3 pr-4 font-[var(--font-display)] font-semibold transition-colors duration-200 group-hover:text-[var(--caoba)]"
+              >
                 {room.n}
               </th>
               <td className="py-3 pr-4">

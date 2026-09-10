@@ -6,10 +6,12 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { useBooking } from "@/lib/booking/BookingProvider";
 import { PaxSelect } from "@/components/ui/PaxSelect";
 import { openDatePickerOnClick, openDatePickerOnKey } from "@/lib/dom/openDatePicker";
+import { MagneticLink } from "@/components/ui/MagneticLink";
+import { Reveal } from "@/components/ui/Reveal";
 
 const fieldLabel = "font-[var(--font-display)] text-xs tracking-wide text-[var(--ink-2)]";
 const fieldInput =
-  "rounded-[1px] border border-[var(--ink)]/25 bg-[var(--ground)] px-3 py-2 font-[var(--font-display)] text-sm text-[var(--ink)]";
+  "rounded-[1px] border border-[var(--ink)]/25 bg-[var(--ground)] px-3 py-2 font-[var(--font-display)] text-sm text-[var(--ink)] transition-[border-color,box-shadow] duration-200 outline-none focus:border-[var(--caoba)] focus:ring-2 focus:ring-[var(--caoba)]/20";
 
 export function QuoteCalculator() {
   const { lang, t, money } = useLanguage();
@@ -21,8 +23,8 @@ export function QuoteCalculator() {
   return (
     <div className="border-y border-[var(--ink)]/10 bg-[var(--panel)]">
       <div className="mx-auto max-w-6xl px-6 py-20">
-        <div className="grid gap-5 sm:grid-cols-2 sm:items-end">
-          <h2 className="font-[var(--font-display)] text-3xl font-bold sm:text-4xl">
+        <Reveal className="grid gap-5 sm:grid-cols-2 sm:items-end">
+          <h2 className="text-fluid-h2 font-[var(--font-display)] font-bold">
             {lang === "es" ? "Resérvela aquí, no por una plataforma" : "Book it here, not through a platform"}
           </h2>
           <p className="text-[var(--ink-2)]">
@@ -30,10 +32,10 @@ export function QuoteCalculator() {
               ? "El mismo calendario de Airbnb y Vrbo, la misma casa, los mismos anfitriones. Reservar directo es lo que permite sostener la tarifa sin la comisión de la plataforma, partir el pago y responderle nosotros mismos."
               : "Same calendar as Airbnb and Vrbo, same house, same hosts. Booking direct is what lets us hold a rate without the platform's cut, split the payment, and answer you ourselves."}
           </p>
-        </div>
+        </Reveal>
 
         <div className="mt-9 grid gap-10 lg:grid-cols-[1fr_26rem] lg:items-start lg:gap-14">
-          <div>
+          <Reveal delayMs={100}>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
                 <label htmlFor="q-in" className={fieldLabel}>
@@ -117,7 +119,10 @@ export function QuoteCalculator() {
               </thead>
               <tbody>
                 {VS.map((row) => (
-                  <tr key={row.es} className="border-b border-[var(--ink)]/10">
+                  <tr
+                    key={row.es}
+                    className="border-b border-[var(--ink)]/10 transition-colors duration-200 hover:bg-[var(--caoba)]/5"
+                  >
                     <td className="py-3 pr-4">{t(row)}</td>
                     <td className="py-3 pr-4 font-[var(--font-display)] font-semibold text-[var(--caoba)]">
                       {lang === "es" ? "Sí" : "Yes"}
@@ -129,9 +134,14 @@ export function QuoteCalculator() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </Reveal>
 
-          <aside className="border-t-4 border-[var(--lamp-fill)] bg-[var(--night)] px-6 py-6 text-[var(--on-dark)] shadow-[0_18px_40px_-28px_rgba(20,33,26,0.55)]">
+          <Reveal
+            scale
+            delayMs={150}
+            className="border-t-4 border-[var(--lamp-fill)] bg-[var(--night)] px-6 py-6 text-[var(--on-dark)] shadow-[0_18px_40px_-28px_rgba(20,33,26,0.55)]"
+          >
+          <aside>
             <h3 className="font-[var(--font-display)] text-lg font-semibold text-[var(--on-dark)]">
               {lang === "es" ? "Su cotización" : "Your quote"}
             </h3>
@@ -181,13 +191,14 @@ export function QuoteCalculator() {
               </>
             )}
 
-            <a
+            <MagneticLink
               href="#"
-              className="mt-5 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] hover:bg-[#f0ce86]"
+              className="mt-5 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[#f0ce86]"
             >
               {lang === "es" ? "Solicitar estas fechas" : "Request these dates"}
-            </a>
+            </MagneticLink>
           </aside>
+          </Reveal>
         </div>
       </div>
     </div>

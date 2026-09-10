@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { DIST } from "@casa-randa/data";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { Reveal } from "@/components/ui/Reveal";
 
 const MAX_KM = Math.max(...DIST.map((d) => d.km));
 
@@ -12,8 +13,8 @@ export function Neighborhood() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-20">
       <div className="grid items-center gap-11 lg:grid-cols-2 lg:gap-14">
-        <div>
-          <h2 className="font-[var(--font-display)] text-3xl font-bold sm:text-4xl">
+        <Reveal>
+          <h2 className="text-fluid-h2 font-[var(--font-display)] font-bold">
             {lang === "es" ? "Diablo Heights, la antigua Zona del Canal" : "Diablo Heights, the old Canal Zone"}
           </h2>
           <p className="mt-4 text-[var(--ink-2)]">
@@ -43,9 +44,9 @@ export function Neighborhood() {
               ? "Distancias en línea recta desde la casa, en Calle Hecker 5624."
               : "Straight-line distances from the house at Calle Hecker 5624."}
           </p>
-        </div>
+        </Reveal>
 
-        <figure className="relative m-0 aspect-[4/3] overflow-hidden">
+        <Reveal scale delayMs={150} className="relative aspect-[4/3] overflow-hidden">
           <Image
             src="/images/fachada-diablo-heights.jpg"
             alt="Fachada de madera de Casa Randa en Diablo Heights, con entablado verde y cerca de caoba"
@@ -53,7 +54,7 @@ export function Neighborhood() {
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="scroll-scale-img object-cover"
           />
-        </figure>
+        </Reveal>
       </div>
     </div>
   );
