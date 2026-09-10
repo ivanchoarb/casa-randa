@@ -13,6 +13,7 @@
 | 2026-09-11 | Correo: se usan las cuentas existentes en **Dongee** (`booking@`, `purchases@`, `info@randahome.com`) | No se crea proveedor nuevo. Detalle completo, incluyendo a qué flujo mapea cada dirección, en [logica-negocio-y-flujos.md](logica-negocio-y-flujos.md#correo-electrónico--aprobado-2026-09-11). |
 | 2026-09-11 | Conciliación bancaria: **no se integra la API de Banco General** | Se usa en su lugar el historial de transacciones de PagueloFacil/Yappy para automatizar el lado "esperado"; la confirmación real del depósito en el banco y toda la conciliación de Airbnb/Vrbo se mantienen manuales. Detalle en [logica-negocio-y-flujos.md](logica-negocio-y-flujos.md#conciliación-bancaria--qué-sí-se-puede-automatizar-sin-la-api-del-banco). |
 | 2026-09-11 | Tienda: **compra solo con reserva confirmada** | `Pedido de tienda.reserva_id` es obligatorio; no hay compras anónimas. |
+| 2026-09-11 | Diagrama de flujo completo: **revisado y aprobado** | Mermaid en [logica-negocio-y-flujos.md](logica-negocio-y-flujos.md#diagrama-completo-verificado-que-renderiza-sin-errores) — cubre huésped, canales OTA, pasarelas, jobs de fondo, datos en Supabase, intranet y correo en un solo diagrama. |
 
 ## Contexto
 
