@@ -13,6 +13,13 @@
   --caoba: #74302a;
   --lamp-fill: #e7be6a;
   --night: #14211a;
+  --night-2: #1e3226;
+
+  /* Text on dark surfaces (hero, availability bar, ticket, reviews,
+     footer) — these surfaces stay dark in both themes, so unlike the
+     tokens above these do NOT flip under the dark-mode override. */
+  --on-dark: #e3e8da;
+  --on-dark-2: #a9bca4;
 
   --font-display: var(--font-archivo);
   --font-body: var(--font-source-serif);
@@ -25,6 +32,9 @@
   --color-caoba: var(--caoba);
   --color-lamp-fill: var(--lamp-fill);
   --color-night: var(--night);
+  --color-night-2: var(--night-2);
+  --color-on-dark: var(--on-dark);
+  --color-on-dark-2: var(--on-dark-2);
   --font-sans: var(--font-display);
   --font-serif: var(--font-body);
 }
@@ -43,4 +53,180 @@ body {
   background: var(--ground);
   color: var(--ink);
   font-family: var(--font-body), serif;
+}
+
+/*
+ * ---------- Image & scroll interaction effects ----------
+ * Progressive enhancement only: every rule here is CSS-only (no JS), gated
+ * behind @supports/@media so unsupported browsers and touch devices just
+ * see the plain photo. Everything animates transform/opacity/filter only
+ * (GPU-friendly, no layout shift), and prefers-reduced-motion turns off
+ * every movement.
+ */
+
+/* Fluid hero heading: scales continuously with the viewport instead of
+   jumping between two Tailwind breakpoints. */
+.text-fluid-hero {
+  font-size: clamp(2.25rem, 1.5rem + 4vw, 4.75rem);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: scroll()) {
+    /* Hero heading/sub/facts drift up and fade as the page scrolls past —
+       a scroll-linked parallax read on the text block as a whole. */
+    .hero-parallax-text {
+      animation: hero-text-rise linear both;
+      animation-timeline: scroll(nearest block);
+      animation-range: 0 60vh;
+    }
+
+    /* Hero background: scale + vertical drift at a different rate than the
+       text above — the two layers moving at different speeds is what
+       reads as parallax depth, not the zoom alone. Always kept scaled up
+       enough that the drift never exposes an edge. */
+    .hero-bg-parallax {
+      animation: hero-bg-drift linear both;
+      animation-timeline: scroll(nearest block);
+      animation-range: 0 80vh;
+    }
+
+    /* Simple scroll-driven zoom for single accompanying photos
+       (the Diablo Heights facade shot). */
+    .scroll-scale-img {
+      animation: scroll-zoom linear both;
+      animation-timeline: scroll(nearest block);
+      animation-range: 0 80vh;
+    }
+  }
+}
+
+@keyframes hero-text-rise {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-56px);
+    opacity: 0.35;
+  }
+}
+
+@keyframes hero-bg-drift {
+  from {
+    transform: scale(1.15) translateY(0);
+  }
+  to {
+    transform: scale(1.05) translateY(6%);
+  }
+}
+
+@keyframes scroll-zoom {
+  from {
+    transform: scale(1.12);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Hero text entrance: heading lines, subtitle and stats materialize in a
+   short stagger on load — a "fluid" reveal (opacity + rise + a hint of
+   blur resolving into focus) distinct from the scroll parallax above,
+   which takes over once the entrance finishes. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-fluid-line,
+  .hero-sub-fade,
+  .hero-fact-item {
+    animation: hero-fluid-rise 0.9s cubic-bezier(0.22, 0.7, 0.25, 1) both;
+  }
+  .hero-fluid-line:nth-child(1) {
+    animation-delay: 0.05s;
+  }
+  .hero-fluid-line:nth-child(2) {
+    animation-delay: 0.16s;
+  }
+  .hero-fluid-line:nth-child(3) {
+    animation-delay: 0.27s;
+  }
+  .hero-sub-fade {
+    animation-delay: 0.4s;
+  }
+  .hero-fact-item:nth-child(1) {
+    animation-delay: 0.52s;
+  }
+  .hero-fact-item:nth-child(2) {
+    animation-delay: 0.6s;
+  }
+  .hero-fact-item:nth-child(3) {
+    animation-delay: 0.68s;
+  }
+  .hero-fact-item:nth-child(4) {
+    animation-delay: 0.76s;
+  }
+}
+
+@keyframes hero-fluid-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* Gallery: zoom-on-hover only. Scoped to hover-capable, fine-pointer
+   devices — touch just shows the photos at rest, unzoomed. */
+.gallery-photo img {
+  transition: transform 0.7s cubic-bezier(0.22, 0.7, 0.25, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .gallery-photo img {
+    transform: scale(1.06);
+  }
+  .gallery-photo:hover img,
+  .gallery-photo:focus-within img {
+    transform: scale(1.14);
+  }
+}
+
+/* Reviews: score bars fill from empty to their score once the section
+   scrolls into view (triggered from React via IntersectionObserver, see
+   Reviews.tsx). scaleX instead of width keeps this off the layout
+   thread — the bar's true width is already set inline per score, this
+   just reveals it. */
+.score-bar-fill {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.85s cubic-bezier(0.22, 0.7, 0.25, 1);
+}
+.score-bar-fill.is-filled {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-scale-img,
+  .hero-bg-parallax,
+  .hero-parallax-text,
+  .hero-fluid-line,
+  .hero-sub-fade,
+  .hero-fact-item {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+  .gallery-photo img,
+  .gallery-photo:hover img,
+  .gallery-photo:focus-within img {
+    transform: none !important;
+  }
+  .score-bar-fill {
+    transition: none !important;
+    transform: scaleX(1) !important;
+  }
 }

@@ -39,25 +39,25 @@ export function Hero() {
           alt="Sala principal de Casa Randa con ventanales de madera hacia el jardín"
           fill
           priority
-          className="object-cover"
+          className="hero-bg-parallax object-cover"
           sizes="100vw"
         />
         <div className="absolute inset-0 bg-[var(--night)]/60" />
       </div>
 
-      <div className="mx-auto max-w-6xl px-6 py-28 text-[var(--panel)] sm:py-36">
-        <h1 className="font-[var(--font-display)] text-4xl leading-tight font-semibold sm:text-6xl">
+      <div className="hero-parallax-text mx-auto max-w-6xl px-6 py-28 text-[var(--on-dark)] sm:py-36">
+        <h1 className="text-fluid-hero font-[var(--font-display)] leading-tight font-semibold">
           {heading.map((line) => (
-            <span key={line} className="block">
+            <span key={line} className="hero-fluid-line block">
               {line}
             </span>
           ))}
         </h1>
-        <p className="mt-6 max-w-xl text-lg opacity-90">{sub}</p>
+        <p className="hero-sub-fade mt-6 max-w-xl text-lg opacity-90">{sub}</p>
 
         <ul className="mt-10 flex flex-wrap gap-8">
           {facts.map(([num, label]) => (
-            <li key={label}>
+            <li key={label} className="hero-fact-item">
               <b className="block text-3xl font-[var(--font-display)]">{num}</b>
               <span className="text-sm opacity-80">{label}</span>
             </li>

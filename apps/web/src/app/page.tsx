@@ -1,37 +1,46 @@
 import { JsonLd } from "@/components/JsonLd";
-import { LangToggle } from "@/components/ui/LangToggle";
+import { SiteHeader } from "@/components/ui/SiteHeader";
+import { SiteFooter } from "@/components/ui/SiteFooter";
+import { BookingProvider } from "@/lib/booking/BookingProvider";
 import { Hero } from "@/components/sections/Hero";
-import { RoomsTable } from "@/components/sections/RoomsTable";
+import { AvailabilityBar } from "@/components/sections/AvailabilityBar";
+import { House } from "@/components/sections/House";
+import { QuoteCalculator } from "@/components/sections/QuoteCalculator";
+import { Neighborhood } from "@/components/sections/Neighborhood";
+import { Reviews } from "@/components/sections/Reviews";
+import { Extras } from "@/components/sections/Extras";
 
 export default function Home() {
   return (
-    <>
+    <BookingProvider>
       <JsonLd />
 
-      <header className="border-b border-[var(--ink)]/10 bg-[var(--panel)]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <span className="font-[var(--font-display)] text-sm font-semibold tracking-wide">
-            CASA RANDA <span className="text-[var(--ink-2)]">PANAMÁ</span>
-          </span>
-          <LangToggle />
-        </div>
-      </header>
+      <SiteHeader />
 
-      <main className="flex-1">
+      <main id="top" className="flex-1">
         <Hero />
+        <AvailabilityBar />
 
-        <section id="casa" className="mx-auto max-w-6xl px-6 py-20">
-          <RoomsTable />
-        </section>
+        <div id="casa">
+          <House />
+        </div>
 
-        {/*
-          TODO: remaining sections (reserva directa / cotizador, barrio,
-          reseñas, extras, footer) — see legacy-static/index.html for the
-          original content and CLAUDE.md for the porting notes. Hero and
-          RoomsTable above fix the component + data pattern to follow for
-          the rest.
-        */}
+        <div id="reservar">
+          <QuoteCalculator />
+        </div>
+
+        <div id="barrio">
+          <Neighborhood />
+        </div>
+
+        <div id="resenas">
+          <Reviews />
+        </div>
+
+        <Extras />
       </main>
-    </>
+
+      <SiteFooter />
+    </BookingProvider>
   );
 }
