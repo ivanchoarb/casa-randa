@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/*
+ * Mismos tokens que apps/web (ver su globals.css) — la paleta de la
+ * casa — pero la intranet es de un solo tipo de letra: es una
+ * herramienta de trabajo ("modo Operar"), no una página de marketing,
+ * así que no hay Source Serif aquí, solo Archivo para todo.
+ */
+:root {
+  --ground: #e3e8da;
+  --panel: #eff2e8;
+  --panel-2: #e2e7d8;
+  --ink: #18291d;
+  --ink-2: #4a5a4f;
+  --line: #c9d2bd;
+  --caoba: #74302a;
+  --lamp: #a5751f;
+  --lamp-bg: #f4e7cc;
+  --good: #3f7a4c;
+  --good-bg: #dce9dd;
+
+  --font-display: var(--font-archivo);
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-line: var(--line);
+  --color-caoba: var(--caoba);
+  --color-lamp: var(--lamp);
+  --color-lamp-bg: var(--lamp-bg);
+  --color-good: var(--good);
+  --color-good-bg: var(--good-bg);
+  --font-sans: var(--font-display);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #131f18;
+    --panel: #1b2c21;
+    --panel-2: #213228;
+    --ink: #e3e8da;
+    --ink-2: #9fb0a4;
+    --line: #33452f;
+    --caoba: #d5806b;
+    --lamp: #e7be6a;
+    --lamp-bg: #3a3120;
+    --good: #7fb389;
+    --good-bg: #213c29;
+  }
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-display), system-ui, sans-serif;
+}
