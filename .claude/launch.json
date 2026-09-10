@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "casa-randa-dev",
+      "runtimeExecutable": "/Users/ivandario/.nvm/versions/node/v24.21.0/bin/node",
+      "runtimeArgs": [
+        "/Users/ivandario/.nvm/versions/node/v24.21.0/lib/node_modules/corepack/dist/pnpm.js",
+        "dev"
+      ],
+      "port": 3000
+    }
+  ]
+}

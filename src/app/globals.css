@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens, taken from the house itself (see legacy-static/LEEME.md):
+ * the green siding, white trim, mahogany floors and fence, and the amber
+ * patio light at night. Light values first, dark overrides below.
+ */
+:root {
+  --ground: #e3e8da;
+  --panel: #eff2e8;
+  --ink: #18291d;
+  --ink-2: #4a5a4f;
+  --caoba: #74302a;
+  --lamp-fill: #e7be6a;
+  --night: #14211a;
+
+  --font-display: var(--font-archivo);
+  --font-body: var(--font-source-serif);
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-caoba: var(--caoba);
+  --color-lamp-fill: var(--lamp-fill);
+  --color-night: var(--night);
+  --font-sans: var(--font-display);
+  --font-serif: var(--font-body);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #131f18;
+    --panel: #1b2c21;
+    --ink: #e3e8da;
+    --ink-2: #9fb0a4;
+    --caoba: #d5806b;
+  }
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body), serif;
+}
