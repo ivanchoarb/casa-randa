@@ -10,6 +10,9 @@
 |---|---|---|
 | 2026-09-11 | Framework de panel: **Refine** ([github.com/refinedev/refine](https://github.com/refinedev/refine)) | Aprobado tras confirmar que el precio de $0.99–$20/mes visible en `refine.dev/pricing` es de "Refine AI" (un generador de apps aparte), no del framework — ver nota en la tabla de stack. |
 | 2026-09-11 | Pasarela de pago: **PagueloFacil principal, Yappy secundaria** | Yappy solo sirve para pagos locales de personas con cuenta en Panamá (residentes) — no cubre a huéspedes internacionales, que son la mayoría de las reservas. PagueloFacil, que sí procesa tarjeta internacional, queda como la ruta principal del checkout; Yappy se ofrece además para quien paga desde Panamá. |
+| 2026-09-11 | Correo: se usan las cuentas existentes en **Dongee** (`booking@`, `purchases@`, `info@randahome.com`) | No se crea proveedor nuevo. Detalle completo, incluyendo a qué flujo mapea cada dirección, en [logica-negocio-y-flujos.md](logica-negocio-y-flujos.md#correo-electrónico--aprobado-2026-09-11). |
+| 2026-09-11 | Conciliación bancaria: **no se integra la API de Banco General** | Se usa en su lugar el historial de transacciones de PagueloFacil/Yappy para automatizar el lado "esperado"; la confirmación real del depósito en el banco y toda la conciliación de Airbnb/Vrbo se mantienen manuales. Detalle en [logica-negocio-y-flujos.md](logica-negocio-y-flujos.md#conciliación-bancaria--qué-sí-se-puede-automatizar-sin-la-api-del-banco). |
+| 2026-09-11 | Tienda: **compra solo con reserva confirmada** | `Pedido de tienda.reserva_id` es obligatorio; no hay compras anónimas. |
 
 ## Contexto
 
@@ -90,5 +93,5 @@ Cada fase debe correr en paralelo a WordPress antes de apagar la pieza equivalen
 
 - Publicar este plan como página compartible (Artifact) para la persona técnica que da feedback — ofrecido, no confirmado aún.
 - Escribir el esquema SQL de Supabase — las entidades ya están mapeadas en [logica-negocio-y-flujos.md](logica-negocio-y-flujos.md), falta convertirlas en tablas.
-- Crear las cuentas de comercio en PagueloFacil y Yappy y obtener credenciales de API para ambas.
-- Elegir proveedor de email transaccional (ver pregunta abierta en logica-negocio-y-flujos.md).
+- Crear las cuentas de comercio en PagueloFacil y Yappy, obtener credenciales de API, y confirmar si PagueloFacil notifica por webhook o hay que consultar su API periódicamente.
+- Activar el servicio de SMTP transaccional de Dongee para el envío automático desde `booking@randahome.com`.
