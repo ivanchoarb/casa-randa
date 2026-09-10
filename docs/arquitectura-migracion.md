@@ -1,6 +1,8 @@
 # Arquitectura Casa Randa — plan de migración fuera de WordPress
 
 > Documentado el 2026-09-10. Registra el análisis y las decisiones de esa sesión de trabajo — no vive solo en el chat, por convención del proyecto (ver [CLAUDE.md](../CLAUDE.md)).
+>
+> Este documento cubre **qué herramientas usamos**. Para **cómo se conecta todo** — entidades, flujos de principio a fin, mapa de integraciones — ver [logica-negocio-y-flujos.md](logica-negocio-y-flujos.md).
 
 ## Decisiones aprobadas por Ivan
 
@@ -87,5 +89,6 @@ Cada fase debe correr en paralelo a WordPress antes de apagar la pieza equivalen
 ## Pendiente
 
 - Publicar este plan como página compartible (Artifact) para la persona técnica que da feedback — ofrecido, no confirmado aún.
-- Definir el esquema inicial de Supabase (tablas: reservas, comisiones, anticipos, gastos, conciliación, tarifas, códigos de descuento, planificación de compras).
+- Escribir el esquema SQL de Supabase — las entidades ya están mapeadas en [logica-negocio-y-flujos.md](logica-negocio-y-flujos.md), falta convertirlas en tablas.
 - Crear las cuentas de comercio en PagueloFacil y Yappy y obtener credenciales de API para ambas.
+- Elegir proveedor de email transaccional (ver pregunta abierta en logica-negocio-y-flujos.md).
