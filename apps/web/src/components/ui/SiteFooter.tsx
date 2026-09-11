@@ -1,7 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { Reveal } from "@/components/ui/Reveal";
+
+// No production subdomain is decided yet for apps/intranet (see
+// docs/arquitectura-migracion.md) — set NEXT_PUBLIC_INTRANET_URL once one
+// is, this falls back to the eventual randahome.com subdomain in the
+// meantime and to the local dev app's own port while developing.
+const INTRANET_URL =
+  process.env.NEXT_PUBLIC_INTRANET_URL ||
+  (process.env.NODE_ENV === "development" ? "http://localhost:3001" : "https://intranet.randahome.com");
 
 export function SiteFooter() {
   const { lang } = useLanguage();
@@ -57,10 +66,36 @@ export function SiteFooter() {
               </a>
             </p>
           </div>
+          <div>
+            <h4 className="font-[var(--font-display)] text-xs font-semibold tracking-wide text-[var(--on-dark-2)]">
+              {lang === "es" ? "Explorar" : "Explore"}
+            </h4>
+            <p className="mt-3 max-w-[30ch] text-sm text-[var(--on-dark-2)]">
+              <Link href="/tienda" className="text-[var(--on-dark)] transition-colors duration-200 hover:text-[var(--lamp-fill)]">
+                {lang === "es" ? "Tienda" : "Shop"}
+              </Link>
+            </p>
+            <p className="mt-1 max-w-[30ch] text-sm text-[var(--on-dark-2)]">
+              <Link
+                href="/que-hacer-en-panama"
+                className="text-[var(--on-dark)] transition-colors duration-200 hover:text-[var(--lamp-fill)]"
+              >
+                {lang === "es" ? "Qué hacer en Panamá" : "What to do in Panama"}
+              </Link>
+            </p>
+          </div>
         </Reveal>
 
-        <div className="mt-10 flex flex-wrap justify-between gap-4 border-t border-[var(--on-dark-2)]/25 pt-4 text-sm text-[var(--on-dark-2)]">
-          <span>© 2026 Casa Randa</span>
+        <div className="mt-10 flex flex-wrap items-baseline justify-between gap-4 border-t border-[var(--on-dark-2)]/25 pt-4 text-sm text-[var(--on-dark-2)]">
+          <span className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <span>© 2026 Casa Randa</span>
+            <a
+              href={INTRANET_URL}
+              className="text-[var(--on-dark-2)] underline decoration-[var(--on-dark-2)]/40 underline-offset-2 transition-colors duration-200 hover:text-[var(--on-dark)]"
+            >
+              {lang === "es" ? "Intranet" : "Staff intranet"}
+            </a>
+          </span>
           <span>
             {lang === "es"
               ? "Prototipo — la reserva directa es por solicitud y cotización"
