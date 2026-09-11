@@ -101,7 +101,8 @@ Marcadas por Ivan el 2026-09-11 como trabajo de ejecución, no decisiones abiert
 - [ ] Crear las cuentas de comercio en PagueloFacil y Yappy, obtener credenciales de API para ambas, y confirmar si PagueloFacil notifica por webhook o hay que consultar su API periódicamente.
 - [ ] Activar el servicio de SMTP transaccional de Dongee para el envío automático desde `booking@randahome.com` — bloquea el envío de liquidaciones desde Contabilidad.
 - [ ] Ivan va a crear su propio usuario administrador en la intranet y borrar la cuenta de prueba (`admin@casarandaintranet.test`) que se usó para verificar los módulos.
-- [ ] Conseguir y pegar en `apps/intranet/.env.local` (ver `.env.example` ahí mismo para instrucciones exactas): la `service_role key` de Supabase, la URL de exportación del calendario de Airbnb, la de Vrbo, y la API key + listing id de PriceLabs. El código de sincronización (`/api/sync/ical`, `/api/sync/pricelabs`) ya está escrito y probado hasta donde se puede sin esto — ver la Fase 2 arriba.
+- [x] `service_role key` de Supabase — agregada y **verificada en vivo** el 2026-09-11 (el feed de salida respondió 200 con un calendario vacío contra el proyecto real). Al pegarla la primera vez, la llave era de otro proyecto de Supabase (`zvhpcgdtgnhwocbangyy`, no `wrroflxjgljwdhfijemc`) — se detectó decodificando el JWT antes de guardarla, no se usó a ciegas.
+- [ ] Conseguir y pegar en `apps/intranet/.env.local`: la URL de exportación del calendario de Airbnb, la de Vrbo, y la API key + listing id de PriceLabs (ver `.env.example` ahí mismo). Confirmado que el resto de la cadena funciona: ambas rutas de sync ya autentican correctamente y reportan con claridad que solo faltan estas tres.
 - [ ] Decidir cómo se dispara el sync en producción de forma periódica (Vercel Cron una vez desplegado es la opción más simple; no depende de tener Railway ya montado).
 
 ## Pendiente
