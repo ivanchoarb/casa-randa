@@ -1,0 +1,89 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { Reveal } from "@/components/ui/Reveal";
+import { CATEGORIES, PLACES, type CategoryKey } from "./places";
+
+function RatingDots({ rating }: { rating: number }) {
+  return (
+    <span className="inline-flex gap-1" aria-label={`${rating}/5`}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <span
+          key={i}
+          className={`h-1.5 w-1.5 rounded-full ${i < rating ? "bg-[var(--caoba)]" : "bg-[var(--ink)]/15"}`}
+        />
+      ))}
+    </span>
+  );
+}
+
+export function GuideList() {
+  const { lang, t } = useLanguage();
+  const [active, setActive] = useState<CategoryKey | "all">("all");
+
+  const visible = active === "all" ? PLACES : PLACES.filter((p) => p.category === active);
+
+  return (
+    <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
+      <Reveal className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setActive("all")}
+          className={`rounded-full border px-4 py-1.5 text-sm transition-colors duration-200 ${
+            active === "all"
+              ? "border-[var(--ink)] bg-[var(--ink)] text-[var(--panel)]"
+              : "border-[var(--ink)]/25 text-[var(--ink-2)] hover:border-[var(--ink)]"
+          }`}
+        >
+          {lang === "es" ? "Todo" : "All"}
+        </button>
+        {CATEGORIES.map((c) => (
+          <button
+            key={c.key}
+            type="button"
+            onClick={() => setActive(c.key)}
+            className={`rounded-full border px-4 py-1.5 text-sm transition-colors duration-200 ${
+              active === c.key
+                ? "border-[var(--ink)] bg-[var(--ink)] text-[var(--panel)]"
+                : "border-[var(--ink)]/25 text-[var(--ink-2)] hover:border-[var(--ink)]"
+            }`}
+          >
+            {lang === "es" ? c.es : c.en}
+          </button>
+        ))}
+      </Reveal>
+
+      <Reveal delayMs={100} className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {visible.map((place) => {
+          const category = CATEGORIES.find((c) => c.key === place.category)!;
+          return (
+            <Link
+              key={place.slug}
+              href={`/que-hacer-en-panama/${place.slug}`}
+              className="group border border-[var(--ink)]/10 bg-[var(--panel)] p-5 transition-colors duration-200 hover:border-[var(--caoba)]/40"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-[var(--font-display)] text-xs font-semibold tracking-wide text-[var(--caoba)] uppercase">
+                  {lang === "es" ? category.es : category.en}
+                </span>
+                <span className="font-[var(--font-display)] text-sm font-semibold text-[var(--ink-2)]">
+                  {"$".repeat(place.priceLevel)}
+                </span>
+              </div>
+              <h3 className="mt-2 font-[var(--font-display)] text-lg font-semibold">{place.name}</h3>
+              <div className="mt-1">
+                <RatingDots rating={place.rating} />
+              </div>
+              <p className="mt-3 text-sm text-[var(--ink-2)]">{t(place.teaser)}</p>
+              <span className="nav-link mt-4 inline-block font-[var(--font-display)] text-sm font-semibold text-[var(--caoba)]">
+                {lang === "es" ? "Ver guía completa →" : "View full guide →"}
+              </span>
+            </Link>
+          );
+        })}
+      </Reveal>
+    </div>
+  );
+}

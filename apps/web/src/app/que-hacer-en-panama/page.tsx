@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { SiteFooter } from "@/components/ui/SiteFooter";
 import { PageHero } from "@/components/ui/PageHero";
-import { GuideSections } from "./GuideSections";
+import { GuideList } from "./GuideList";
 
 export const metadata: Metadata = {
   title: "Qué hacer en Panamá",
-  description:
-    "Una guía corta de qué ver cerca de Casa Randa: Casco Viejo, Cerro Ancón, las esclusas de Miraflores, el Biomuseo y la Calzada de Amador.",
+  description: "Una selección honesta de lugares, sabores y experiencias que sí recomendamos cerca de Casa Randa.",
 };
 
 export default function Page() {
@@ -21,11 +20,11 @@ export default function Page() {
             en: "What to do in Panama",
           }}
           intro={{
-            es: "Diablo Heights está a minutos del Canal, del Casco Viejo y de la Calzada de Amador. Esto es lo que vale la pena ver sin alejarse mucho de la casa.",
-            en: "Diablo Heights sits minutes from the Canal, Casco Viejo, and the Amador Causeway. Here's what's worth seeing without straying far from the house.",
+            es: "Una selección honesta de lugares, sabores y experiencias que sí recomendamos, con distancia, precio y horario reales desde la casa.",
+            en: "An honest selection of places, flavors and experiences we genuinely recommend, with real distance, pricing and hours from the house.",
           }}
         />
-        <GuideSections />
+        <GuideList />
       </main>
       <SiteFooter />
     </>
