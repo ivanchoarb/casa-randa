@@ -9,6 +9,11 @@ create type public.rol_usuario as enum ('administrador', 'dueño', 'empleado');
 create table public.perfiles (
   id uuid primary key references auth.users (id) on delete cascade,
   nombre text not null,
+  -- Copiado de auth.users al crear el perfil, para poder mostrar la
+  -- lista de usuarios (pantalla Usuarios y permisos) sin necesitar la
+  -- service role key en el cliente — auth.users no es consultable vía
+  -- PostgREST directamente.
+  email text not null,
   rol public.rol_usuario not null default 'empleado',
   created_at timestamptz not null default now()
 );
@@ -24,8 +29,8 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.perfiles (id, nombre)
-  values (new.id, coalesce(new.raw_user_meta_data ->> 'nombre', new.email));
+  insert into public.perfiles (id, nombre, email)
+  values (new.id, coalesce(new.raw_user_meta_data ->> 'nombre', new.email), new.email);
   return new;
 end;
 $$;
