@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/ui/SiteFooter";
 import { BookingProvider } from "@/lib/booking/BookingProvider";
 import { Hero } from "@/components/sections/Hero";
 import { AvailabilityBar } from "@/components/sections/AvailabilityBar";
+import { NightToDayReveal } from "@/components/sections/NightToDayReveal";
 import { House } from "@/components/sections/House";
 import { QuoteCalculator } from "@/components/sections/QuoteCalculator";
 import { Neighborhood } from "@/components/sections/Neighborhood";
@@ -28,6 +29,8 @@ export default function Home() {
         <div id="reservar">
           <QuoteCalculator />
         </div>
+
+        <NightToDayReveal />
 
         <div id="barrio">
           <Neighborhood />
