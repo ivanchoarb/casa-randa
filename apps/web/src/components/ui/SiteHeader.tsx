@@ -14,6 +14,7 @@ const NAV = [
   { href: "#barrio", es: "Diablo Heights", en: "Diablo Heights" },
   { href: "#resenas", es: "Reseñas", en: "Reviews" },
   { href: "/que-hacer-en-panama", es: "Qué hacer en Panamá", en: "What to do in Panama" },
+  { href: "/tienda", es: "Tienda", en: "Shop" },
 ];
 
 export function SiteHeader() {

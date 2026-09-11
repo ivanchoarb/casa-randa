@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -64,16 +63,6 @@ export function SiteFooter() {
               <a href="#" className="text-[var(--on-dark)] transition-colors duration-200 hover:text-[var(--lamp-fill)]">
                 @casaranda_panama
               </a>
-            </p>
-          </div>
-          <div>
-            <h4 className="font-[var(--font-display)] text-xs font-semibold tracking-wide text-[var(--on-dark-2)]">
-              {lang === "es" ? "Explorar" : "Explore"}
-            </h4>
-            <p className="mt-3 max-w-[30ch] text-sm text-[var(--on-dark-2)]">
-              <Link href="/tienda" className="text-[var(--on-dark)] transition-colors duration-200 hover:text-[var(--lamp-fill)]">
-                {lang === "es" ? "Tienda" : "Shop"}
-              </Link>
             </p>
           </div>
         </Reveal>
