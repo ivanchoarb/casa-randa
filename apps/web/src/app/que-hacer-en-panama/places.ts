@@ -25,6 +25,10 @@ export interface Place {
   name: string;
   rating: number; // out of 5
   priceLevel: 1 | 2 | 3;
+  /** Paths under /public, e.g. "/images/guia-panama/isla-taboga/1.jpg". Empty
+   *  until real, licensed photos exist — the card and detail page both fall
+   *  back to a branded placeholder rather than a stock substitute. */
+  images: string[];
   teaser: Bilingual;
   why: Bilingual;
   distance: Bilingual;
@@ -43,6 +47,7 @@ export const PLACES: Place[] = [
     name: "Centro de Visitantes de Miraflores",
     rating: 5,
     priceLevel: 2,
+    images: [],
     teaser: {
       es: "Observe en primera fila cómo los barcos atraviesan las esclusas del Canal de Panamá y descubra la historia de una de las grandes obras de ingeniería del mundo.",
       en: "Watch ships cross the Panama Canal locks from a front-row viewpoint and discover the story behind one of the world's great engineering achievements.",
@@ -77,6 +82,7 @@ export const PLACES: Place[] = [
     name: "Multiplaza Panamá",
     rating: 4,
     priceLevel: 2,
+    images: [],
     teaser: {
       es: "Compras, gastronomía y entretenimiento en un ambiente moderno, con marcas internacionales, propuestas premium y opciones para toda la familia.",
       en: "Shopping, dining and entertainment in a modern setting with international brands, premium concepts and family-friendly options.",
@@ -111,6 +117,7 @@ export const PLACES: Place[] = [
     name: "Albrook Mall",
     rating: 4,
     priceLevel: 1,
+    images: [],
     teaser: {
       es: "Compras, gastronomía y entretenimiento en uno de los centros comerciales más completos de Panamá, especialmente práctico para familias y grupos.",
       en: "Shopping, dining and entertainment at one of Panama's most complete malls, especially convenient for families and groups.",
@@ -144,6 +151,7 @@ export const PLACES: Place[] = [
     name: "Isla Taboga",
     rating: 4,
     priceLevel: 2,
+    images: [],
     teaser: {
       es: "Una escapada de playa, historia y naturaleza a solo 30 minutos en ferry de Ciudad de Panamá, ideal para disfrutar durante el día.",
       en: "A beach, history and nature escape just 30 minutes by ferry from Panama City, ideal for an easy day trip.",
@@ -178,6 +186,7 @@ export const PLACES: Place[] = [
     name: "MaaGoo's Fish Tacos & More",
     rating: 4,
     priceLevel: 2,
+    images: [],
     teaser: {
       es: "Un restaurante informal y lleno de personalidad en Corozal, conocido por sus tacos de pescado fresco, preparaciones ahumadas, ceviches y sabores caribeños. Una excelente opción para comer cerca de Casa Randa y del Canal de Panamá.",
       en: "A relaxed restaurant full of character in Corozal, known for fresh fish tacos, smoked seafood, ceviche and Caribbean flavors. An excellent dining option near Casa Randa and the Panama Canal.",

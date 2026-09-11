@@ -5,6 +5,7 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { Reveal } from "@/components/ui/Reveal";
 import { MagneticLink } from "@/components/ui/MagneticLink";
 import { CATEGORIES, type Place } from "../places";
+import { ImageCarousel } from "../ImageCarousel";
 
 const fieldLabel = "font-[var(--font-display)] text-xs font-semibold tracking-[0.1em] text-[var(--caoba)] uppercase";
 
@@ -21,6 +22,10 @@ export function PlaceDetail({ place }: { place: Place }) {
       <Link href="/que-hacer-en-panama" className="nav-link font-[var(--font-display)] text-sm">
         {lang === "es" ? "← Volver a la guía" : "← Back to the guide"}
       </Link>
+
+      <Reveal delayMs={40} className="mt-6">
+        <ImageCarousel images={place.images} alt={place.name} />
+      </Reveal>
 
       <Reveal delayMs={60}>
         <p className="mt-6 font-[var(--font-display)] text-xs font-semibold tracking-[0.14em] text-[var(--caoba)] uppercase">
