@@ -115,7 +115,7 @@ flowchart TD
 | **Reserva** | canal (Airbnb/Vrbo/Directo), código externo, huésped, entrada, salida, noches, huéspedes, tarifa, bruto, comisión plataforma, recibido, comisión Marquelda, comisión Iván, neto, estado | El registro central. Todo lo demás cuelga de una reserva. |
 | **Solicitud** (reserva directa antes de pagar) | datos del formulario, plan de tarifa, plan de pago, código de descuento, estado | Se **convierte en Reserva** cuando se aprueba y se confirma el pago — no antes. |
 | **Bloqueo de calendario** | inicio, fin, fuente (Airbnb/Vrbo/Directo), reserva_id | La pieza que hoy falla (defecto D2): un bloqueo de fuente Directo debe sobrevivir a la resincronización y aparecer en los feeds de salida. |
-| **Tarifa diaria** | fecha, tarifa, fuente (PriceLabs/plana), estancia mínima | La cotización la lee, no la inventa. |
+| **Tarifa diaria** | fecha, tarifa, fuente (PriceLabs/plana), estancia mínima | La cotización la lee, no la inventa. La `RATE` de ejemplo (520 USD) en `@casa-randa/pricing` está cerca de lo real pero no lo es — [resumen-intervencion-anuncios.md](resumen-intervencion-anuncios.md) registra la tarifa realmente cobrada (514 USD/noche) y los límites vigentes de PriceLabs (mínimo/medio/máximo: 437/575/782 USD), útiles como referencia cuando se conecte esta tabla a la API real. |
 | **Gasto** | fecha, categoría, concepto, proveedor, valor, medio de pago | Igual a lo que ya existe en Contabilidad. |
 | **Anticipo de comisión** | persona (Marquelda/Iván), fecha, valor, referencia, motivo | Se descuenta contra la comisión acumulada del año. |
 | **Movimiento bancario** | fecha, descripción, referencia, valor recibido, reserva/gasto relacionado, estado | Alimenta Conciliación bancaria. |

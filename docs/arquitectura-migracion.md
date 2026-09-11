@@ -85,7 +85,7 @@ Cada fase debe correr en paralelo a WordPress antes de apagar la pieza equivalen
 
 ## Riesgos críticos a vigilar
 
-- **El defecto D2 sigue abierto**: las reservas directas confirmadas hoy no entran al feed de salida de iCal — la sincronización las borra. Activar pagos reales antes de resolver esto en el nuevo motor arriesga overbooking.
+- **El defecto D2 sigue abierto — confirmado como bloqueante duro, no solo teórico**: las reservas directas confirmadas hoy no entran al feed de salida de iCal — la sincronización las borra. [resumen-intervencion-anuncios.md](resumen-intervencion-anuncios.md) (§5, "Antes de lanzar a producción") lo verificó contra el sistema en vivo: *"El motor reescribe la lista de fechas ocupadas con lo que traen Airbnb y Vrbo... el día que actives cobros, hay doble reserva garantizada."* Activar pagos reales antes de resolver esto en el nuevo motor no es un riesgo — es una garantía de overbooking.
 - **El checkout necesita soportar dos pasarelas desde el diseño inicial**, no solo una: PagueloFacil (tarjeta, principal) y Yappy (local, secundaria) tienen flujos distintos — botón vs. redirección, moneda, webhook de confirmación — y ambos tocan tanto el cotizador del sitio como la tienda.
 - **Migrar datos reales no es solo migrar código**: 69 reservas, gastos por categoría, anticipos de comisión y códigos de descuento activos tienen que exportarse de WordPress antes de apagarlo.
 - **WordPress sigue siendo la fuente de verdad del dinero** hasta que la Fase 4 esté probada. No cortar contabilidad y conciliación de un salto.
