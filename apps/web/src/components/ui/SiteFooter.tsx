@@ -75,14 +75,6 @@ export function SiteFooter() {
                 {lang === "es" ? "Tienda" : "Shop"}
               </Link>
             </p>
-            <p className="mt-1 max-w-[30ch] text-sm text-[var(--on-dark-2)]">
-              <Link
-                href="/que-hacer-en-panama"
-                className="text-[var(--on-dark)] transition-colors duration-200 hover:text-[var(--lamp-fill)]"
-              >
-                {lang === "es" ? "Qué hacer en Panamá" : "What to do in Panama"}
-              </Link>
-            </p>
           </div>
         </Reveal>
 

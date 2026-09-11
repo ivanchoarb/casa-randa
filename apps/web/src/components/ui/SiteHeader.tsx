@@ -1,15 +1,19 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { LangToggle } from "@/components/ui/LangToggle";
 import { MagneticLink } from "@/components/ui/MagneticLink";
 
+// Anchors (href starting with "#") point at homepage sections and go
+// through homeHref() below; a plain path is a real page and is used as-is.
 const NAV = [
   { href: "#casa", es: "La casa", en: "The house" },
   { href: "#reservar", es: "Reserva directa", en: "Direct booking" },
   { href: "#barrio", es: "Diablo Heights", en: "Diablo Heights" },
   { href: "#resenas", es: "Reseñas", en: "Reviews" },
+  { href: "/que-hacer-en-panama", es: "Qué hacer en Panamá", en: "What to do in Panama" },
 ];
 
 export function SiteHeader() {
@@ -31,11 +35,17 @@ export function SiteHeader() {
         </a>
 
         <nav className="ml-auto hidden gap-5 font-[var(--font-display)] text-sm md:flex">
-          {NAV.map((item) => (
-            <a key={item.href} href={homeHref(item.href)} className="nav-link py-1.5">
-              {lang === "es" ? item.es : item.en}
-            </a>
-          ))}
+          {NAV.map((item) =>
+            item.href.startsWith("#") ? (
+              <a key={item.href} href={homeHref(item.href)} className="nav-link py-1.5">
+                {lang === "es" ? item.es : item.en}
+              </a>
+            ) : (
+              <Link key={item.href} href={item.href} className="nav-link py-1.5">
+                {lang === "es" ? item.es : item.en}
+              </Link>
+            ),
+          )}
         </nav>
 
         <LangToggle />
