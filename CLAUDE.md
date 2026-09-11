@@ -67,6 +67,7 @@ Scaffolded 2026-09-11: Next.js (App Router) + [Refine](https://github.com/refine
 - **`src/app/providers.tsx`** — the `<Refine>` setup: router (`@refinedev/nextjs-router/app`), data provider, auth provider, and one `resource` per module (`reservas`, `bloqueos_calendario`, `tareas_operacion`, `gastos`, `movimientos_bancarios`, `plan_compras`, `perfiles`), matching the tables in `supabase/migrations/`.
 - **`src/app/(app)/`** — the protected route group (`layout.tsx` wraps children in `<Authenticated>` + `AppShell`). All 7 modules read/write real data:
   - `reservas` — `useTable` on `reservas`, the reference pattern for the rest.
+  - The `Inicio` dashboard (`(app)/page.tsx`, outside the 7 sidebar modules) computes reserva en curso / ingresos del mes / ingresos acumulados / saldo neto del propietario the same way `contabilidad` does, so the two never disagree.
   - `calendario` groups `bloqueos_calendario` by month, source badge per row.
   - `operacion` pulls `tareas_operacion` joined with its `reservas` row via `meta: { select: "*, reservas(...)" }` (confirmed `@refinedev/supabase` passes `meta.select` straight to `supabase-js`'s `.select()` — read `node_modules/@refinedev/supabase/dist/index.mjs` before relying on it) and groups by reserva into a "X/3 listas" checklist.
   - `usuarios` lists `perfiles` and lets an `administrador` change anyone's role inline (`useUpdate`); a non-admin only sees their own row (RLS `ver_propio_perfil`) — that's expected, not a bug. Needed adding an `email` column to `perfiles` (`supabase/migrations/0001_perfiles.sql`) because `auth.users` isn't queryable via PostgREST.
@@ -94,4 +95,3 @@ Scaffolded 2026-09-11: Next.js (App Router) + [Refine](https://github.com/refine
 - No liquidación email sending, no Airbnb/Vrbo CSV import (see the `contabilidad` note above).
 - RLS employee-role permissions in `supabase/migrations/0006_rls.sql` are an unconfirmed first pass.
 - No iCal sync job or PriceLabs bridge exists yet — those are Fase 2, not started, and are what `apps/web`'s availability/pricing gap above is actually waiting on. Without them, `bloqueos_calendario`/`tarifas_diarias` only ever have what's entered by hand.
-- The `Inicio` dashboard (`src/app/(app)/page.tsx`) still shows hardcoded "—" placeholder cards — it was never wired up like the other modules; a real version would aggregate the same data `contabilidad` already computes.
