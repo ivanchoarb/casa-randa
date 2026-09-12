@@ -292,30 +292,71 @@ export async function subirCotizacionPDF(bytes: Uint8Array, codigo: string, expi
 }
 
 /**
- * Formato exacto pedido por Ivan el 2026-09-12 (pegó la plantilla completa,
- * con emojis por línea, no solo por sección) — se reproduce literal, sin
- * agregar énfasis en negrita o cursiva que él no puso.
+ * Plantilla pedida por Ivan el 2026-09-12. Tiene dos variantes porque el
+ * link de click-to-chat de WhatsApp (`wa.me/?text=...`) y la API real de
+ * WhatsApp Business no comparten el mismo camino:
+ *
+ * - `emojis: true` (default) — para el `caption` de la API real
+ *   (enviar-whatsapp/route.ts, POST directo a Meta). Ahí los emojis
+ *   llegan bien, es una llamada JSON normal.
+ * - `emojis: false` — para `enlaceWhatsApp()` / el link wa.me. Confirmado
+ *   en vivo el 2026-09-12 que el parámetro `text=` del propio
+ *   api.whatsapp.com/send corrompe cualquier emoji a "�" — hasta un
+ *   string de prueba mínimo ("🌴 prueba 💰"), con o sin percent-encoding,
+ *   sale roto ahí. No es un problema de cómo codificamos la URL, es una
+ *   limitación real del click-to-chat de WhatsApp. Mientras no haya
+ *   credenciales para la API real, esta variante usa *negrita* de
+ *   WhatsApp para mantener la organización visual sin emojis.
  */
-export function resumenWhatsApp(input: CotizacionInput, calculo: CotizacionCalculo, urlPdf?: string) {
+export function resumenWhatsApp(
+  input: CotizacionInput,
+  calculo: CotizacionCalculo,
+  urlPdf?: string,
+  opts?: { emojis?: boolean },
+) {
+  const conEmojis = opts?.emojis ?? true;
   const saludo = input.clienteNombre ? `¡Hola ${input.clienteNombre}!` : "¡Hola!";
+
+  if (conEmojis) {
+    const lineas = [
+      `🌴 Casa Randa — Cotización ${calculo.codigo}`,
+      "",
+      `${saludo} 👋 Aquí tienes el detalle de tu próxima estadía:`,
+      "",
+      "🗓️ Fechas de Reserva",
+      `🛫 ${fechaLarga(input.entrada)} ➡️ 🛬 ${fechaLarga(input.salida)}`,
+      `🌙 ${calculo.noches} noches | 👥 ${input.huespedes} huéspedes`,
+      "",
+      "💳 Resumen Financiero",
+      `💰 Total: ${money(calculo.total)}`,
+      `📉 Anticipo (${input.anticipoPct}%): ${money(calculo.anticipo)}`,
+      `⚖️ Saldo: ${money(calculo.saldo)}`,
+      "",
+      `⏱️ Cotización válida por ${input.validezDias} días`,
+    ];
+    if (urlPdf) lineas.push("", "📥 Descarga tu PDF completo aquí:", `🔗 ${urlPdf}`);
+    lineas.push("", "¿Tienes alguna duda? Escríbenos, ¡será un gusto ayudarte a planear tu viaje! 🌊🏖️");
+    return lineas;
+  }
+
   const lineas = [
-    `🌴 Casa Randa — Cotización ${calculo.codigo}`,
+    `*Casa Randa* — Cotización ${calculo.codigo}`,
     "",
-    `${saludo} 👋 Aquí tienes el detalle de tu próxima estadía:`,
+    `${saludo} Aquí tienes el detalle de tu próxima estadía:`,
     "",
-    "🗓️ Fechas de Reserva",
-    `🛫 ${fechaLarga(input.entrada)} ➡️ 🛬 ${fechaLarga(input.salida)}`,
-    `🌙 ${calculo.noches} noches | 👥 ${input.huespedes} huéspedes`,
+    "*Fechas de Reserva*",
+    `${fechaLarga(input.entrada)} → ${fechaLarga(input.salida)}`,
+    `${calculo.noches} noches | ${input.huespedes} huéspedes`,
     "",
-    "💳 Resumen Financiero",
-    `💰 Total: ${money(calculo.total)}`,
-    `📉 Anticipo (${input.anticipoPct}%): ${money(calculo.anticipo)}`,
-    `⚖️ Saldo: ${money(calculo.saldo)}`,
+    "*Resumen Financiero*",
+    `Total: *${money(calculo.total)}*`,
+    `Anticipo (${input.anticipoPct}%): ${money(calculo.anticipo)}`,
+    `Saldo: ${money(calculo.saldo)}`,
     "",
-    `⏱️ Cotización válida por ${input.validezDias} días`,
+    `Cotización válida por ${input.validezDias} días`,
   ];
-  if (urlPdf) lineas.push("", "📥 Descarga tu PDF completo aquí:", `🔗 ${urlPdf}`);
-  lineas.push("", "¿Tienes alguna duda? Escríbenos, ¡será un gusto ayudarte a planear tu viaje! 🌊🏖️");
+  if (urlPdf) lineas.push("", "Descarga tu PDF completo aquí:", urlPdf);
+  lineas.push("", "¿Tienes alguna duda? Escríbenos, ¡será un gusto ayudarte a planear tu viaje!");
   return lineas;
 }
 
@@ -325,7 +366,8 @@ export function resumenWhatsApp(input: CotizacionInput, calculo: CotizacionCalcu
  * Meta). `urlPdf` (de subirCotizacionPDF, idealmente ya acortada con
  * acortarUrl) se agrega como un link de descarga dentro del texto — no
  * es un adjunto real, pero el cliente puede abrirlo y bajar el PDF desde
- * el mismo chat.
+ * el mismo chat. `emojis: false` porque este mecanismo específico de
+ * WhatsApp los corrompe — ver el comentario en resumenWhatsApp().
  */
 export function enlaceWhatsApp(
   input: CotizacionInput,
@@ -333,7 +375,7 @@ export function enlaceWhatsApp(
   telefono: string,
   urlPdf?: string,
 ) {
-  const texto = encodeURIComponent(resumenWhatsApp(input, calculo, urlPdf).join("\n"));
+  const texto = encodeURIComponent(resumenWhatsApp(input, calculo, urlPdf, { emojis: false }).join("\n"));
   const numero = telefono.replace(/[^0-9]/g, "");
   return numero ? `https://wa.me/${numero}?text=${texto}` : `https://wa.me/?text=${texto}`;
 }
