@@ -12,6 +12,7 @@ interface Reserva {
   entrada: string;
   salida: string;
   bruto: number;
+  recibido: number;
   comision_marquelda: number;
   comision_ivan: number;
   neto: number;
@@ -50,8 +51,13 @@ export default function InicioPage() {
   const delMes = delAnio.filter((r) => new Date(`${r.entrada}T12:00:00`).getMonth() === mes);
 
   const reservaEnCurso = activas.find((r) => r.entrada <= hoy && hoy < r.salida);
-  const ingresosDelMes = delMes.reduce((sum, r) => sum + r.neto, 0);
-  const ingresosAcumulados = delAnio.reduce((sum, r) => sum + r.neto, 0);
+  // "recibido" (bruto - comisión de plataforma), no "neto" (que ya resta
+  // también las comisiones de Marquelda/Iván) — usar `neto` aquí duplica
+  // esa resta en el saldo del propietario. Mismo cálculo que Contabilidad,
+  // verificado cifra por cifra contra staging.randahome.com/intranet/ el
+  // 2026-09-11.
+  const ingresosDelMes = delMes.reduce((sum, r) => sum + r.recibido, 0);
+  const ingresosAcumulados = delAnio.reduce((sum, r) => sum + r.recibido, 0);
   const gastosDelAnio = gastos
     .filter((g) => new Date(`${g.fecha}T12:00:00`).getFullYear() === anio)
     .reduce((sum, g) => sum + g.valor, 0);

@@ -25,6 +25,7 @@ interface Reserva {
   noches: number;
   bruto: number;
   comision_plataforma: number;
+  recibido: number;
   comision_marquelda: number;
   comision_ivan: number;
   neto: number;
@@ -65,6 +66,17 @@ const inputClass = "rounded-md border border-line bg-ground px-2 py-1.5 text-sm"
 const money = (n: number) =>
   `$${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+const MESES = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+];
+
+// Ojo: "recibido" (bruto - comisión de plataforma) es lo que staging llama
+// "Ingresos netos acumulados" — NO usar `neto` aquí, que ya tiene también
+// restadas las comisiones de Marquelda e Iván. Usar `neto` en este cálculo
+// resta esas comisiones dos veces en el saldo del propietario (bug real,
+// encontrado y corregido el 2026-09-11 comparando cifra por cifra contra
+// staging.randahome.com/intranet/contabilidad/).
 function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: Gasto[] }) {
   const anio = new Date().getFullYear();
   const mes = new Date().getMonth();
@@ -73,34 +85,43 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
   const delAnio = activas.filter((r) => new Date(`${r.entrada}T12:00:00`).getFullYear() === anio);
   const delMes = delAnio.filter((r) => new Date(`${r.entrada}T12:00:00`).getMonth() === mes);
 
-  const ingresoNetoAcumulado = delAnio.reduce((sum, r) => sum + r.neto, 0);
+  const recibidoAcumulado = delAnio.reduce((sum, r) => sum + r.recibido, 0);
   const comisionMesMarquelda = delMes.reduce((sum, r) => sum + r.comision_marquelda, 0);
   const comisionMesIvan = delMes.reduce((sum, r) => sum + r.comision_ivan, 0);
+  const comisionAnualMarquelda = delAnio.reduce((sum, r) => sum + r.comision_marquelda, 0);
+  const comisionAnualIvan = delAnio.reduce((sum, r) => sum + r.comision_ivan, 0);
   const gastosDelAnio = gastos
     .filter((g) => new Date(`${g.fecha}T12:00:00`).getFullYear() === anio)
     .reduce((sum, g) => sum + g.valor, 0);
-  const comisionAnualTotal = delAnio.reduce(
-    (sum, r) => sum + r.comision_marquelda + r.comision_ivan,
-    0,
-  );
-  const saldoNetoPropietario = ingresoNetoAcumulado - comisionAnualTotal - gastosDelAnio;
+  const saldoNetoPropietario =
+    recibidoAcumulado - (comisionAnualMarquelda + comisionAnualIvan) - gastosDelAnio;
 
   const tarjetas = [
-    { titulo: "Ingresos netos acumulados", valor: money(ingresoNetoAcumulado), nota: `${anio}` },
-    { titulo: "Comisión del mes · Marquelda", valor: money(comisionMesMarquelda), nota: "Mes actual" },
-    { titulo: "Comisión del mes · Iván", valor: money(comisionMesIvan), nota: "Mes actual" },
     {
-      titulo: "Saldo neto del propietario",
+      titulo: `Ingresos netos acumulados ${anio}`,
+      valor: money(recibidoAcumulado),
+      nota: "Después de comisiones de plataforma",
+    },
+    {
+      titulo: `${MESES[mes]} · Marquelda`,
+      valor: money(comisionMesMarquelda),
+      nota: "Comisión del mes actual",
+    },
+    { titulo: `${MESES[mes]} · Iván`, valor: money(comisionMesIvan), nota: "Comisión del mes actual" },
+    { titulo: `${anio} · Marquelda`, valor: money(comisionAnualMarquelda), nota: "Acumulado anual" },
+    { titulo: `${anio} · Iván`, valor: money(comisionAnualIvan), nota: "Acumulado anual" },
+    {
+      titulo: `Saldo neto del propietario ${anio}`,
       valor: money(saldoNetoPropietario),
       nota: "Después de comisiones y gastos del año",
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {tarjetas.map((t) => (
         <div key={t.titulo} className="rounded-xl border border-line bg-panel p-4">
-          <p className="text-xs font-medium text-ink-2 uppercase">{t.titulo}</p>
+          <p className="text-xs font-medium tracking-wide text-ink-2 uppercase">{t.titulo}</p>
           <p className="mt-1 text-2xl font-bold tabular-nums">{t.valor}</p>
           <p className="mt-1 text-xs text-ink-2">{t.nota}</p>
         </div>
@@ -109,17 +130,24 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
   );
 }
 
+// Staging (staging.randahome.com/intranet/contabilidad/) solo lleva
+// anticipos de comisión para Iván — Marquelda no toma adelantos. El schema
+// sigue soportando ambas personas (persona_comision), pero esta sección
+// se fija en "ivan" para calzar con el sistema real.
 function AnticiposComision({ reservas }: { reservas: Reserva[] }) {
-  const anio = new Date().getFullYear();
+  const anioActual = new Date().getFullYear();
+  const [anio, setAnio] = useState(anioActual);
+  const persona: Persona = "ivan";
+
   const { result, tableQuery } = useTable<Anticipo>({
     resource: "anticipos_comision",
+    filters: { permanent: [{ field: "persona", operator: "eq", value: persona }] },
     sorters: { initial: [{ field: "fecha", order: "desc" }] },
     pagination: { pageSize: 200 },
   });
   const { mutate: crear, mutation: creando } = useCreate<Anticipo>();
   const { mutate: eliminar } = useDelete<Anticipo>();
 
-  const [persona, setPersona] = useState<Persona>("marquelda");
   const [fecha, setFecha] = useState("");
   const [valor, setValor] = useState("");
   const [referencia, setReferencia] = useState("");
@@ -145,56 +173,59 @@ function AnticiposComision({ reservas }: { reservas: Reserva[] }) {
     );
   }
 
-  const comisionAnual = (p: Persona) =>
-    reservas
-      .filter(
-        (r) =>
-          (r.estado === "confirmada" || r.estado === "completada") &&
-          new Date(`${r.entrada}T12:00:00`).getFullYear() === anio,
-      )
-      .reduce((sum, r) => sum + (p === "marquelda" ? r.comision_marquelda : r.comision_ivan), 0);
+  const comisionAnual = reservas
+    .filter(
+      (r) =>
+        (r.estado === "confirmada" || r.estado === "completada") &&
+        new Date(`${r.entrada}T12:00:00`).getFullYear() === anio,
+    )
+    .reduce((sum, r) => sum + r.comision_ivan, 0);
 
-  const anticiposPagados = (p: Persona) =>
-    anticipos
-      .filter((a) => a.persona === p && new Date(`${a.fecha}T12:00:00`).getFullYear() === anio)
-      .reduce((sum, a) => sum + a.valor, 0);
+  const anticiposDelAnio = anticipos.filter((a) => new Date(`${a.fecha}T12:00:00`).getFullYear() === anio);
+  const anticiposPagados = anticiposDelAnio.reduce((sum, a) => sum + a.valor, 0);
+  const saldoPendiente = comisionAnual - anticiposPagados;
+
+  const anios = Array.from({ length: 4 }, (_, i) => anioActual - 2 + i);
 
   return (
     <section className="mt-12">
-      <h2 className="text-lg font-bold">Anticipos de comisiones</h2>
-      <p className="mt-1 text-sm text-ink-2">Control anual de pagos parciales y saldo pendiente, {anio}.</p>
+      <h2 className="text-lg font-bold">Anticipos de comisiones de Iván</h2>
+      <p className="mt-1 text-sm text-ink-2">Control anual de pagos parciales y saldo pendiente.</p>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {(["marquelda", "ivan"] as Persona[]).map((p) => {
-          const acumulada = comisionAnual(p);
-          const pagados = anticiposPagados(p);
-          return (
-            <div key={p} className="rounded-xl border border-line bg-panel p-4">
-              <p className="text-sm font-semibold capitalize">{p}</p>
-              <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-xs text-ink-2">Comisión</p>
-                  <p className="font-semibold tabular-nums">{money(acumulada)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-ink-2">Anticipos</p>
-                  <p className="font-semibold tabular-nums">{money(pagados)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-ink-2">Saldo</p>
-                  <p className="font-semibold tabular-nums text-caoba">{money(acumulada - pagados)}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      <div className="mt-4 flex items-end gap-2">
+        <label className="text-xs text-ink-2">
+          Año
+          <select
+            value={anio}
+            onChange={(e) => setAnio(Number(e.target.value))}
+            className={`${inputClass} mt-1 block`}
+          >
+            {anios.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-line bg-panel p-4 text-center">
+          <p className="text-xs text-ink-2 uppercase">Comisión acumulada {anio} (USD)</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums">{money(comisionAnual)}</p>
+        </div>
+        <div className="rounded-xl border border-line bg-panel p-4 text-center">
+          <p className="text-xs text-ink-2 uppercase">Anticipos pagados (USD)</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums">{money(anticiposPagados)}</p>
+        </div>
+        <div className="rounded-xl border border-line bg-panel p-4 text-center">
+          <p className="text-xs text-ink-2 uppercase">Saldo real pendiente (USD)</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-caoba">{money(saldoPendiente)}</p>
+          <p className="mt-1 text-xs text-ink-2">Comisiones menos anticipos</p>
+        </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-end gap-2 rounded-lg border border-line bg-panel p-3">
-        <select value={persona} onChange={(e) => setPersona(e.target.value as Persona)} className={`${inputClass} capitalize`}>
-          <option value="marquelda">Marquelda</option>
-          <option value="ivan">Iván</option>
-        </select>
         <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={inputClass} />
         <input
           placeholder="Valor USD"
@@ -231,17 +262,17 @@ function AnticiposComision({ reservas }: { reservas: Reserva[] }) {
         </p>
       )}
 
-      {!tableQuery.isLoading && anticipos.length > 0 && (
+      {!tableQuery.isLoading && anticiposDelAnio.length > 0 && (
         <div className="mt-4 space-y-2">
-          {anticipos.map((a) => (
+          {anticiposDelAnio.map((a) => (
             <div
               key={a.id}
               className="flex items-center justify-between rounded-lg border border-line bg-panel px-4 py-3 text-sm"
             >
               <div>
-                <span className="font-medium capitalize">{a.persona}</span>
+                <span className="font-medium">{a.fecha}</span>
                 <span className="ml-2 text-ink-2">
-                  {a.fecha} · {a.motivo ?? "Sin motivo"}
+                  {a.motivo ?? "Sin motivo"}
                   {a.referencia ? ` · ${a.referencia}` : ""}
                 </span>
               </div>
@@ -489,6 +520,9 @@ export default function ContabilidadPage() {
     <div>
       <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Finanzas</p>
       <h1 className="mt-1 text-2xl font-bold">Contabilidad y liquidaciones</h1>
+      {!reservasQuery.isError && !reservasQuery.isLoading && (
+        <p className="mt-1 text-sm text-ink-2">{reservas.length} reservas registradas</p>
+      )}
 
       {reservasQuery.isError && (
         <p className="mt-4 text-sm text-caoba">
