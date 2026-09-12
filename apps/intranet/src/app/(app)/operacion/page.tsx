@@ -202,6 +202,86 @@ function TareaPanel({ tarea }: { tarea: TareaConReserva }) {
   );
 }
 
+function grupoCompleto(grupo: TareaConReserva[]) {
+  return grupo.every((t) => t.estado === "completada");
+}
+
+function GrupoReserva({
+  tareasReserva,
+  abierta,
+  onToggle,
+  tareaAbierta,
+  onToggleTarea,
+}: {
+  tareasReserva: TareaConReserva[];
+  abierta: boolean;
+  onToggle: () => void;
+  tareaAbierta: string | null;
+  onToggleTarea: (id: string | null) => void;
+}) {
+  const reserva = tareasReserva[0].reservas;
+  const listas = tareasReserva.filter((t) => t.estado === "completada").length;
+  const conNovedadEnReserva = tareasReserva.some((t) => t.estado === "con_novedad");
+
+  return (
+    <div
+      className={`rounded-lg border bg-panel px-4 py-3 ${
+        conNovedadEnReserva ? "border-l-4 border-l-caoba border-line" : "border-line"
+      }`}
+    >
+      <button type="button" onClick={onToggle} className="flex w-full items-center justify-between text-left">
+        <div>
+          <p className="text-sm font-semibold">{reserva?.huesped_nombre ?? "—"}</p>
+          <p className="text-xs text-ink-2 capitalize">
+            {reserva?.canal}
+            {reserva?.codigo_externo ? ` · ${reserva.codigo_externo}` : ""} · {reserva?.entrada} →{" "}
+            {reserva?.salida}
+          </p>
+        </div>
+        <span className="text-sm font-medium tabular-nums text-ink-2">
+          {listas}/{tareasReserva.length} listas
+        </span>
+      </button>
+
+      {abierta && (
+        <div className="mt-3 space-y-2">
+          {tareasReserva.map((t) => {
+            const tareaEstaAbierta = tareaAbierta === t.id;
+            return (
+              <div key={t.id}>
+                <button
+                  type="button"
+                  onClick={() => onToggleTarea(tareaEstaAbierta ? null : t.id)}
+                  className={`flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left ${
+                    tareaEstaAbierta ? "border-caoba" : "border-line"
+                  } bg-panel`}
+                >
+                  <span className="text-sm font-semibold">{TIPO_LABEL[t.tipo]}</span>
+                  <span className="flex items-center gap-3">
+                    <span className="text-xs text-ink-2">{fechaCorta(t.fecha)}</span>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        t.estado === "completada"
+                          ? "bg-good-bg text-good"
+                          : t.estado === "con_novedad"
+                            ? "bg-lamp-bg text-lamp"
+                            : "bg-panel-2 text-ink-2"
+                      }`}
+                    >
+                      {ESTADO_LABEL[t.estado]}
+                    </span>
+                  </span>
+                </button>
+                {tareaEstaAbierta && <TareaPanel tarea={t} />}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function OperacionPage() {
   // Tercer módulo conectado a datos reales — ver docs/arquitectura-migracion.md,
   // Fase 3. meta.select usa el embed de PostgREST para traer la reserva
@@ -216,23 +296,39 @@ export default function OperacionPage() {
 
   const [reservaAbierta, setReservaAbierta] = useState<string | null>(null);
   const [tareaAbierta, setTareaAbierta] = useState<string | null>(null);
+  const [historialAbierto, setHistorialAbierto] = useState(false);
 
   const hoy = hoyISO();
-  // Vigentes: la estadía todavía no terminó, o terminó hace poco (margen
-  // para la limpieza de salida) — igual al recorte que ya se ve en
-  // staging.randahome.com/intranet/operacion/ (comparado en vivo el
-  // 2026-09-11: mismas 11 reservas, mismas 33 tareas). Sin esto, la
-  // pantalla se llena de tareas de estadías de hace 1-2 años que a nadie
-  // le sirve ver en el día a día.
+  const todosLosGrupos = agruparPorReserva(result.data ?? []);
+
+  // Vigentes: la estadía todavía no terminó o terminó hace poco (margen
+  // para la limpieza de salida, igual al recorte que ya se ve en
+  // staging.randahome.com/intranet/operacion/, comparado en vivo el
+  // 2026-09-11: mismas 11 reservas, mismas 33 tareas), Y — 2026-09-12,
+  // a pedido de Ivan — que todavía le falte al menos una tarea por
+  // terminar. En cuanto las 3 tareas de una reserva quedan en
+  // "completada" desaparece de aquí arriba y pasa a Historial, sin
+  // esperar a que se cumplan los 3 días de margen.
   const desde = sumarDias(hoy, -3);
-  const tareas = (result.data ?? []).filter((t) => (t.reservas?.salida ?? "9999-99-99") >= desde);
+  const gruposVigentes = todosLosGrupos.filter((g) => {
+    const salida = g[0].reservas?.salida ?? "9999-99-99";
+    return salida >= desde && !grupoCompleto(g);
+  });
 
-  const paraHoy = tareas.filter((t) => t.fecha === hoy).length;
-  const pendientes = tareas.filter((t) => t.estado === "pendiente").length;
-  const completadas = tareas.filter((t) => t.estado === "completada").length;
-  const conNovedad = tareas.filter((t) => t.estado === "con_novedad").length;
+  // Historial: reservas ya completamente cerradas (las 3 tareas en
+  // "completada"), sin el límite de 3 días — así queda de verdad
+  // archivado, no solo oculto un par de días y perdido después. Viene
+  // del mismo fetch (@refinedev/core ya trae hasta 300 tareas, más que
+  // suficiente hoy), ordenado por salida más reciente primero.
+  const gruposHistorial = todosLosGrupos
+    .filter((g) => grupoCompleto(g))
+    .sort((a, b) => (b[0].reservas?.salida ?? "").localeCompare(a[0].reservas?.salida ?? ""));
 
-  const reservasAgrupadas = agruparPorReserva(tareas);
+  const tareasVigentes = gruposVigentes.flat();
+  const paraHoy = tareasVigentes.filter((t) => t.fecha === hoy).length;
+  const pendientes = tareasVigentes.filter((t) => t.estado === "pendiente").length;
+  const completadas = tareasVigentes.filter((t) => t.estado === "completada").length;
+  const conNovedad = tareasVigentes.filter((t) => t.estado === "con_novedad").length;
 
   return (
     <div>
@@ -242,7 +338,7 @@ export default function OperacionPage() {
         Las tareas se crean automáticamente a partir de las reservas activas.
       </p>
       {!tableQuery.isLoading && !tableQuery.isError && (
-        <p className="mt-1 text-sm text-ink-2">{tareas.length} tareas</p>
+        <p className="mt-1 text-sm text-ink-2">{tareasVigentes.length} tareas vigentes</p>
       )}
 
       {tableQuery.isError && (
@@ -273,85 +369,68 @@ export default function OperacionPage() {
         </div>
       )}
 
-      {!tableQuery.isLoading && !tableQuery.isError && reservasAgrupadas.length === 0 && (
+      {!tableQuery.isLoading && !tableQuery.isError && gruposVigentes.length === 0 && (
         <p className="mt-8 text-sm text-ink-2">Todavía no hay tareas de operación vigentes.</p>
       )}
 
       <div className="mt-6 space-y-2">
-        {reservasAgrupadas.map((tareasReserva) => {
-          const reserva = tareasReserva[0].reservas;
+        {gruposVigentes.map((tareasReserva) => {
           const reservaId = tareasReserva[0].reserva_id;
-          const listas = tareasReserva.filter((t) => t.estado === "completada").length;
-          const conNovedadEnReserva = tareasReserva.some((t) => t.estado === "con_novedad");
-          const abierta = reservaAbierta === reservaId;
-
           return (
-            <div
+            <GrupoReserva
               key={reservaId}
-              className={`rounded-lg border bg-panel px-4 py-3 ${
-                conNovedadEnReserva ? "border-l-4 border-l-caoba border-line" : "border-line"
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  setReservaAbierta(abierta ? null : reservaId);
-                  setTareaAbierta(null);
-                }}
-                className="flex w-full items-center justify-between text-left"
-              >
-                <div>
-                  <p className="text-sm font-semibold">{reserva?.huesped_nombre ?? "—"}</p>
-                  <p className="text-xs text-ink-2 capitalize">
-                    {reserva?.canal}
-                    {reserva?.codigo_externo ? ` · ${reserva.codigo_externo}` : ""} ·{" "}
-                    {reserva?.entrada} → {reserva?.salida}
-                  </p>
-                </div>
-                <span className="text-sm font-medium tabular-nums text-ink-2">
-                  {listas}/{tareasReserva.length} listas
-                </span>
-              </button>
-
-              {abierta && (
-                <div className="mt-3 space-y-2">
-                  {tareasReserva.map((t) => {
-                    const tareaEstaAbierta = tareaAbierta === t.id;
-                    return (
-                      <div key={t.id}>
-                        <button
-                          type="button"
-                          onClick={() => setTareaAbierta(tareaEstaAbierta ? null : t.id)}
-                          className={`flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left ${
-                            tareaEstaAbierta ? "border-caoba" : "border-line"
-                          } bg-panel`}
-                        >
-                          <span className="text-sm font-semibold">{TIPO_LABEL[t.tipo]}</span>
-                          <span className="flex items-center gap-3">
-                            <span className="text-xs text-ink-2">{fechaCorta(t.fecha)}</span>
-                            <span
-                              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                t.estado === "completada"
-                                  ? "bg-good-bg text-good"
-                                  : t.estado === "con_novedad"
-                                    ? "bg-lamp-bg text-lamp"
-                                    : "bg-panel-2 text-ink-2"
-                              }`}
-                            >
-                              {ESTADO_LABEL[t.estado]}
-                            </span>
-                          </span>
-                        </button>
-                        {tareaEstaAbierta && <TareaPanel tarea={t} />}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+              tareasReserva={tareasReserva}
+              abierta={reservaAbierta === reservaId}
+              onToggle={() => {
+                setReservaAbierta(reservaAbierta === reservaId ? null : reservaId);
+                setTareaAbierta(null);
+              }}
+              tareaAbierta={tareaAbierta}
+              onToggleTarea={setTareaAbierta}
+            />
           );
         })}
       </div>
+
+      {!tableQuery.isLoading && !tableQuery.isError && gruposHistorial.length > 0 && (
+        <div className="mt-8">
+          <button
+            type="button"
+            onClick={() => setHistorialAbierto((v) => !v)}
+            className="flex w-full items-center justify-between rounded-xl border border-line bg-panel px-4 py-3 text-left"
+          >
+            <span className="font-semibold">
+              Historial{" "}
+              <span className="font-normal text-ink-2">
+                ({gruposHistorial.length} reserva{gruposHistorial.length === 1 ? "" : "s"} archivada
+                {gruposHistorial.length === 1 ? "" : "s"})
+              </span>
+            </span>
+            <span className={`text-ink-2 transition-transform ${historialAbierto ? "rotate-180" : ""}`}>▾</span>
+          </button>
+
+          {historialAbierto && (
+            <div className="mt-2 space-y-2">
+              {gruposHistorial.map((tareasReserva) => {
+                const reservaId = tareasReserva[0].reserva_id;
+                return (
+                  <GrupoReserva
+                    key={reservaId}
+                    tareasReserva={tareasReserva}
+                    abierta={reservaAbierta === reservaId}
+                    onToggle={() => {
+                      setReservaAbierta(reservaAbierta === reservaId ? null : reservaId);
+                      setTareaAbierta(null);
+                    }}
+                    tareaAbierta={tareaAbierta}
+                    onToggleTarea={setTareaAbierta}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
