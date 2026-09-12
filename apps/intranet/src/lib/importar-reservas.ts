@@ -139,8 +139,8 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
       omitidas.push({ fila: filaNum, motivo: "fecha de check-in/check-out inválida" });
       continue;
     }
-    if (salida <= entrada) {
-      omitidas.push({ fila: filaNum, motivo: "check-out no es posterior a check-in" });
+    if (salida < entrada) {
+      omitidas.push({ fila: filaNum, motivo: "check-out es anterior a check-in" });
       continue;
     }
     if (!Number.isFinite(bruto)) {
