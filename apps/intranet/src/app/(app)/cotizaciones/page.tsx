@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { supabaseClient } from "@/lib/supabase-client";
 import {
   acortarUrl,
@@ -36,6 +36,38 @@ export default function CotizacionesPage() {
   const [huespedes, setHuespedes] = useState("2");
   const [entrada, setEntrada] = useState(hoyISO());
   const [salida, setSalida] = useState(sumarDias(hoyISO(), 1));
+  const salidaRef = useRef<HTMLInputElement>(null);
+
+  // Abre el selector de calendario nativo con un solo click en cualquier
+  // parte del campo, no solo en el ícono — showPicker() no existe en todos
+  // los navegadores (Firefox no lo tiene), así que si falla el campo sigue
+  // siendo usable normalmente, solo sin la apertura automática.
+  function abrirCalendario(e: React.MouseEvent<HTMLInputElement>) {
+    try {
+      e.currentTarget.showPicker?.();
+    } catch {
+      // sin soporte — el input se puede seguir usando a mano.
+    }
+  }
+
+  function cambiarEntrada(valor: string) {
+    setEntrada(valor);
+    // Si la salida ya no tiene sentido con la nueva entrada (o nunca se
+    // eligió una válida), se corre un día después de la nueva entrada —
+    // así el calendario de salida, al abrirse, ya cae en el mes correcto
+    // en vez del mes de la fecha vieja.
+    if (!salida || salida <= valor) setSalida(sumarDias(valor, 1));
+    // Se espera al siguiente frame para que React ya haya pintado el
+    // nuevo `value` de salida antes de abrir su calendario — si se abre
+    // en el mismo tick, el navegador todavía ve el valor anterior.
+    requestAnimationFrame(() => {
+      try {
+        salidaRef.current?.showPicker?.();
+      } catch {
+        // sin soporte — igual queda seleccionable a mano.
+      }
+    });
+  }
   const [tarifaNoche, setTarifaNoche] = useState("550");
   const [limpieza, setLimpieza] = useState("60");
   const [otrosCargos, setOtrosCargos] = useState("0");
@@ -224,16 +256,19 @@ export default function CotizacionesPage() {
               <input
                 type="date"
                 value={entrada}
-                onChange={(e) => setEntrada(e.target.value)}
+                onChange={(e) => cambiarEntrada(e.target.value)}
+                onClick={abrirCalendario}
                 className={`${inputClass} mt-1 block w-full`}
               />
             </label>
             <label className="text-xs text-ink-2">
               Salida
               <input
+                ref={salidaRef}
                 type="date"
                 value={salida}
                 onChange={(e) => setSalida(e.target.value)}
+                onClick={abrirCalendario}
                 className={`${inputClass} mt-1 block w-full`}
               />
             </label>
