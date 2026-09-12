@@ -1,5 +1,8 @@
 "use client";
 
+import { usePermisos } from "@/lib/use-permisos";
+import { supabaseClient } from "@/lib/supabase-client";
+import * as XLSX from "xlsx";
 import { useMemo, useState } from "react";
 import { useTable, useUpdate } from "@refinedev/core";
 import { computeQuote, type CancellationPolicy, type PaymentPlan } from "@casa-randa/pricing";
@@ -160,6 +163,7 @@ const ESTADO_LABEL: Record<Reserva["estado"], string> = {
 const ORDEN_ESTADOS: Reserva["estado"][] = ["confirmada", "completada", "cancelada", "pendiente"];
 
 function FilaReserva({ r }: { r: Reserva }) {
+  const { can } = usePermisos();
   return (
     <tr className="border-b border-line last:border-0">
       <td className="px-4 py-3">
@@ -170,7 +174,7 @@ function FilaReserva({ r }: { r: Reserva }) {
       <td className="px-4 py-3">{r.entrada}</td>
       <td className="px-4 py-3">{r.salida}</td>
       <td className="px-4 py-3 text-right tabular-nums">{r.noches}</td>
-      <td className="px-4 py-3 text-right tabular-nums">${r.neto.toFixed(2)}</td>
+      {can("contabilidad") && <td className="px-4 py-3 text-right tabular-nums">${(r.neto ?? 0).toFixed(2)}</td>}
     </tr>
   );
 }
@@ -186,6 +190,7 @@ function GrupoEstado({
   abierto: boolean;
   onToggle: () => void;
 }) {
+  const { can } = usePermisos();
   return (
     <div className="overflow-hidden rounded-xl border border-line bg-panel">
       <button
@@ -208,7 +213,7 @@ function GrupoEstado({
                 <th className="px-4 py-3 font-medium">Entrada</th>
                 <th className="px-4 py-3 font-medium">Salida</th>
                 <th className="px-4 py-3 text-right font-medium">Noches</th>
-                <th className="px-4 py-3 text-right font-medium">Neto</th>
+                {can("contabilidad") && <th className="px-4 py-3 text-right font-medium">Neto</th>}
               </tr>
             </thead>
             <tbody>
@@ -224,6 +229,31 @@ function GrupoEstado({
 }
 
 export default function ReservasPage() {
+  const { can } = usePermisos();
+  const [exportando, setExportando] = useState(false);
+  const [errorExportar, setErrorExportar] = useState("");
+  async function descargarReservas() {
+    setExportando(true); setErrorExportar("");
+    try {
+      const filas = [];
+      // Explicit ranges avoid the REST API default row limit.
+      for (let offset = 0; ; offset += 500) {
+        const { data, error } = await supabaseClient.from("reservas_acceso")
+          .select("id,huesped_nombre,canal,codigo_externo,entrada,salida,noches,estado")
+          .order("entrada", { ascending: false }).order("id").range(offset, offset + 499);
+        if (error) throw error;
+        filas.push(...(data ?? []));
+        if (!data || data.length < 500) break;
+      }
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filas.map(r => ({
+        Huésped: r.huesped_nombre, Canal: r.canal, Código: r.codigo_externo,
+        Entrada: r.entrada, Salida: r.salida, Noches: r.noches, Estado: r.estado,
+      }))), "Reservas");
+      XLSX.writeFile(wb, "casa-randa-reservas.xlsx");
+    } catch { setErrorExportar("No se pudieron descargar las reservas. Intenta de nuevo."); }
+    finally { setExportando(false); }
+  }
   // Primer módulo conectado de verdad a Refine (useTable → @refinedev/supabase
   // → tabla `reservas`) — el resto de páginas de la intranet todavía son
   // esqueletos. Ver docs/arquitectura-migracion.md, Fase 3.
@@ -236,6 +266,7 @@ export default function ReservasPage() {
   // todas de una vez es liviano y evita ese problema.
   const { result, tableQuery } = useTable<Reserva>({
     resource: "reservas",
+    queryOptions: { enabled: can("reservas") || can("reservas_exportar") },
     sorters: { initial: [{ field: "entrada", order: "desc" }] },
     pagination: { mode: "off" },
   });
@@ -250,6 +281,7 @@ export default function ReservasPage() {
   // navegador ni duplicar la lógica de precio en dos lugares.
   const { result: solicitudesResult, tableQuery: solicitudesQuery } = useTable<Solicitud>({
     resource: "solicitudes",
+    queryOptions: { enabled: can("solicitudes") },
     sorters: { initial: [{ field: "created_at", order: "desc" }] },
     pagination: { mode: "off" },
   });
@@ -279,7 +311,9 @@ export default function ReservasPage() {
       <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Reservas</p>
       <h1 className="mt-1 text-2xl font-bold">Solicitudes y reservas</h1>
 
-      <section className="mt-6">
+      {can("reservas_exportar") && <button onClick={() => void descargarReservas()} disabled={exportando} className="mt-4 rounded-md border border-line px-4 py-2 text-sm disabled:opacity-50">{exportando ? "Descargando…" : "Descargar reservas"}</button>}
+      {errorExportar && <p role="alert" className="mt-2 text-caoba">{errorExportar}</p>}
+      {can("solicitudes") && <section className="mt-6">
         <h2 className="text-lg font-semibold">
           Solicitudes desde la página{" "}
           {!solicitudesQuery.isLoading && (
@@ -333,9 +367,9 @@ export default function ReservasPage() {
             )}
           </div>
         )}
-      </section>
+      </section>}
 
-      <h2 className="mt-10 text-lg font-semibold">Reservas confirmadas</h2>
+      {(can("reservas") || can("reservas_exportar")) && <><h2 className="mt-10 text-lg font-semibold">Reservas confirmadas</h2>
 
       {tableQuery.isLoading && <p className="mt-6 text-sm text-ink-2">Cargando…</p>}
 
@@ -363,6 +397,7 @@ export default function ReservasPage() {
           ))}
         </div>
       )}
+      </>}
     </div>
   );
 }

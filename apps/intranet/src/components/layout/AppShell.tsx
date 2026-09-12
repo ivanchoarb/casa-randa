@@ -2,6 +2,8 @@
 
 import { useGetIdentity, useLogout, useMenu } from "@refinedev/core";
 import Link from "next/link";
+import { usePermisos } from "@/lib/use-permisos";
+import { RUTAS } from "@/lib/permisos";
 import type { ReactNode } from "react";
 
 interface Identity {
@@ -25,6 +27,7 @@ function conCotizaciones<T extends { key: string }>(menuItems: T[]) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { can } = usePermisos();
   const { menuItems, selectedKey } = useMenu();
   const { data: identity } = useGetIdentity<Identity>();
   const { mutate: logout } = useLogout();
@@ -38,7 +41,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 space-y-1 px-3 py-4">
-          <Link
+          {RUTAS["/"].some(can) && <Link
             href="/"
             className={`block rounded-md px-3 py-2 text-sm font-medium ${
               selectedKey === "/"
@@ -47,8 +50,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             }`}
           >
             Inicio
-          </Link>
-          {conCotizaciones(menuItems).map((item) => (
+          </Link>}
+          {conCotizaciones(menuItems).filter(item => (RUTAS[item.route ?? ""] ?? []).some(can)).map((item) => (
             <Link
               key={item.key}
               href={item.route ?? "#"}

@@ -4,12 +4,14 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
 const code = fs.readFileSync(new URL('../src/lib/usuarios-api.ts', import.meta.url), 'utf8');
-const ctx = { exports: {}, Response };
+const permsCtx = { exports: {} };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL('../src/lib/permisos.ts', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, permsCtx);
+const ctx = { exports: {}, Response, require: name => { assert.equal(name, './permisos'); return permsCtx.exports; } };
 vm.runInNewContext(ts.transpileModule(code, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, ctx);
 const actorId = '11111111-1111-1111-1111-111111111111';
 const targetId = '22222222-2222-2222-2222-222222222222';
 const valid = { id: targetId, nombre: 'Prueba', email: 'test@example.invalid', rol: 'empleado', password: 'only-synthetic-123' };
-function setup(role = 'administrador', profileFailure = false) {
+function setup(role = 'administrador', profileFailure = false, permisos = {}) {
   const calls = [];
   const db = {
     auth: { getUser: async () => ({ data: { user: { id: actorId } } }), admin: {
@@ -21,7 +23,7 @@ function setup(role = 'administrador', profileFailure = false) {
     from: () => {
       let updating = false, selectedId;
       const q = { select: () => q, eq: (_, id) => { selectedId = id; return q; }, update: v => { updating = true; calls.push(['profile', v]); return q; },
-        single: async () => updating ? { data: { id: targetId }, error: profileFailure ? {} : null } : { data: { rol: selectedId === actorId ? role : 'empleado' } } };
+        single: async () => updating ? { data: { id: targetId }, error: profileFailure ? {} : null } : { data: { rol: selectedId === actorId ? role : 'empleado', permisos } } };
       return q;
     },
   };
@@ -31,7 +33,7 @@ const req = (method, body, token = true) => new Request('http://localhost/api/us
 test('rejects missing session and non-admin roles for every mutation', async () => {
   for (const method of ['POST', 'PATCH', 'DELETE']) {
     assert.equal((await setup().handle(req(method, valid, false))).status, 401);
-    for (const role of ['empleado', 'dueño']) {
+    for (const role of ['empleado', 'dueño', 'host']) {
       const s = setup(role); assert.equal((await s.handle(req(method, valid))).status, 403); assert.equal(s.calls.length, 0);
     }
   }
@@ -59,4 +61,29 @@ test('compensates a failed profile write after create and edit', async () => {
   assert.equal(c.calls.at(-1)[0], 'delete');
   const e = setup('administrador', true); assert.equal((await e.handle(req('PATCH', valid))).status, 500);
   assert.equal(e.calls.at(-1)[2].email, 'old@example.invalid');
+});
+
+test('allows an administrator to assign Host', async () => {
+  const s = setup();
+  assert.equal((await s.handle(req('POST', { ...valid, rol: 'host' }))).status, 201);
+  assert.equal(s.calls.find(c => c[0] === 'profile')[1].rol, 'host');
+});
+
+test('per-user permissions cannot self-escalate or remove own management access', async () => {
+  const s = setup();
+  assert.equal((await s.handle(req('POST', { ...valid, permisos: { usuarios: true } }))).status, 400);
+  assert.equal((await s.handle(req('POST', { ...valid, permisos: { desconocido: true } }))).status, 400);
+  assert.equal((await s.handle(req('PATCH', { ...valid, id: actorId, rol: 'administrador', permisos: { usuarios: false } }))).status, 409);
+  const denied = setup('administrador', false, { usuarios: false });
+  assert.equal((await denied.handle(req('POST', valid))).status, 403);
+  assert.equal(denied.calls.length, 0);
+});
+test('Host starts with only the requested areas and supports individual overrides', () => {
+  const { puede, PERMISOS } = permsCtx.exports;
+  const expected = ['proxima_reserva','ingresos_mes','comision_host','liquidacion_host','reservas','reservas_exportar','calendario','plan_compras','cotizaciones'];
+  for (const key of Object.keys(PERMISOS)) assert.equal(puede('host', {}, key), expected.includes(key), key);
+  assert.equal(puede('host', { plan_compras: false }, 'plan_compras'), false);
+  assert.equal(puede('host', { operacion: true }, 'operacion'), true);
+  assert.equal(puede('host', { usuarios: true }, 'usuarios'), false);
+  assert.equal(puede(undefined, {}, 'reservas'), false);
 });

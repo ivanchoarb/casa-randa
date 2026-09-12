@@ -2,6 +2,7 @@
 
 import { Authenticated } from "@refinedev/core";
 import type { ReactNode } from "react";
+import { PermissionGate } from "@/components/layout/PermissionGate";
 import { AppShell } from "@/components/layout/AppShell";
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
@@ -15,7 +16,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         </div>
       }
     >
-      <AppShell>{children}</AppShell>
+      <AppShell><PermissionGate>{children}</PermissionGate></AppShell>
     </Authenticated>
   );
 }

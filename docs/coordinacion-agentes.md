@@ -12,6 +12,31 @@ correcta de Claude confirmando la lectura de AGENTS.md y este registro.
 
 ## Estado del trabajo
 
+Codex: permisos por usuario terminados en la sesión de ChatGPT, que se quedó sin
+créditos antes de hacer commit. Claude retomó (2026-09-12), revisó cada diff y
+verificó antes de continuar: catálogo de 18 permisos, excepciones por usuario en
+`perfiles.permisos`, función SQL `tiene_permiso()`, reescritura de políticas RLS
+en ~10 tablas y `storage.objects`, vista `reservas_acceso` que enmascara columnas
+financieras por permiso (migración 0016, ya aplicada). UI: checkboxes por sección
+en usuarios/page.tsx, `PermissionGate` bloquea rutas sin acceso, `AppShell`/menú
+e Inicio/Reservas/Análisis filtran por permiso, APIs de cotización exigen el
+permiso `cotizaciones` en servidor. Ver detalle en docs/gestion-usuarios.md.
+
+Verificación de RLS en vivo (Claude, 2026-09-12) — la prueba de "permisos de base
+con fixtures revertidos" que había quedado pendiente: dentro de una transacción
+sobre la base real, siempre cerrada con `ROLLBACK`, se simuló `auth.uid()` como
+empleado, host (con y sin override de `plan_compras`), dueño y administrador,
+más un segundo usuario sintético para aislamiento entre perfiles. Confirmado:
+`reservas` cruda bloqueada sin permiso `contabilidad`; `reservas_acceso` enmascara
+las columnas financieras para empleado/host y las muestra completas a dueño/admin;
+el override por usuario sí revoca un permiso puntual; `perfiles` aísla a cada
+usuario no-admin a su propia fila. `pnpm build`/`pnpm lint`/`node --test` (9/9)
+pasan. Sin commit todavía.
+
+Roles definidos por el usuario: Dueño, Administrador, Host, Empleado. Host y
+Empleado ya tienen su conjunto de permisos por defecto (0015 y 0016 aplicadas y
+verificadas); ya no queda pendiente acordar el alcance de Host.
+
 Codex: CRUD de usuarios implementado con roles existentes, API restringida a
 administradores y confirmación de eliminación. Alcance: usuarios/page.tsx,
 api/usuarios, lib/usuarios-api.ts, pruebas y ajuste min-width del AppShell.
@@ -30,8 +55,9 @@ documentación de auditoría/coordinación. No requiere migraciones SQL.
 | Corrección puntos 2 y 4 | Claude | Terminada (2026-09-12) | Ver "Correcciones aplicadas" abajo |
 | Auditoría posterior a 44b0c28 | Codex | Terminada | Correcciones 2 y 4 coherentes; 1, 3 y 5 abiertos. Evidencia y límites en docs/auditoria-2026-09-12.md; sin cambios funcionales |
 | Backfill tareas desalineadas + punto 3 | Claude | Terminada (2026-09-12) | El usuario pidió ambos tras revisar la auditoría. Ver "Correcciones aplicadas" abajo |
-| Corrección puntos 1 y 5 | Sin asignar | Pendiente | El usuario no ha pedido priorizarlos todavía |
+| Corrección puntos 1 y 5 | Sin asignar | Parcial | Punto 1 sigue abierto. Punto 5 quedó resuelto como efecto colateral de 0016 (retiró `publico_valida_codigo` sin reemplazo; hoy nada en apps/web consume esa tabla, así que no rompe nada, pero falta una política pública acotada si se construye la validación de códigos) |
 | Auditoría posterior a ea2ddf5 | Codex | Terminada | Consulta de vigentes y backfill revisados; nuevo P2 en orden/paginación de Historial. Ver segunda revisión en docs/auditoria-2026-09-12.md |
+| Permisos por usuario (roles Host + overrides) | Codex, verificado por Claude | Terminada (2026-09-12) | Migraciones 0015/0016 aplicadas; RLS verificada en vivo con transacción revertida; build/lint/tests OK. Sin commit al terminar la revisión |
 
 ## Correcciones aplicadas (Claude, 2026-09-12)
 

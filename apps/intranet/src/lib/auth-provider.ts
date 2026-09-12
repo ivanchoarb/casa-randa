@@ -56,7 +56,7 @@ export const authProvider: AuthProvider = {
 
     const { data: perfil } = await supabaseClient
       .from("perfiles")
-      .select("nombre, rol")
+      .select("nombre, rol, permisos")
       .eq("id", data.user.id)
       .single();
 
@@ -64,7 +64,8 @@ export const authProvider: AuthProvider = {
       id: data.user.id,
       email: data.user.email,
       nombre: perfil?.nombre ?? data.user.email,
-      rol: perfil?.rol ?? "empleado",
+      rol: perfil?.rol,
+      permisos: perfil?.permisos ?? {},
     };
   },
 };

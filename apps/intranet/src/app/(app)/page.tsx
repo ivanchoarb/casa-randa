@@ -1,6 +1,7 @@
 "use client";
 
 import { useTable } from "@refinedev/core";
+import { usePermisos } from "@/lib/use-permisos";
 import Link from "next/link";
 import { descargarLiquidacionMarquelda } from "@/lib/liquidacion";
 
@@ -38,6 +39,7 @@ const money = (n: number) =>
   `$${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function InicioPage() {
+  const { can } = usePermisos();
   // Conectado a datos reales (2026-09-11), mismo cálculo que usa
   // Contabilidad para que las dos pantallas nunca se contradigan. Tarjetas
   // y el botón de liquidación calzan con staging.randahome.com/intranet/
@@ -49,6 +51,7 @@ export default function InicioPage() {
   });
   const { result: gastosResult } = useTable<Gasto>({
     resource: "gastos",
+    queryOptions: { enabled: can("finanzas_propietario") },
     pagination: { pageSize: 500 },
   });
 
@@ -86,10 +89,11 @@ export default function InicioPage() {
   const saldoNetoPropietario = ingresosAcumulados - comisionesDelAnio - gastosDelAnio;
 
   const tarjetas = [
-    { titulo: `Ingresos de ${capitalizar(MESES[mes])}`, valor: money(ingresosDelMes), nota: "Después de comisión de plataforma" },
-    { titulo: "Comisión Marquelda", valor: money(comisionMesMarquelda), nota: `${capitalizar(MESES[mes])} ${anio}` },
-    { titulo: "Ingresos acumulados", valor: money(ingresosAcumulados), nota: `Acumulado ${anio}` },
+    { permiso: "ingresos_mes" as const, titulo: `Ingresos de ${capitalizar(MESES[mes])}`, valor: money(ingresosDelMes), nota: "Después de comisión de plataforma" },
+    { permiso: "comision_host" as const, titulo: "Comisión Host (Marquelda)", valor: money(comisionMesMarquelda), nota: `${capitalizar(MESES[mes])} ${anio}` },
+    { permiso: "finanzas_propietario" as const, titulo: "Ingresos acumulados", valor: money(ingresosAcumulados), nota: `Acumulado ${anio}` },
     {
+      permiso: "finanzas_propietario" as const,
       titulo: "Saldo neto propietario",
       valor: money(saldoNetoPropietario),
       nota: "Después de comisiones y gastos del año",
@@ -113,7 +117,7 @@ export default function InicioPage() {
 
       {!tableQuery.isError && (
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-xl border border-line bg-panel p-5">
+          {can("proxima_reserva") && <div className="rounded-xl border border-line bg-panel p-5">
             <p className="text-xs font-medium tracking-wide text-ink-2 uppercase">Próxima reserva</p>
             {proximaReserva ? (
               <>
@@ -125,16 +129,16 @@ export default function InicioPage() {
                 <p className="mt-1 text-xs text-ink-2">
                   {proximaReserva.entrada} → {proximaReserva.salida} · {proximaReserva.noches} noches
                 </p>
-                <Link href="/reservas" className="mt-2 inline-block text-xs font-semibold text-caoba hover:underline">
+                {can("reservas") && <Link href="/reservas" className="mt-2 inline-block text-xs font-semibold text-caoba hover:underline">
                   Ver reserva →
-                </Link>
+                </Link>}
               </>
             ) : (
               <p className="mt-2 text-xl font-bold">{tableQuery.isLoading ? "…" : "Ninguna"}</p>
             )}
-          </div>
+          </div>}
 
-          {tarjetas.map((t) => (
+          {tarjetas.filter(t => can(t.permiso)).map((t) => (
             <div key={t.titulo} className="rounded-xl border border-line bg-panel p-5">
               <p className="text-xs font-medium tracking-wide text-ink-2 uppercase">{t.titulo}</p>
               <p className="mt-2 text-2xl font-bold tabular-nums">{t.valor}</p>
@@ -142,7 +146,7 @@ export default function InicioPage() {
             </div>
           ))}
 
-          <div className="rounded-xl border border-line bg-panel p-5">
+          {can("liquidacion_host") && <div className="rounded-xl border border-line bg-panel p-5">
             <p className="text-xs font-medium tracking-wide text-ink-2 uppercase">Liquidación Marquelda</p>
             <p className="mt-2 text-xl font-bold">{capitalizar(MESES[mes])}</p>
             <button
@@ -153,7 +157,7 @@ export default function InicioPage() {
             >
               Descargar liquidación
             </button>
-          </div>
+          </div>}
         </div>
       )}
     </div>

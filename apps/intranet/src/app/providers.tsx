@@ -2,10 +2,10 @@
 
 import { Refine, type ResourceProps } from "@refinedev/core";
 import routerProvider from "@refinedev/nextjs-router/app";
-import { dataProvider } from "@refinedev/supabase";
+import { protectedDataProvider } from "@/lib/data-provider";
 import type { ReactNode } from "react";
 import { authProvider } from "@/lib/auth-provider";
-import { supabaseClient } from "@/lib/supabase-client";
+
 
 // Un resource por módulo de la intranet — mismos siete que ya existen
 // en la de WordPress (ver docs/logica-negocio-y-flujos.md), menos
@@ -32,7 +32,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <Refine
       routerProvider={routerProvider}
-      dataProvider={dataProvider(supabaseClient)}
+      dataProvider={protectedDataProvider}
       authProvider={authProvider}
       resources={resources}
       options={{

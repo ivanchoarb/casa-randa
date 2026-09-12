@@ -1,6 +1,7 @@
 "use client";
 
 import { useCreate, useDelete, useTable, useUpdate } from "@refinedev/core";
+import { usePermisos } from "@/lib/use-permisos";
 import { useMemo, useState } from "react";
 
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
@@ -779,6 +780,7 @@ function CodigosDeDescuento() {
 }
 
 export default function AnalisisPage() {
+  const { can } = usePermisos();
   // Quinto módulo conectado a datos reales. El comparativo año a año ya no
   // está diferido: con las 69 reservas reales importadas el 2026-09-11 hay
   // datos suficientes para calcularlo de verdad, verificado contra
@@ -786,6 +788,7 @@ export default function AnalisisPage() {
   // INGRESO NETO para 2026 y 2027, comparado en vivo).
   const { result: reservasResult, tableQuery: reservasQuery } = useTable<Reserva>({
     resource: "reservas",
+    queryOptions: { enabled: can("analisis_financiero") },
     pagination: { pageSize: 500 },
   });
 
@@ -793,6 +796,7 @@ export default function AnalisisPage() {
   // Plan anual de compras son dos vistas del mismo dato, no dos fuentes.
   const { result: planesResult, tableQuery: planesQuery } = useTable<PlanCompra>({
     resource: "plan_compras",
+    queryOptions: { enabled: can("plan_compras") || can("cuentas_pagar") },
     sorters: { initial: [{ field: "anio", order: "desc" }] },
     pagination: { pageSize: 100 },
   });
@@ -810,14 +814,14 @@ export default function AnalisisPage() {
       </p>
 
       <div className="mt-8">
-        <ComparativoAnual
+        {can("analisis_financiero") && <ComparativoAnual
           reservas={reservasResult.data ?? []}
           cargando={reservasQuery.isLoading}
           error={reservasQuery.isError}
-        />
-        <PlanDeCompras planes={planes} cargando={planesQuery.isLoading} error={planesQuery.isError} />
-        <CuentasPorPagar planes={planes} cargando={planesQuery.isLoading} />
-        <CodigosDeDescuento />
+        />}
+        {can("plan_compras") && <PlanDeCompras planes={planes} cargando={planesQuery.isLoading} error={planesQuery.isError} />}
+        {can("cuentas_pagar") && <CuentasPorPagar planes={planes} cargando={planesQuery.isLoading} />}
+        {can("descuentos") && <CodigosDeDescuento />}
       </div>
     </div>
   );

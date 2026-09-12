@@ -1,6 +1,7 @@
+import { puede, permisosValidos } from "./permisos";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const roles = ["administrador", "dueño", "empleado"];
+const roles = ["dueño", "administrador", "host", "empleado"];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const fail = (error: string, status = 400) => Response.json({ error }, { status });
 
@@ -13,13 +14,17 @@ export function usuariosHandler(getAdmin: () => SupabaseClient) {
       const db = getAdmin();
       const { data: auth, error: authError } = await db.auth.getUser(token);
       if (authError || !auth.user) return fail("La sesión no es válida.", 401);
-      const { data: actor, error: actorError } = await db.from("perfiles").select("rol").eq("id", auth.user.id).single();
-      if (actorError || actor?.rol !== "administrador") return fail("Solo un administrador puede gestionar usuarios.", 403);
+      const { data: actor, error: actorError } = await db.from("perfiles").select("rol, permisos").eq("id", auth.user.id).single();
+      if (actorError || !puede(actor?.rol, actor?.permisos, "usuarios")) return fail("Solo un administrador puede gestionar usuarios.", 403);
 
       let body;
       try { body = await req.json(); } catch { return fail("Solicitud inválida."); }
       if (!body || typeof body !== "object" || Array.isArray(body)) return fail("Solicitud inválida.");
       const { id, rol } = body;
+      if (req.method !== "DELETE" && body.permisos !== undefined && !permisosValidos(body.permisos)) return fail("Permisos inválidos.");
+      if (rol !== "administrador" && body.permisos?.usuarios === true) return fail("Solo administradores pueden gestionar usuarios.");
+      if (id === auth.user.id && body.permisos?.usuarios === false) return fail("No puedes desactivar tu propia gestión de usuarios.", 409);
+      const cambiosPermisos = body.permisos !== undefined ? { permisos: body.permisos } : {};
       if (req.method !== "POST" && (typeof id !== "string" || !uuid.test(id))) return fail("Usuario inválido.");
       if (id === auth.user.id && (req.method === "DELETE" || rol !== "administrador")) {
         return fail("No puedes eliminar tu propia cuenta ni quitarte el rol de administrador.", 409);
@@ -45,7 +50,7 @@ export function usuariosHandler(getAdmin: () => SupabaseClient) {
         if (typeof password !== "string" || password.length < 12 || password.length > 128) return fail("La contraseña debe tener entre 12 y 128 caracteres.");
         const { data, error } = await db.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { nombre } });
         if (error || !data.user) return fail("No se pudo crear la cuenta. Comprueba si el correo ya existe y si la contraseña cumple los requisitos.", 409);
-        const { error: profileError } = await db.from("perfiles").update({ nombre, email, rol }).eq("id", data.user.id).select("id").single();
+        const { error: profileError } = await db.from("perfiles").update({ nombre, email, rol, ...cambiosPermisos }).eq("id", data.user.id).select("id").single();
         if (profileError) {
           const { error: cleanup } = await db.auth.admin.deleteUser(data.user.id);
           return fail(cleanup ? "La cuenta se creó, pero no se pudo asignar el rol ni deshacer la creación. Revisa el listado antes de reintentar." : "No se pudo asignar el rol. La creación fue deshecha.", 500);
@@ -59,7 +64,7 @@ export function usuariosHandler(getAdmin: () => SupabaseClient) {
         email, user_metadata: { ...previous.user.user_metadata, nombre },
       });
       if (authUpdateError) return fail("No se pudo actualizar la cuenta. Comprueba si el correo ya está en uso.", 409);
-      const { error: profileError } = await db.from("perfiles").update({ nombre, email, rol }).eq("id", id).select("id").single();
+      const { error: profileError } = await db.from("perfiles").update({ nombre, email, rol, ...cambiosPermisos }).eq("id", id).select("id").single();
       if (profileError) {
         const { error: rollback } = await db.auth.admin.updateUserById(id, { email: previous.user.email, user_metadata: previous.user.user_metadata });
         return fail(rollback ? "No se pudo guardar el perfil ni restaurar el acceso anterior. Revisa la cuenta antes de reintentar." : "No se pudo guardar el perfil. Se restauró el acceso anterior.", 500);

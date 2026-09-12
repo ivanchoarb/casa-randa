@@ -1,3 +1,4 @@
+import { puede } from "@/lib/permisos";
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
@@ -28,6 +29,12 @@ export async function POST(req: NextRequest) {
   if (userError || !userData.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  const { data: perfil, error: perfilError } = await supabase.from("perfiles").select("rol, permisos").eq("id", userData.user.id).single();
+  if (perfilError || !puede(perfil?.rol, perfil?.permisos, "cotizaciones")) {
+    return NextResponse.json({ error: "No tienes permiso para gestionar cotizaciones." }, { status: 403 });
+  }
+
 
   let body: { url?: string };
   try {
