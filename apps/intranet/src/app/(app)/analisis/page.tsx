@@ -1,7 +1,18 @@
 "use client";
 
 import { useCreate, useTable } from "@refinedev/core";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
+type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
+interface Reserva {
+  id: string;
+  entrada: string;
+  noches: number;
+  neto: number;
+  estado: EstadoReserva;
+  huesped_pais: string | null;
+  huesped_ciudad: string | null;
+}
 
 type CategoriaCapex =
   | "mejora"
@@ -19,8 +30,11 @@ interface PlanCompra {
   concepto: string;
   proveedor: string | null;
   cotizacion_usd: number | null;
+  fecha_programada: string | null;
   prioridad: PrioridadCapex;
   estado: EstadoCapex;
+  enlace_cotizacion: string | null;
+  notas: string | null;
 }
 
 interface CodigoDescuento {
@@ -30,6 +44,7 @@ interface CodigoDescuento {
   vigente_hasta: string;
   maximo_usos: number;
   usos_actuales: number;
+  notas: string | null;
 }
 
 const CATEGORIAS: CategoriaCapex[] = [
@@ -40,6 +55,7 @@ const CATEGORIAS: CategoriaCapex[] = [
   "decoracion",
 ];
 const PRIORIDADES: PrioridadCapex[] = ["alta", "media", "baja"];
+const ESTADOS_CAPEX: EstadoCapex[] = ["programada", "cotizada", "aprobada", "realizada"];
 
 const ESTADO_STYLE: Record<EstadoCapex, string> = {
   programada: "bg-panel-2 text-ink-2",
@@ -49,6 +65,130 @@ const ESTADO_STYLE: Record<EstadoCapex, string> = {
 };
 
 const inputClass = "rounded-md border border-line bg-ground px-2 py-1.5 text-sm";
+const money = (n: number) =>
+  `$${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+// El "Comportamiento mensual" de staging (comparado en vivo el 2026-09-11,
+// año 2026: RESERVAS/NOCHES/INGRESO NETO calzan exactos con esta misma
+// lógica — confirmado antes de construir nada) tiene un bug real: las
+// etiquetas de mes están corridas una posición hacia atrás (el conteo de
+// enero aparece bajo "Dic", el de febrero bajo "Ene", etc. — los NÚMEROS
+// son correctos, solo el nombre del mes está mal). No se replica ese
+// desfase aquí — los conteos van bajo su mes real.
+function ComparativoAnual({ reservas, cargando }: { reservas: Reserva[]; cargando: boolean }) {
+  const anios = useMemo(() => {
+    const set = new Set(reservas.map((r) => Number(r.entrada.slice(0, 4))));
+    return Array.from(set).sort((a, b) => b - a);
+  }, [reservas]);
+
+  const [anioElegido, setAnioElegido] = useState<number | null>(null);
+  const anioActivo = anioElegido ?? anios[0];
+
+  const delAnio = reservas.filter(
+    (r) =>
+      (r.estado === "confirmada" || r.estado === "completada") &&
+      Number(r.entrada.slice(0, 4)) === anioActivo,
+  );
+  const totalReservas = delAnio.length;
+  const totalNoches = delAnio.reduce((s, r) => s + r.noches, 0);
+  const ingresoNeto = delAnio.reduce((s, r) => s + r.neto, 0);
+
+  const porMes = MESES.map((_, i) => delAnio.filter((r) => Number(r.entrada.slice(5, 7)) - 1 === i).length);
+  const maxMes = Math.max(1, ...porMes);
+
+  const paises = Array.from(new Set(delAnio.map((r) => r.huesped_pais).filter((v): v is string => !!v)));
+  const ciudades = Array.from(
+    new Set(delAnio.map((r) => r.huesped_ciudad).filter((v): v is string => !!v)),
+  );
+
+  if (cargando) return null;
+  if (anios.length === 0) {
+    return <p className="text-sm text-ink-2">Todavía no hay reservas para comparar año a año.</p>;
+  }
+
+  return (
+    <section>
+      <div className="flex flex-wrap gap-2">
+        {anios.map((a) => (
+          <button
+            key={a}
+            type="button"
+            onClick={() => setAnioElegido(a)}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+              a === anioActivo ? "bg-caoba text-panel" : "border border-line text-ink-2"
+            }`}
+          >
+            {a}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between rounded-xl border border-line bg-panel p-4">
+        <div>
+          <h2 className="font-bold">Comparativo año a año</h2>
+          <p className="text-xs text-ink-2">Reservas, noches, ingresos y temporadas</p>
+        </div>
+        <span className="rounded-full bg-panel-2 px-3 py-1 text-xs font-semibold text-ink-2">
+          {anios.length} años
+        </span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-line bg-panel p-4">
+          <p className="text-xs font-medium text-ink-2 uppercase">Reservas</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums">{totalReservas}</p>
+        </div>
+        <div className="rounded-xl border border-line bg-panel p-4">
+          <p className="text-xs font-medium text-ink-2 uppercase">Noches</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums">{totalNoches}</p>
+        </div>
+        <div className="rounded-xl border border-line bg-panel p-4">
+          <p className="text-xs font-medium text-ink-2 uppercase">Ingreso neto</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums">{money(ingresoNeto)}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-line bg-panel p-4">
+        <h3 className="font-semibold">Comportamiento mensual</h3>
+        {totalReservas === 0 ? (
+          <p className="mt-2 text-sm text-ink-2">Sin reservas en {anioActivo}.</p>
+        ) : (
+          <div className="mt-3 space-y-2">
+            {MESES.map((m, i) =>
+              porMes[i] > 0 ? (
+                <div key={m} className="flex items-center gap-3">
+                  <span className="w-8 text-xs text-ink-2">{m}</span>
+                  <div className="h-2 flex-1 rounded-full bg-panel-2">
+                    <div
+                      className="h-2 rounded-full bg-caoba"
+                      style={{ width: `${(porMes[i] / maxMes) * 100}%` }}
+                    />
+                  </div>
+                  <span className="w-14 text-right text-xs text-ink-2 tabular-nums">{porMes[i]} res.</span>
+                </div>
+              ) : null,
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 rounded-xl border border-line bg-panel p-4">
+        <h3 className="font-semibold">Origen de huéspedes</h3>
+        <p className="mt-2 text-sm">
+          <strong>Países:</strong> {paises.length > 0 ? paises.join(", ") : "Pendiente de registrar"}
+        </p>
+        <p className="mt-1 text-sm">
+          <strong>Ciudades:</strong> {ciudades.length > 0 ? ciudades.join(", ") : "Pendiente de registrar"}
+        </p>
+        <p className="mt-2 text-xs text-ink-2">
+          Completa país y ciudad al editar cada reserva para mejorar la segmentación de campañas.
+        </p>
+      </div>
+    </section>
+  );
+}
 
 function PlanDeCompras() {
   const { result, tableQuery } = useTable<PlanCompra>({
@@ -59,11 +199,16 @@ function PlanDeCompras() {
   const { mutate: crear, mutation } = useCreate<PlanCompra>();
   const isPending = mutation.isPending;
 
+  const [anio, setAnio] = useState(String(new Date().getFullYear()));
   const [concepto, setConcepto] = useState("");
   const [categoria, setCategoria] = useState<CategoriaCapex>("mejora");
-  const [prioridad, setPrioridad] = useState<PrioridadCapex>("media");
-  const [cotizacion, setCotizacion] = useState("");
   const [proveedor, setProveedor] = useState("");
+  const [cotizacion, setCotizacion] = useState("");
+  const [fechaProgramada, setFechaProgramada] = useState("");
+  const [prioridad, setPrioridad] = useState<PrioridadCapex>("alta");
+  const [estado, setEstado] = useState<EstadoCapex>("programada");
+  const [enlace, setEnlace] = useState("");
+  const [notas, setNotas] = useState("");
 
   function agregar() {
     if (!concepto.trim()) return;
@@ -71,13 +216,16 @@ function PlanDeCompras() {
       {
         resource: "plan_compras",
         values: {
-          anio: new Date().getFullYear(),
+          anio: Number(anio) || new Date().getFullYear(),
           categoria,
           concepto,
           proveedor: proveedor || null,
           cotizacion_usd: cotizacion ? Number(cotizacion) : null,
+          fecha_programada: fechaProgramada || null,
           prioridad,
-          estado: "programada",
+          estado,
+          enlace_cotizacion: enlace || null,
+          notas: notas || null,
         },
       },
       {
@@ -85,68 +233,133 @@ function PlanDeCompras() {
           setConcepto("");
           setProveedor("");
           setCotizacion("");
+          setFechaProgramada("");
+          setEnlace("");
+          setNotas("");
         },
       },
     );
   }
 
   return (
-    <section>
+    <section className="mt-12">
       <h2 className="text-lg font-bold">Plan anual de compras, mejoras y reparaciones</h2>
       <p className="mt-1 text-sm text-ink-2">
         De la casa (muebles, equipo, mantenimiento) — no confundir con la tienda del huésped, ver
         la nota en <code>supabase/migrations/0004_tienda_y_planificacion.sql</code>.
       </p>
 
-      <div className="mt-4 flex flex-wrap items-end gap-2 rounded-lg border border-line bg-panel p-3">
-        <input
-          placeholder="Concepto"
-          value={concepto}
-          onChange={(e) => setConcepto(e.target.value)}
-          className={`${inputClass} min-w-[12rem] flex-1`}
-        />
-        <select
-          value={categoria}
-          onChange={(e) => setCategoria(e.target.value as CategoriaCapex)}
-          className={`${inputClass} capitalize`}
-        >
-          {CATEGORIAS.map((c) => (
-            <option key={c} value={c}>
-              {c.replace("_", " ")}
-            </option>
-          ))}
-        </select>
-        <input
-          placeholder="Proveedor"
-          value={proveedor}
-          onChange={(e) => setProveedor(e.target.value)}
-          className={`${inputClass} w-36`}
-        />
-        <input
-          placeholder="Cotización USD"
-          type="number"
-          value={cotizacion}
-          onChange={(e) => setCotizacion(e.target.value)}
-          className={`${inputClass} w-32`}
-        />
-        <select
-          value={prioridad}
-          onChange={(e) => setPrioridad(e.target.value as PrioridadCapex)}
-          className={`${inputClass} capitalize`}
-        >
-          {PRIORIDADES.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
+      <div className="mt-4 grid grid-cols-1 gap-3 rounded-lg border border-line bg-panel p-4 sm:grid-cols-2">
+        <label className="text-xs text-ink-2">
+          Año
+          <input
+            type="number"
+            value={anio}
+            onChange={(e) => setAnio(e.target.value)}
+            className={`${inputClass} mt-1 block w-full`}
+          />
+        </label>
+        <label className="text-xs text-ink-2">
+          Categoría
+          <select
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value as CategoriaCapex)}
+            className={`${inputClass} mt-1 block w-full capitalize`}
+          >
+            {CATEGORIAS.map((c) => (
+              <option key={c} value={c}>
+                {c.replace("_", " ")}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs text-ink-2">
+          Concepto
+          <input
+            value={concepto}
+            onChange={(e) => setConcepto(e.target.value)}
+            className={`${inputClass} mt-1 block w-full`}
+          />
+        </label>
+        <label className="text-xs text-ink-2">
+          Proveedor
+          <input
+            value={proveedor}
+            onChange={(e) => setProveedor(e.target.value)}
+            className={`${inputClass} mt-1 block w-full`}
+          />
+        </label>
+        <label className="text-xs text-ink-2">
+          Cotización USD
+          <input
+            type="number"
+            value={cotizacion}
+            onChange={(e) => setCotizacion(e.target.value)}
+            className={`${inputClass} mt-1 block w-full`}
+          />
+        </label>
+        <label className="text-xs text-ink-2">
+          Fecha programada
+          <input
+            type="date"
+            value={fechaProgramada}
+            onChange={(e) => setFechaProgramada(e.target.value)}
+            className={`${inputClass} mt-1 block w-full`}
+          />
+        </label>
+        <label className="text-xs text-ink-2">
+          Prioridad
+          <select
+            value={prioridad}
+            onChange={(e) => setPrioridad(e.target.value as PrioridadCapex)}
+            className={`${inputClass} mt-1 block w-full capitalize`}
+          >
+            {PRIORIDADES.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs text-ink-2">
+          Estado
+          <select
+            value={estado}
+            onChange={(e) => setEstado(e.target.value as EstadoCapex)}
+            className={`${inputClass} mt-1 block w-full capitalize`}
+          >
+            {ESTADOS_CAPEX.map((e) => (
+              <option key={e} value={e}>
+                {e}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs text-ink-2 sm:col-span-2">
+          Enlace a cotización
+          <input
+            value={enlace}
+            onChange={(e) => setEnlace(e.target.value)}
+            placeholder="https://…"
+            className={`${inputClass} mt-1 block w-full`}
+          />
+        </label>
+        <label className="text-xs text-ink-2 sm:col-span-2">
+          Notas
+          <textarea
+            value={notas}
+            onChange={(e) => setNotas(e.target.value)}
+            rows={2}
+            className={`${inputClass} mt-1 block w-full`}
+          />
+        </label>
         <button
           type="button"
           onClick={agregar}
           disabled={isPending}
-          className="rounded-md bg-caoba px-4 py-1.5 text-sm font-semibold text-panel disabled:opacity-60"
+          className="rounded-md bg-caoba px-4 py-1.5 text-sm font-semibold text-panel disabled:opacity-60 sm:col-span-2"
         >
-          Agregar
+          Guardar planificación
         </button>
       </div>
 
@@ -159,23 +372,32 @@ function PlanDeCompras() {
       {!tableQuery.isLoading && result.data.length > 0 && (
         <div className="mt-4 space-y-2">
           {result.data.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between rounded-lg border border-line bg-panel px-4 py-3 text-sm"
-            >
-              <div>
+            <div key={item.id} className="rounded-lg border border-line bg-panel px-4 py-3 text-sm">
+              <div className="flex items-center justify-between">
                 <p className="font-medium">{item.concepto}</p>
-                <p className="text-xs text-ink-2 capitalize">
-                  {item.anio} · {item.categoria.replace("_", " ")}
-                  {item.proveedor ? ` · ${item.proveedor}` : ""}
-                  {item.cotizacion_usd ? ` · $${item.cotizacion_usd.toFixed(2)}` : ""}
-                </p>
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${ESTADO_STYLE[item.estado]}`}
+                >
+                  {item.estado}
+                </span>
               </div>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${ESTADO_STYLE[item.estado]}`}
-              >
-                {item.estado}
-              </span>
+              <p className="mt-1 text-xs text-ink-2 capitalize">
+                {item.anio} · {item.categoria.replace("_", " ")}
+                {item.proveedor ? ` · ${item.proveedor}` : ""}
+                {item.cotizacion_usd ? ` · ${money(item.cotizacion_usd)}` : ""}
+                {item.fecha_programada ? ` · ${item.fecha_programada}` : ""}
+              </p>
+              {item.enlace_cotizacion && (
+                <a
+                  href={item.enlace_cotizacion}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1 inline-block text-xs text-caoba hover:underline"
+                >
+                  Ver cotización →
+                </a>
+              )}
+              {item.notas && <p className="mt-1 text-xs text-ink-2">{item.notas}</p>}
             </div>
           ))}
         </div>
@@ -198,6 +420,7 @@ function CodigosDeDescuento() {
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
   const [maximo, setMaximo] = useState("0");
+  const [notas, setNotas] = useState("");
 
   function agregar() {
     if (!codigo.trim() || !pct || !desde || !hasta) return;
@@ -210,6 +433,7 @@ function CodigosDeDescuento() {
           vigente_desde: desde,
           vigente_hasta: hasta,
           maximo_usos: Number(maximo) || 0,
+          notas: notas || null,
         },
       },
       {
@@ -219,6 +443,7 @@ function CodigosDeDescuento() {
           setDesde("");
           setHasta("");
           setMaximo("0");
+          setNotas("");
         },
       },
     );
@@ -261,6 +486,12 @@ function CodigosDeDescuento() {
           onChange={(e) => setMaximo(e.target.value)}
           className={`${inputClass} w-44`}
         />
+        <input
+          placeholder="Notas"
+          value={notas}
+          onChange={(e) => setNotas(e.target.value)}
+          className={`${inputClass} min-w-[10rem] flex-1`}
+        />
         <button
           type="button"
           onClick={agregar}
@@ -286,6 +517,7 @@ function CodigosDeDescuento() {
                 <th className="px-4 py-3 text-right font-medium">%</th>
                 <th className="px-4 py-3 font-medium">Vigencia</th>
                 <th className="px-4 py-3 text-right font-medium">Usos</th>
+                <th className="px-4 py-3 font-medium">Notas</th>
               </tr>
             </thead>
             <tbody>
@@ -299,6 +531,7 @@ function CodigosDeDescuento() {
                   <td className="px-4 py-3 text-right tabular-nums">
                     {c.usos_actuales} / {c.maximo_usos || "∞"}
                   </td>
+                  <td className="px-4 py-3 text-ink-2">{c.notas ?? "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -310,18 +543,29 @@ function CodigosDeDescuento() {
 }
 
 export default function AnalisisPage() {
-  // Quinto módulo conectado a datos reales. El comparativo año a año que
-  // muestra la intranet de WordPress necesita reservas reales para
-  // calcularse (agregaciones sobre `reservas`) — se deja para cuando haya
-  // datos, en vez de simularlo con cifras de ejemplo.
+  // Quinto módulo conectado a datos reales. El comparativo año a año ya no
+  // está diferido: con las 69 reservas reales importadas el 2026-09-11 hay
+  // datos suficientes para calcularlo de verdad, verificado contra
+  // staging.randahome.com/intranet/analisis/ (mismos RESERVAS/NOCHES/
+  // INGRESO NETO para 2026 y 2027, comparado en vivo).
+  const { result: reservasResult, tableQuery: reservasQuery } = useTable<Reserva>({
+    resource: "reservas",
+    pagination: { pageSize: 500 },
+  });
+
   return (
     <div>
       <p className="text-xs font-semibold tracking-wide text-caoba uppercase">
         Inteligencia del negocio
       </p>
-      <h1 className="mt-1 text-2xl font-bold">Análisis y planificación</h1>
+      <h1 className="mt-1 text-2xl font-bold">Histórico, planificación y marketing</h1>
+      <p className="mt-2 max-w-2xl text-sm text-ink-2">
+        Los datos originales permanecen intactos y cada año se conserva además un cierre
+        consolidado.
+      </p>
 
       <div className="mt-8">
+        <ComparativoAnual reservas={reservasResult.data ?? []} cargando={reservasQuery.isLoading} />
         <PlanDeCompras />
         <CodigosDeDescuento />
       </div>
