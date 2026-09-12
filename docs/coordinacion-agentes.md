@@ -17,7 +17,42 @@ correcta de Claude confirmando la lectura de AGENTS.md y este registro.
 | Revisión inicial | Codex | Terminada | Lectura del código y comprobaciones locales; sin correcciones funcionales |
 | Contexto compartido | Codex | Preparado | AGENTS.md, enlace en CLAUDE.md y este registro |
 | Conexión con Claude Code | Codex y usuario | Verificada | Autenticación y consulta de lectura completadas |
-| Correcciones del diagnóstico | Sin asignar | Pendiente | No empezar correcciones sin acordar el alcance |
+| Corrección puntos 2 y 4 | Claude | Terminada (2026-09-12) | Ver "Correcciones aplicadas" abajo |
+| Corrección puntos 1, 3 y 5 | Sin asignar | Pendiente | El usuario no ha pedido priorizarlos todavía |
+
+## Correcciones aplicadas (Claude, 2026-09-12)
+
+El usuario pidió priorizar los puntos 2 y 4 de los hallazgos de abajo.
+Archivos tocados: `supabase/migrations/0012_restringir_insercion_solicitudes.sql`,
+`supabase/migrations/0013_resincronizar_tareas_operacion.sql`,
+`apps/intranet/src/app/(app)/operacion/page.tsx`. Ambas migraciones ya se
+aplicaron a la base real vía `DATABASE_URL`.
+
+- **Punto 2** — la policy `publico_crea_solicitud` pasó de `with check (true)`
+  a `with check (estado = 'pendiente' and reserva_id is null)`. Comprobado con
+  la anon key real: un insert forzando `estado: 'aprobada'` ahora devuelve 401
+  (RLS), y un insert con la forma exacta que manda el formulario público
+  (sin `estado` ni `reserva_id`) sigue devolviendo 201 sin cambios.
+- **Punto 4a** (tareas no resincronizan fechas) — el trigger
+  `crear_tareas_operacion` ahora también dispara en
+  `update of entrada, salida` (antes solo `update of estado`), y el insert
+  pasó de `on conflict do nothing` a `on conflict ... do update set fecha =
+  excluded.fecha`. Comprobado dentro de una transacción con `ROLLBACK`
+  (correr las fechas de una reserva real +5 días y confirmar que sus 3
+  tareas se movieron igual, sin dejar el cambio aplicado de verdad).
+- **Punto 4b** (Operación no excluía canceladas) — `operacion/page.tsx` ahora
+  trae `reservas.estado` en el embed y una reserva cancelada se archiva en
+  Historial igual que una completada (`grupoCancelado()`), con una etiqueta
+  "· Cancelada" visible. No se pudo probar contra un dato real cancelado hoy
+  (ninguna de las 11 reservas `cancelada` reales tiene tareas todavía, y el
+  modo automático de Claude bloqueó cambiar el estado de una reserva real
+  como prueba temporal — correctamente, un fallo a mitad de la prueba habría
+  dejado una reserva real marcada cancelada por error). Se verificó la lógica
+  de filtrado exacta con datos sintéticos en una prueba aislada, sin tocar la
+  base real.
+
+`pnpm build`/`pnpm lint` pasan en `apps/intranet` después de estos cambios.
+No se tocaron los puntos 1, 3 ni 5 — siguen abiertos, sin asignar.
 
 ## Hallazgos para contrastar
 

@@ -22,6 +22,7 @@ interface TareaConReserva {
     entrada: string;
     salida: string;
     recibido: number;
+    estado: "pendiente" | "confirmada" | "completada" | "cancelada";
   } | null;
 }
 
@@ -206,6 +207,16 @@ function grupoCompleto(grupo: TareaConReserva[]) {
   return grupo.every((t) => t.estado === "completada");
 }
 
+// Hallazgo de Codex (docs/coordinacion-agentes.md, punto 4, 2026-09-12):
+// esta pantalla no excluía reservas canceladas por su estado. Una reserva
+// cancelada nunca llega a "completada" en sus 3 tareas — nadie hace el
+// turnover de una estadía que no va a pasar — así que sin este chequeo se
+// quedaría en Vigentes para siempre. Se trata igual que una reserva
+// completa: no necesita más atención, pasa a Historial.
+function grupoCancelado(grupo: TareaConReserva[]) {
+  return grupo[0]?.reservas?.estado === "cancelada";
+}
+
 function GrupoReserva({
   tareasReserva,
   abierta,
@@ -222,6 +233,7 @@ function GrupoReserva({
   const reserva = tareasReserva[0].reservas;
   const listas = tareasReserva.filter((t) => t.estado === "completada").length;
   const conNovedadEnReserva = tareasReserva.some((t) => t.estado === "con_novedad");
+  const cancelada = reserva?.estado === "cancelada";
 
   return (
     <div
@@ -236,6 +248,7 @@ function GrupoReserva({
             {reserva?.canal}
             {reserva?.codigo_externo ? ` · ${reserva.codigo_externo}` : ""} · {reserva?.entrada} →{" "}
             {reserva?.salida}
+            {cancelada && <span className="ml-1 font-semibold text-caoba normal-case">· Cancelada</span>}
           </p>
         </div>
         <span className="text-sm font-medium tabular-nums text-ink-2">
@@ -289,7 +302,7 @@ export default function OperacionPage() {
   // meta.select directo a .select() de supabase-js).
   const { result, tableQuery } = useTable<TareaConReserva>({
     resource: "tareas_operacion",
-    meta: { select: "*, reservas(huesped_nombre, canal, codigo_externo, entrada, salida, recibido)" },
+    meta: { select: "*, reservas(huesped_nombre, canal, codigo_externo, entrada, salida, recibido, estado)" },
     sorters: { initial: [{ field: "fecha", order: "asc" }] },
     pagination: { pageSize: 300 },
   });
@@ -312,16 +325,17 @@ export default function OperacionPage() {
   const desde = sumarDias(hoy, -3);
   const gruposVigentes = todosLosGrupos.filter((g) => {
     const salida = g[0].reservas?.salida ?? "9999-99-99";
-    return salida >= desde && !grupoCompleto(g);
+    return salida >= desde && !grupoCompleto(g) && !grupoCancelado(g);
   });
 
   // Historial: reservas ya completamente cerradas (las 3 tareas en
-  // "completada"), sin el límite de 3 días — así queda de verdad
-  // archivado, no solo oculto un par de días y perdido después. Viene
-  // del mismo fetch (@refinedev/core ya trae hasta 300 tareas, más que
-  // suficiente hoy), ordenado por salida más reciente primero.
+  // "completada") o canceladas (no necesitan turnover), sin el límite de
+  // 3 días — así queda de verdad archivado, no solo oculto un par de días
+  // y perdido después. Viene del mismo fetch (@refinedev/core ya trae
+  // hasta 300 tareas, más que suficiente hoy), ordenado por salida más
+  // reciente primero.
   const gruposHistorial = todosLosGrupos
-    .filter((g) => grupoCompleto(g))
+    .filter((g) => grupoCompleto(g) || grupoCancelado(g))
     .sort((a, b) => (b[0].reservas?.salida ?? "").localeCompare(a[0].reservas?.salida ?? ""));
 
   const tareasVigentes = gruposVigentes.flat();
