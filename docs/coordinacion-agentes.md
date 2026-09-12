@@ -18,7 +18,9 @@ correcta de Claude confirmando la lectura de AGENTS.md y este registro.
 | Contexto compartido | Codex | Preparado | AGENTS.md, enlace en CLAUDE.md y este registro |
 | Conexión con Claude Code | Codex y usuario | Verificada | Autenticación y consulta de lectura completadas |
 | Corrección puntos 2 y 4 | Claude | Terminada (2026-09-12) | Ver "Correcciones aplicadas" abajo |
-| Corrección puntos 1, 3 y 5 | Sin asignar | Pendiente | El usuario no ha pedido priorizarlos todavía |
+| Auditoría posterior a 44b0c28 | Codex | Terminada | Correcciones 2 y 4 coherentes; 1, 3 y 5 abiertos. Evidencia y límites en docs/auditoria-2026-09-12.md; sin cambios funcionales |
+| Backfill tareas desalineadas + punto 3 | Claude | Terminada (2026-09-12) | El usuario pidió ambos tras revisar la auditoría. Ver "Correcciones aplicadas" abajo |
+| Corrección puntos 1 y 5 | Sin asignar | Pendiente | El usuario no ha pedido priorizarlos todavía |
 
 ## Correcciones aplicadas (Claude, 2026-09-12)
 
@@ -52,7 +54,35 @@ aplicaron a la base real vía `DATABASE_URL`.
   base real.
 
 `pnpm build`/`pnpm lint` pasan en `apps/intranet` después de estos cambios.
-No se tocaron los puntos 1, 3 ni 5 — siguen abiertos, sin asignar.
+
+## Correcciones aplicadas (Claude, 2026-09-12, tras la auditoría de Codex)
+
+El usuario pidió, después de leer `docs/auditoria-2026-09-12.md`: reparar las
+tareas desalineadas encontradas y priorizar el punto 3. Archivos tocados:
+`supabase/migrations/0014_backfill_tareas_desalineadas.sql`,
+`apps/intranet/src/app/(app)/operacion/page.tsx`. La migración ya se aplicó
+a la base real vía `DATABASE_URL`.
+
+- **Backfill** — la auditoría señaló que 0013 no repara filas ya
+  desalineadas de antes. Comprobado por consulta directa: 12 filas reales
+  desalineadas, todas de las reservas "Ambar Sanchez" (0010 corrigió sus
+  fechas antes de que existiera el trigger de resync). 0014 las corrige con
+  el mismo mapeo de 0009. Confirmado: 0 filas desalineadas después.
+- **Punto 3** (paginación de Operación) — la auditoría lo reprodujo con
+  datos sintéticos (100 reservas viejas completadas + 1 futura pendiente →
+  el corte de 300 filas ordenadas ascendente devolvía 0 vigentes, no 1).
+  Se separó en dos `useTable`: "recientes" (`reservas.salida >= desde`,
+  filtrado en servidor vía `reservas!inner(...)` en el embed, sin límite de
+  filas) alimenta Vigentes; "archivadas" (`reservas.salida < desde`,
+  ordenado por salida descendente, `pageSize: 500`) alimenta la mitad vieja
+  de Historial. Confirmado en vivo que Postgres/PostgREST sí filtra la fila
+  externa por una columna de la relación embebida (no solo el contenido
+  anidado). Verificado que Vigentes/Historial renderizan igual que antes
+  del cambio (mismas 10 reservas activas, mismo "Tonisha Allen" en
+  Historial) — sin regresión.
+
+`pnpm build`/`pnpm lint` pasan en `apps/intranet` después de estos cambios.
+No se tocaron los puntos 1 ni 5 — siguen abiertos, sin asignar.
 
 ## Hallazgos para contrastar
 

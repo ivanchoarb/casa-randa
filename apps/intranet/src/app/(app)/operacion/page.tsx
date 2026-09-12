@@ -295,48 +295,82 @@ function GrupoReserva({
   );
 }
 
+const RESERVA_EMBED = "huesped_nombre, canal, codigo_externo, entrada, salida, recibido, estado";
+
 export default function OperacionPage() {
   // Tercer módulo conectado a datos reales — ver docs/arquitectura-migracion.md,
   // Fase 3. meta.select usa el embed de PostgREST para traer la reserva
   // de cada tarea en la misma consulta (@refinedev/supabase pasa
   // meta.select directo a .select() de supabase-js).
-  const { result, tableQuery } = useTable<TareaConReserva>({
+  //
+  // 2026-09-12: hallazgo de la auditoría de Codex (docs/auditoria-2026-09-12.md,
+  // punto 3), reproducido con datos sintéticos: una sola consulta ordenada
+  // por fecha ascendente con un límite de 300 filas corta las tareas MÁS
+  // NUEVAS, no las viejas — con suficientes reservas históricas, una
+  // reserva futura recién creada podía no aparecer nunca en Vigentes.
+  // Se separa en dos consultas, cada una filtrada en el servidor (no en
+  // el cliente) por `reservas.salida` vía el embed `reservas!inner(...)`
+  // (confirmado que Supabase/PostgREST sí filtra la fila externa por una
+  // columna de la relación embebida, no solo lo que se muestra):
+  //
+  // - "recientes": reservas.salida >= desde, sin límite de filas — este
+  //   conjunto está acotado por diseño (cuántas reservas recientes o
+  //   futuras puede tener una casa de 6 habitaciones), así que no hace
+  //   falta paginar.
+  // - "archivadas": reservas.salida < desde, ordenado por salida
+  //   descendente con un límite generoso — si algún día se supera, se
+  //   pierden las entradas más ANTIGUAS del historial, no las más
+  //   recientes, que es el error contrario (y mucho menos dañino) al que
+  //   tenía la consulta única.
+  const hoy = hoyISO();
+  const desde = sumarDias(hoy, -3);
+
+  const { result: recientesResult, tableQuery: recientesQuery } = useTable<TareaConReserva>({
     resource: "tareas_operacion",
-    meta: { select: "*, reservas(huesped_nombre, canal, codigo_externo, entrada, salida, recibido, estado)" },
+    meta: { select: `*, reservas!inner(${RESERVA_EMBED})` },
     sorters: { initial: [{ field: "fecha", order: "asc" }] },
-    pagination: { pageSize: 300 },
+    filters: { initial: [{ field: "reservas.salida", operator: "gte", value: desde }] },
+    pagination: { mode: "off" },
   });
+  const { result: archivadasResult, tableQuery: archivadasQuery } = useTable<TareaConReserva>({
+    resource: "tareas_operacion",
+    meta: { select: `*, reservas!inner(${RESERVA_EMBED})` },
+    sorters: { initial: [{ field: "reservas.salida", order: "desc" }] },
+    filters: { initial: [{ field: "reservas.salida", operator: "lt", value: desde }] },
+    pagination: { pageSize: 500 },
+  });
+  const tableQuery = recientesQuery;
 
   const [reservaAbierta, setReservaAbierta] = useState<string | null>(null);
   const [tareaAbierta, setTareaAbierta] = useState<string | null>(null);
   const [historialAbierto, setHistorialAbierto] = useState(false);
-
-  const hoy = hoyISO();
-  const todosLosGrupos = agruparPorReserva(result.data ?? []);
 
   // Vigentes: la estadía todavía no terminó o terminó hace poco (margen
   // para la limpieza de salida, igual al recorte que ya se ve en
   // staging.randahome.com/intranet/operacion/, comparado en vivo el
   // 2026-09-11: mismas 11 reservas, mismas 33 tareas), Y — 2026-09-12,
   // a pedido de Ivan — que todavía le falte al menos una tarea por
-  // terminar. En cuanto las 3 tareas de una reserva quedan en
-  // "completada" desaparece de aquí arriba y pasa a Historial, sin
-  // esperar a que se cumplan los 3 días de margen.
-  const desde = sumarDias(hoy, -3);
-  const gruposVigentes = todosLosGrupos.filter((g) => {
-    const salida = g[0].reservas?.salida ?? "9999-99-99";
-    return salida >= desde && !grupoCompleto(g) && !grupoCancelado(g);
-  });
+  // terminar y que la reserva no esté cancelada. En cuanto las 3 tareas
+  // de una reserva quedan en "completada" (o la reserva se cancela)
+  // desaparece de aquí arriba y pasa a Historial, sin esperar a que se
+  // cumplan los 3 días de margen.
+  const gruposRecientes = agruparPorReserva(recientesResult.data ?? []);
+  const gruposVigentes = gruposRecientes.filter((g) => !grupoCompleto(g) && !grupoCancelado(g));
 
   // Historial: reservas ya completamente cerradas (las 3 tareas en
-  // "completada") o canceladas (no necesitan turnover), sin el límite de
-  // 3 días — así queda de verdad archivado, no solo oculto un par de días
-  // y perdido después. Viene del mismo fetch (@refinedev/core ya trae
-  // hasta 300 tareas, más que suficiente hoy), ordenado por salida más
-  // reciente primero.
-  const gruposHistorial = todosLosGrupos
-    .filter((g) => grupoCompleto(g) || grupoCancelado(g))
-    .sort((a, b) => (b[0].reservas?.salida ?? "").localeCompare(a[0].reservas?.salida ?? ""));
+  // "completada") o canceladas (no necesitan turnover) — las recientes
+  // vienen de la misma consulta de arriba (ya filtrada, no hace falta
+  // repetirla), las más viejas de la consulta de archivadas, sin el
+  // límite de 3 días — así queda de verdad archivado, no solo oculto un
+  // par de días y perdido después. Ordenado por salida más reciente
+  // primero.
+  const gruposHistorialReciente = gruposRecientes.filter((g) => grupoCompleto(g) || grupoCancelado(g));
+  const gruposArchivados = agruparPorReserva(archivadasResult.data ?? []).filter(
+    (g) => grupoCompleto(g) || grupoCancelado(g),
+  );
+  const gruposHistorial = [...gruposHistorialReciente, ...gruposArchivados].sort(
+    (a, b) => (b[0].reservas?.salida ?? "").localeCompare(a[0].reservas?.salida ?? ""),
+  );
 
   const tareasVigentes = gruposVigentes.flat();
   const paraHoy = tareasVigentes.filter((t) => t.fecha === hoy).length;
@@ -406,7 +440,7 @@ export default function OperacionPage() {
         })}
       </div>
 
-      {!tableQuery.isLoading && !tableQuery.isError && gruposHistorial.length > 0 && (
+      {!tableQuery.isLoading && !tableQuery.isError && !archivadasQuery.isLoading && gruposHistorial.length > 0 && (
         <div className="mt-8">
           <button
             type="button"
