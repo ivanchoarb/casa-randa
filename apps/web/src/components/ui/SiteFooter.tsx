@@ -6,10 +6,13 @@ import { Reveal } from "@/components/ui/Reveal";
 // No production subdomain is decided yet for apps/intranet (see
 // docs/arquitectura-migracion.md) — set NEXT_PUBLIC_INTRANET_URL once one
 // is, this falls back to the eventual randahome.com subdomain in the
-// meantime and to the local dev app's own port while developing.
+// meantime and to the local dev app's own port while developing. Port
+// 3002, not 3001 — that's what apps/intranet actually runs on in dev
+// (see .claude/launch.json's "intranet-dev" entry), 3001 was never
+// where it ran.
 const INTRANET_URL =
   process.env.NEXT_PUBLIC_INTRANET_URL ||
-  (process.env.NODE_ENV === "development" ? "http://localhost:3001" : "https://intranet.randahome.com");
+  (process.env.NODE_ENV === "development" ? "http://localhost:3002" : "https://intranet.randahome.com");
 
 export function SiteFooter() {
   const { lang } = useLanguage();
