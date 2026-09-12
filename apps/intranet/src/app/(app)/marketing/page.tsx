@@ -365,13 +365,13 @@ export default function MarketingPage() {
       Apellido: c.apellido ?? "",
       Correo: c.email,
       Teléfono: c.telefono ?? "",
-      País: c.pais ?? "",
+      "Lugar de origen": c.pais ?? "",
       Ciudad: c.ciudad ?? "",
       Idioma: idiomaSugerido(c.pais) ? IDIOMA_LABEL[idiomaSugerido(c.pais) as "es" | "en"] : "",
-      Origen: c.fuente,
-      "Llegada (arrival)": c.entrada ?? "",
-      "Salida (departure)": c.salida ?? "",
+      Llegada: c.entrada ?? "",
+      Salida: c.salida ?? "",
       Estado: c.estado ? ESTADO_LABEL[c.estado] : "",
+      Fuente: c.fuente,
       "Registrado el": c.created_at.slice(0, 10),
     }));
     const wb = XLSX.utils.book_new();
@@ -481,11 +481,15 @@ export default function MarketingPage() {
                 <thead>
                   <tr className="border-b border-line">
                     <th className="p-4">Nombre</th>
-                    <th className="p-4">Contacto</th>
-                    <th className="p-4">Origen</th>
+                    <th className="p-4">Apellido</th>
+                    <th className="p-4">Correo</th>
+                    <th className="p-4">Teléfono</th>
+                    <th className="p-4">Lugar de origen</th>
                     <th className="p-4">Idioma</th>
-                    <th className="p-4">Fechas</th>
+                    <th className="p-4">Llegada</th>
+                    <th className="p-4">Salida</th>
                     <th className="p-4">Estado</th>
+                    <th className="p-4">Fuente</th>
                     <th className="p-4">Registrado</th>
                     <th className="p-4">Acciones</th>
                   </tr>
@@ -493,24 +497,18 @@ export default function MarketingPage() {
                 <tbody>
                   {filtrados.map((c) => (
                     <tr key={c.id} className="border-b border-line last:border-0">
-                      <td className="p-4 font-medium">
-                        {c.nombre}
-                        {c.apellido ? ` ${c.apellido}` : ""}
-                      </td>
-                      <td className="p-4">
-                        <p>{c.email}</p>
-                        {c.telefono && <p className="text-xs text-ink-2">{c.telefono}</p>}
-                      </td>
+                      <td className="p-4 font-medium">{c.nombre}</td>
+                      <td className="p-4">{c.apellido || "—"}</td>
+                      <td className="p-4">{c.email}</td>
+                      <td className="p-4">{c.telefono || "—"}</td>
                       <td className="p-4 text-xs text-ink-2">
-                        {c.fuente}
-                        {[c.ciudad, c.pais].filter(Boolean).length > 0
-                          ? ` · ${[c.ciudad, c.pais].filter(Boolean).join(", ")}`
-                          : ""}
+                        {[c.pais, c.ciudad].filter(Boolean).join(", ") || "—"}
                       </td>
                       <td className="p-4 text-xs text-ink-2">
                         {idiomaSugerido(c.pais) ? IDIOMA_LABEL[idiomaSugerido(c.pais) as "es" | "en"] : "—"}
                       </td>
-                      <td className="p-4 text-xs">{c.entrada && c.salida ? `${c.entrada} → ${c.salida}` : "—"}</td>
+                      <td className="p-4 text-xs">{c.entrada || "—"}</td>
+                      <td className="p-4 text-xs">{c.salida || "—"}</td>
                       <td className="p-4">
                         {c.estado ? (
                           <span
@@ -528,6 +526,7 @@ export default function MarketingPage() {
                           <span className="text-xs text-ink-2">—</span>
                         )}
                       </td>
+                      <td className="p-4 text-xs text-ink-2">{c.fuente}</td>
                       <td className="p-4 text-xs text-ink-2">{c.created_at.slice(0, 10)}</td>
                       <td className="p-4">
                         <div className="flex gap-3">
