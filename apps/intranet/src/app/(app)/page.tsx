@@ -1,6 +1,7 @@
 "use client";
 
 import { useTable } from "@refinedev/core";
+import { useMemo, useState } from "react";
 import { usePermisos } from "@/lib/use-permisos";
 import Link from "next/link";
 import { descargarLiquidacionMarquelda } from "@/lib/liquidacion";
@@ -37,6 +38,99 @@ const capitalizar = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const money = (n: number) =>
   `$${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Entrada/estado nunca se enmascaran en reservas_acceso para quien tiene el
+// permiso "reservas" (Empleado y Host lo tienen por defecto) — a diferencia
+// de las cifras financieras de las tarjetas de arriba, este gráfico no
+// necesita "finanzas_propietario" para funcionar.
+function ActividadMensual({ reservas, anioActual }: { reservas: Reserva[]; anioActual: number }) {
+  const activas = useMemo(
+    () => reservas.filter((r) => r.estado === "confirmada" || r.estado === "completada"),
+    [reservas],
+  );
+  const anios = useMemo(() => {
+    const set = new Set(activas.map((r) => Number(r.entrada.slice(0, 4))));
+    set.add(anioActual);
+    return Array.from(set).sort((a, b) => b - a);
+  }, [activas, anioActual]);
+
+  const [anioElegido, setAnioElegido] = useState(anioActual);
+  const anioActivo = anios.includes(anioElegido) ? anioElegido : anios[0];
+
+  const delAnio = activas.filter((r) => Number(r.entrada.slice(0, 4)) === anioActivo);
+  const porMes = MESES.map((_, i) => delAnio.filter((r) => Number(r.entrada.slice(5, 7)) - 1 === i).length);
+  const maxMes = Math.max(0, ...porMes);
+  const hayDatos = maxMes > 0;
+  const indiceMax = hayDatos ? porMes.indexOf(maxMes) : -1;
+  const indiceMin = hayDatos ? porMes.indexOf(Math.min(...porMes)) : -1;
+
+  return (
+    <div className="mt-6 rounded-xl border border-line bg-panel p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium tracking-wide text-ink-2 uppercase">Meses más activos</p>
+          <p className="mt-1 text-xs text-ink-2">Reservas por mes de entrada — temporada alta y baja</p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {anios.map((a) => (
+            <button
+              key={a}
+              type="button"
+              onClick={() => setAnioElegido(a)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                a === anioActivo ? "bg-caoba text-panel" : "border border-line text-ink-2"
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {!hayDatos ? (
+        <p className="mt-4 text-sm text-ink-2">Sin reservas confirmadas en {anioActivo}.</p>
+      ) : (
+        <>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-lg bg-panel-2 px-3 py-2">
+              <p className="text-xs text-ink-2">Mes más activo</p>
+              <p className="text-sm font-semibold">
+                {capitalizar(MESES[indiceMax])} · {porMes[indiceMax]}{" "}
+                {porMes[indiceMax] === 1 ? "reserva" : "reservas"}
+              </p>
+            </div>
+            <div className="rounded-lg bg-panel-2 px-3 py-2">
+              <p className="text-xs text-ink-2">Mes más flojo</p>
+              <p className="text-sm font-semibold">
+                {capitalizar(MESES[indiceMin])} · {porMes[indiceMin]}{" "}
+                {porMes[indiceMin] === 1 ? "reserva" : "reservas"}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            {MESES.map((m, i) => (
+              <div key={m} className="flex items-center gap-3">
+                <span className="w-8 text-xs text-ink-2">{capitalizar(m.slice(0, 3))}</span>
+                <div className="h-2 flex-1 rounded-full bg-panel-2">
+                  <div
+                    className={`h-2 rounded-full ${
+                      i === indiceMax ? "bg-caoba" : i === indiceMin ? "bg-lamp" : "bg-good"
+                    }`}
+                    style={{ width: `${(porMes[i] / maxMes) * 100}%` }}
+                  />
+                </div>
+                <span className="w-16 text-right text-xs text-ink-2 tabular-nums">
+                  {porMes[i]} res.
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function InicioPage() {
   const { can } = usePermisos();
@@ -160,6 +254,8 @@ export default function InicioPage() {
           </div>}
         </div>
       )}
+
+      {!tableQuery.isError && can("reservas") && <ActividadMensual reservas={reservas} anioActual={anio} />}
     </div>
   );
 }
