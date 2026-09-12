@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabaseClient } from "@/lib/supabase-client";
 import {
   acortarUrl,
@@ -28,9 +28,13 @@ function sumarDias(iso: string, dias: number) {
 
 // Formulario, cálculo y PDF verificados descargando una cotización real
 // desde staging.randahome.com/intranet/cotizaciones/ el 2026-09-12 — los
-// valores por defecto de abajo (tarifa 550, limpieza 60, impuestos 10%,
-// anticipo 30%, validez 3 días) son los mismos que trae ese formulario al
-// abrirlo, no inventados.
+// valores por defecto de abajo (limpieza 60, impuestos 10%, anticipo 30%,
+// validez 3 días) son los mismos que trae ese formulario al abrirlo, no
+// inventados. La tarifa por noche es distinta: staging siempre trae 550 fijo,
+// pero Ivan pidió que reflejara el precio real de PriceLabs — 2026-09-12, ver
+// el efecto de sincronización más abajo. 550 solo sobrevive como el valor
+// inicial antes de la primera sincronización, o si PriceLabs no tiene
+// tarifa para las fechas elegidas.
 export default function CotizacionesPage() {
   const [clienteNombre, setClienteNombre] = useState("");
   const [huespedes, setHuespedes] = useState("2");
@@ -69,6 +73,38 @@ export default function CotizacionesPage() {
     });
   }
   const [tarifaNoche, setTarifaNoche] = useState("550");
+  const [tarifaPriceLabs, setTarifaPriceLabs] = useState<{ promedio: number; noches: number } | null>(null);
+
+  // Se sincroniza con la tarifa real de PriceLabs cada vez que cambian las
+  // fechas — reemplaza el valor de la tarifa, igual que "Salida" ya se
+  // recalcula al cambiar "Entrada" más arriba. Sigue siendo editable a mano
+  // después: esto solo evita que la cotización arranque con un 550 fijo que
+  // no tiene relación con el precio real de esas fechas (queja de Ivan,
+  // 2026-09-12). tarifas_diarias es de lectura pública (`publico_lee_tarifas`
+  // en 0006_rls.sql), no hace falta el cliente admin.
+  useEffect(() => {
+    if (!entrada || !salida || salida <= entrada) return;
+    let cancelado = false;
+    void supabaseClient
+      .from("tarifas_diarias")
+      .select("tarifa")
+      .gte("fecha", entrada)
+      .lt("fecha", salida)
+      .then(({ data, error }) => {
+        if (cancelado) return;
+        if (error || !data || data.length === 0) {
+          setTarifaPriceLabs(null);
+          return;
+        }
+        const promedio = data.reduce((suma, fila) => suma + Number(fila.tarifa), 0) / data.length;
+        setTarifaPriceLabs({ promedio, noches: data.length });
+        setTarifaNoche(promedio.toFixed(2));
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [entrada, salida]);
+
   const [limpieza, setLimpieza] = useState("60");
   const [otrosCargos, setOtrosCargos] = useState("0");
   const [descuentoPct, setDescuentoPct] = useState("0");
@@ -280,6 +316,22 @@ export default function CotizacionesPage() {
                 onChange={(e) => setTarifaNoche(e.target.value)}
                 className={`${inputClass} mt-1 block w-full`}
               />
+              {salida > entrada && tarifaPriceLabs && Math.abs(Number(tarifaNoche) - tarifaPriceLabs.promedio) < 0.01 && (
+                <span className="mt-1 block text-xs text-good">
+                  Sincronizado con PriceLabs — promedio real de {tarifaPriceLabs.noches}{" "}
+                  {tarifaPriceLabs.noches === 1 ? "noche" : "noches"}.
+                </span>
+              )}
+              {salida > entrada && tarifaPriceLabs && Math.abs(Number(tarifaNoche) - tarifaPriceLabs.promedio) >= 0.01 && (
+                <span className="mt-1 block text-xs text-lamp">
+                  Ajustada a mano — PriceLabs sugiere {money(tarifaPriceLabs.promedio)}/noche para estas fechas.
+                </span>
+              )}
+              {salida > entrada && !tarifaPriceLabs && (
+                <span className="mt-1 block text-xs text-ink-2">
+                  Sin tarifa de PriceLabs sincronizada para estas fechas — usando el valor manual.
+                </span>
+              )}
             </label>
             <label className="text-xs text-ink-2">
               Limpieza (USD)
