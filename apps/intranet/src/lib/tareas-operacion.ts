@@ -4,28 +4,19 @@ type TipoTarea = "preparacion" | "turnover" | "limpieza_salida";
 
 /**
  * "Se genera sola a partir de la Reserva" (docs/logica-negocio-y-flujos.md)
- * — no hay una forma verificada de saber la regla exacta del sistema
- * WordPress real (no hay acceso al código PHP), así que esto es una
- * interpretación razonable, no una réplica exacta: preparación el día
- * antes de la llegada, turnover el día de la llegada, limpieza de salida
- * el día de la salida. Idealmente esto sería un trigger de Postgres (ver
- * supabase/migrations/0007_tareas_operacion_trigger.sql, escrito pero NO
- * aplicado — no hay acceso de DDL directo a la base desde aquí, solo a la
- * REST API). Mientras tanto se llama a mano desde los puntos donde una
- * reserva pasa a confirmada/completada (el import de CSV) y desde un
- * backfill de una sola vez para las reservas que ya existían.
+ * — fechas verificadas el 2026-09-11 haciendo clic tarea por tarea en
+ * staging.randahome.com/intranet/operacion/: Preparar llegada cae el día
+ * de entrada, Check-out y Limpieza caen los dos el día de salida (no uno
+ * después del otro). Ahora hay un trigger de Postgres real que hace esto
+ * mismo (supabase/migrations/0007_tareas_operacion_trigger.sql +
+ * 0009_fix_tareas_operacion_fechas.sql, aplicados el 2026-09-11) — esta
+ * función queda como respaldo idempotente para cuando el import de CSV
+ * corre contra un entorno sin el trigger aplicado.
  */
-function sumarDias(fechaISO: string, dias: number): string {
-  const d = new Date(`${fechaISO}T00:00:00`);
-  d.setDate(d.getDate() + dias);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
 function tareasParaReserva(reservaId: string, entrada: string, salida: string) {
   const tipos: { tipo: TipoTarea; fecha: string }[] = [
-    { tipo: "preparacion", fecha: sumarDias(entrada, -1) },
-    { tipo: "turnover", fecha: entrada },
+    { tipo: "preparacion", fecha: entrada },
+    { tipo: "turnover", fecha: salida },
     { tipo: "limpieza_salida", fecha: salida },
   ];
   return tipos.map((t) => ({ reserva_id: reservaId, tipo: t.tipo, fecha: t.fecha }));
