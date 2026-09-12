@@ -12,6 +12,16 @@ correcta de Claude confirmando la lectura de AGENTS.md y este registro.
 
 ## Estado del trabajo
 
+Codex: CRUD de usuarios implementado con roles existentes, API restringida a
+administradores y confirmación de eliminación. Alcance: usuarios/page.tsx,
+api/usuarios, lib/usuarios-api.ts, pruebas y ajuste min-width del AppShell.
+Se preservaron los cambios de Operación pendientes. Ver docs/gestion-usuarios.md.
+
+Codex: corrección del historial de Operación implementada (orden por reserva,
+paginación de grupos completos y errores de carga), autorizada por el usuario.
+Archivos: página de Operación, test de regresión, script test de intranet y
+documentación de auditoría/coordinación. No requiere migraciones SQL.
+
 | Tarea | Responsable | Estado | Alcance |
 | --- | --- | --- | --- |
 | Revisión inicial | Codex | Terminada | Lectura del código y comprobaciones locales; sin correcciones funcionales |
@@ -21,6 +31,7 @@ correcta de Claude confirmando la lectura de AGENTS.md y este registro.
 | Auditoría posterior a 44b0c28 | Codex | Terminada | Correcciones 2 y 4 coherentes; 1, 3 y 5 abiertos. Evidencia y límites en docs/auditoria-2026-09-12.md; sin cambios funcionales |
 | Backfill tareas desalineadas + punto 3 | Claude | Terminada (2026-09-12) | El usuario pidió ambos tras revisar la auditoría. Ver "Correcciones aplicadas" abajo |
 | Corrección puntos 1 y 5 | Sin asignar | Pendiente | El usuario no ha pedido priorizarlos todavía |
+| Auditoría posterior a ea2ddf5 | Codex | Terminada | Consulta de vigentes y backfill revisados; nuevo P2 en orden/paginación de Historial. Ver segunda revisión en docs/auditoria-2026-09-12.md |
 
 ## Correcciones aplicadas (Claude, 2026-09-12)
 

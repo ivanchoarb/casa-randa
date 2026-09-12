@@ -1,100 +1,87 @@
 "use client";
 
-import { useGetIdentity, useTable, useUpdate } from "@refinedev/core";
+import { useGetIdentity, useTable } from "@refinedev/core";
+import { useState, type FormEvent } from "react";
+import { supabaseClient } from "@/lib/supabase-client";
 
 type Rol = "administrador" | "dueño" | "empleado";
-
-interface Perfil {
-  id: string;
-  nombre: string;
-  email: string;
-  rol: Rol;
-  created_at: string;
-}
-
+interface Perfil { id: string; nombre: string; email: string; rol: Rol }
 const ROLES: Rol[] = ["administrador", "dueño", "empleado"];
+const input = "mt-1 w-full rounded-md border border-line bg-ground px-3 py-2";
+const button = "rounded-md border border-line px-3 py-2 text-sm disabled:opacity-50";
 
 export default function UsuariosPage() {
-  // Cuarto módulo conectado a datos reales. La tabla perfiles guarda el
-  // correo copiado de auth.users (ver supabase/migrations/0001_perfiles.sql)
-  // porque auth.users no se puede leer directo por PostgREST/RLS. RLS
-  // además limita esto solo: un no-administrador solo ve su propia fila
-  // (política "ver_propio_perfil"), así que esta pantalla se ve distinta
-  // según quién esté logueado — eso es intencional, no un bug.
-  const { data: identity } = useGetIdentity<{ rol?: Rol }>();
+  const { data: identity } = useGetIdentity<{ id: string; rol: Rol }>();
   const esAdmin = identity?.rol === "administrador";
-
-  const { result, tableQuery } = useTable<Perfil>({
-    resource: "perfiles",
-    sorters: { initial: [{ field: "nombre", order: "asc" }] },
-    pagination: { pageSize: 100 },
+  const { result, tableQuery, currentPage, setCurrentPage, pageCount } = useTable<Perfil>({
+    resource: "perfiles", sorters: { initial: [{ field: "nombre", order: "asc" }] }, pagination: { pageSize: 20 },
   });
+  const [editing, setEditing] = useState<Perfil | "nuevo" | null>(null);
+  const [deleting, setDeleting] = useState<Perfil | null>(null);
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [rol, setRol] = useState<Rol>("empleado");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
-  const { mutate: actualizar, mutation } = useUpdate<Perfil>();
-  const isPending = mutation.isPending;
+  function abrir(p: Perfil | "nuevo") {
+    setEditing(p); setDeleting(null); setError(""); setNotice(""); setPassword("");
+    setNombre(p === "nuevo" ? "" : p.nombre); setEmail(p === "nuevo" ? "" : p.email); setRol(p === "nuevo" ? "empleado" : p.rol);
+  }
+  async function ejecutar(method: string, body: object) {
+    setBusy(true); setError(""); setNotice("");
+    try {
+      const { data } = await supabaseClient.auth.getSession();
+      if (!data.session) throw new Error("Inicia sesión para continuar.");
+      const res = await fetch("/api/usuarios", { method, headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` }, body: JSON.stringify(body) });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "No se pudo completar la operación.");
+      setEditing(null); setDeleting(null); setPassword("");
+      setNotice(method === "DELETE" ? "Usuario eliminado." : method === "POST" ? "Usuario creado." : "Usuario actualizado.");
+      await tableQuery.refetch();
+    } catch (e) { setError(e instanceof Error ? e.message : "No se pudo completar la operación."); }
+    finally { setBusy(false); }
+  }
+  function guardar(e: FormEvent) {
+    e.preventDefault();
+    void ejecutar(editing === "nuevo" ? "POST" : "PATCH", { ...(editing && editing !== "nuevo" ? { id: editing.id } : { password }), nombre, email, rol });
+  }
 
   return (
     <div>
       <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Acceso</p>
-      <h1 className="mt-1 text-2xl font-bold">Usuarios y permisos</h1>
-      <p className="mt-2 max-w-2xl text-sm text-ink-2">
-        {esAdmin
-          ? "Como administrador ves y puedes cambiar el rol de todos los usuarios."
-          : "Solo ves tu propio perfil — cambiar roles es exclusivo del administrador (ver políticas RLS en supabase/migrations/0006_rls.sql)."}
-      </p>
-
-      {tableQuery.isError && (
-        <p className="mt-6 text-sm text-caoba">
-          No se pudo conectar a Supabase todavía — completa <code>.env.local</code> (ver{" "}
-          <code>supabase/README.md</code>).
-        </p>
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold">Usuarios y permisos</h1>
+        {esAdmin && <button className={button} disabled={busy} onClick={() => abrir("nuevo")}>Crear usuario</button>}
+      </div>
+      <p className="mt-2 text-sm text-ink-2">{esAdmin ? "Gestiona cuentas y asigna los roles de administrador, dueño o empleado." : "Consulta tu perfil. La gestión de usuarios está reservada a administradores."}</p>
+      {notice && <p role="status" className="mt-4 text-good">{notice}</p>}
+      {error && <p role="alert" className="mt-4 text-caoba">{error}</p>}
+      {esAdmin && editing && (
+        <form onSubmit={guardar} className="mt-6 space-y-4 rounded-xl border border-line bg-panel p-5">
+          <h2 className="font-semibold">{editing === "nuevo" ? "Crear usuario" : "Editar usuario"}</h2>
+          <fieldset disabled={busy} className="grid gap-4 sm:grid-cols-2">
+            <label className="text-sm">Nombre<input className={input} required maxLength={120} value={nombre} onChange={e => setNombre(e.target.value)} /></label>
+            <label className="text-sm">Correo<input className={input} type="email" required maxLength={254} value={email} onChange={e => setEmail(e.target.value)} /></label>
+            <label className="text-sm">Rol<select className={input} value={rol} disabled={editing !== "nuevo" && editing.id === identity?.id} onChange={e => setRol(e.target.value as Rol)}>{ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></label>
+            {editing === "nuevo" && <label className="text-sm">Contraseña inicial<input className={input} type="password" autoComplete="new-password" required minLength={12} maxLength={128} value={password} onChange={e => setPassword(e.target.value)} /><span className="text-xs text-ink-2">Mínimo 12 caracteres. La cuenta queda activa; no se envía correo automático.</span></label>}
+          </fieldset>
+          <div className="flex gap-2"><button type="submit" disabled={busy} className={button}>{busy ? "Guardando…" : "Guardar usuario"}</button><button type="button" disabled={busy} className={button} onClick={() => { setEditing(null); setPassword(""); setError(""); }}>Cancelar</button></div>
+        </form>
       )}
-
-      {!tableQuery.isLoading && !tableQuery.isError && result.data.length > 0 && (
-        <div className="mt-6 overflow-x-auto rounded-xl border border-line bg-panel">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-line text-xs tracking-wide text-ink-2 uppercase">
-                <th className="px-4 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 font-medium">Correo</th>
-                <th className="px-4 py-3 font-medium">Rol</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.data.map((p) => (
-                <tr key={p.id} className="border-b border-line last:border-0">
-                  <td className="px-4 py-3">{p.nombre}</td>
-                  <td className="px-4 py-3 text-ink-2">{p.email}</td>
-                  <td className="px-4 py-3">
-                    {esAdmin ? (
-                      <select
-                        value={p.rol}
-                        disabled={isPending}
-                        onChange={(e) =>
-                          actualizar({
-                            resource: "perfiles",
-                            id: p.id,
-                            values: { rol: e.target.value as Rol },
-                          })
-                        }
-                        className="rounded-md border border-line bg-ground px-2 py-1 text-sm capitalize"
-                      >
-                        {ROLES.map((r) => (
-                          <option key={r} value={r}>
-                            {r}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className="capitalize">{p.rol}</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {esAdmin && deleting && (
+        <section role="alertdialog" aria-labelledby="eliminar-titulo" aria-describedby="eliminar-texto" className="mt-6 rounded-xl border border-caoba bg-panel p-5">
+          <h2 id="eliminar-titulo" className="font-semibold">Eliminar usuario</h2>
+          <p id="eliminar-texto" className="mt-2 text-sm">Se eliminará la cuenta de {deleting.nombre} ({deleting.email}) y su perfil. Esta acción es permanente.</p>
+          <div className="mt-4 flex gap-2"><button disabled={busy} className={button} onClick={() => void ejecutar("DELETE", { id: deleting.id })}>{busy ? "Eliminando…" : "Confirmar eliminación"}</button><button disabled={busy} className={button} onClick={() => { setDeleting(null); setError(""); }}>Cancelar</button></div>
+        </section>
       )}
+      {tableQuery.isLoading && <p className="mt-6">Cargando usuarios…</p>}
+      {tableQuery.isError && <p role="alert" className="mt-6 text-caoba">No se pudieron cargar los usuarios. <button onClick={() => void tableQuery.refetch()} className="underline">Reintentar</button></p>}
+      {!tableQuery.isLoading && !tableQuery.isError && <div className="mt-6 overflow-x-auto rounded-xl border border-line bg-panel"><table className="w-full text-left text-sm"><thead><tr className="border-b border-line"><th className="p-4">Nombre</th><th className="p-4">Correo</th><th className="p-4">Rol</th>{esAdmin && <th className="p-4">Acciones</th>}</tr></thead><tbody>{result.data.map(p => <tr key={p.id} className="border-b border-line last:border-0"><td className="p-4">{p.nombre}</td><td className="p-4">{p.email}</td><td className="p-4 capitalize">{p.rol}</td>{esAdmin && <td className="p-4"><div className="flex gap-2"><button disabled={busy} className={button} onClick={() => abrir(p)}>Editar</button><button disabled={busy || p.id === identity?.id || p.rol === "administrador"} title={p.rol === "administrador" ? "Cambia primero el rol antes de eliminar" : undefined} className={button} onClick={() => { setDeleting(p); setEditing(null); setPassword(""); setError(""); setNotice(""); }}>Eliminar</button></div></td>}</tr>)}</tbody></table>{result.data.length === 0 && <p className="p-4">No hay usuarios en esta página.</p>}</div>}
+      <nav aria-label="Páginas de usuarios" className="mt-4 flex items-center justify-between"><button disabled={currentPage <= 1 || tableQuery.isFetching || busy} className={button} onClick={() => setCurrentPage(currentPage - 1)}>Anterior</button><span className="text-sm">Página {currentPage} de {Math.max(1, pageCount)}</span><button disabled={currentPage >= pageCount || tableQuery.isFetching || busy} className={button} onClick={() => setCurrentPage(currentPage + 1)}>Siguiente</button></nav>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useUpdate, useTable } from "@refinedev/core";
+import { useUpdate, useTable, useInvalidate } from "@refinedev/core";
 import { useState } from "react";
 
 type TipoTarea = "preparacion" | "turnover" | "limpieza_salida";
@@ -109,6 +109,7 @@ function agruparPorReserva(tareas: TareaConReserva[]) {
 
 function TareaPanel({ tarea }: { tarea: TareaConReserva }) {
   const { mutate: actualizar, mutation } = useUpdate<TareaConReserva>();
+  const invalidate = useInvalidate();
   const [estado, setEstado] = useState<EstadoTarea>(tarea.estado);
   const [responsable, setResponsable] = useState(tarea.responsable ?? "");
   const [checklist, setChecklist] = useState<Record<string, boolean>>(tarea.checklist ?? {});
@@ -126,7 +127,7 @@ function TareaPanel({ tarea }: { tarea: TareaConReserva }) {
         checklist,
         notas: notas || null,
       },
-    });
+    }, { onSuccess: () => { void invalidate({ resource: "reservas", invalidates: ["list"] }); } });
   }
 
   return (
@@ -295,33 +296,16 @@ function GrupoReserva({
   );
 }
 
+interface ReservaConTareas extends NonNullable<TareaConReserva["reservas"]> {
+  id: string;
+  tareas_operacion: Omit<TareaConReserva, "reservas">[];
+}
+
 const RESERVA_EMBED = "huesped_nombre, canal, codigo_externo, entrada, salida, recibido, estado";
 
 export default function OperacionPage() {
-  // Tercer módulo conectado a datos reales — ver docs/arquitectura-migracion.md,
-  // Fase 3. meta.select usa el embed de PostgREST para traer la reserva
-  // de cada tarea en la misma consulta (@refinedev/supabase pasa
-  // meta.select directo a .select() de supabase-js).
-  //
-  // 2026-09-12: hallazgo de la auditoría de Codex (docs/auditoria-2026-09-12.md,
-  // punto 3), reproducido con datos sintéticos: una sola consulta ordenada
-  // por fecha ascendente con un límite de 300 filas corta las tareas MÁS
-  // NUEVAS, no las viejas — con suficientes reservas históricas, una
-  // reserva futura recién creada podía no aparecer nunca en Vigentes.
-  // Se separa en dos consultas, cada una filtrada en el servidor (no en
-  // el cliente) por `reservas.salida` vía el embed `reservas!inner(...)`
-  // (confirmado que Supabase/PostgREST sí filtra la fila externa por una
-  // columna de la relación embebida, no solo lo que se muestra):
-  //
-  // - "recientes": reservas.salida >= desde, sin límite de filas — este
-  //   conjunto está acotado por diseño (cuántas reservas recientes o
-  //   futuras puede tener una casa de 6 habitaciones), así que no hace
-  //   falta paginar.
-  // - "archivadas": reservas.salida < desde, ordenado por salida
-  //   descendente con un límite generoso — si algún día se supera, se
-  //   pierden las entradas más ANTIGUAS del historial, no las más
-  //   recientes, que es el error contrario (y mucho menos dañino) al que
-  //   tenía la consulta única.
+  // Vigentes se filtra en servidor; el historial pagina reservas como raíz
+  // para ordenar antes del límite y obtener todas las tareas de cada grupo.
   const hoy = hoyISO();
   const desde = sumarDias(hoy, -3);
 
@@ -332,12 +316,16 @@ export default function OperacionPage() {
     filters: { initial: [{ field: "reservas.salida", operator: "gte", value: desde }] },
     pagination: { mode: "off" },
   });
-  const { result: archivadasResult, tableQuery: archivadasQuery } = useTable<TareaConReserva>({
-    resource: "tareas_operacion",
-    meta: { select: `*, reservas!inner(${RESERVA_EMBED})` },
-    sorters: { initial: [{ field: "reservas.salida", order: "desc" }] },
-    filters: { initial: [{ field: "reservas.salida", operator: "lt", value: desde }] },
-    pagination: { pageSize: 500 },
+  const {
+    result: archivadasResult, tableQuery: archivadasQuery,
+    currentPage, setCurrentPage, pageCount,
+  } = useTable<ReservaConTareas>({
+    resource: "reservas",
+    meta: { select: `id, ${RESERVA_EMBED}, tareas_operacion!inner(*)` },
+    sorters: { permanent: [{ field: "salida", order: "desc" }, { field: "id", order: "desc" }] },
+    filters: { permanent: [{ field: "salida", operator: "lt", value: desde }] },
+    pagination: { pageSize: 20 },
+    syncWithLocation: false,
   });
   const tableQuery = recientesQuery;
 
@@ -365,10 +353,12 @@ export default function OperacionPage() {
   // par de días y perdido después. Ordenado por salida más reciente
   // primero.
   const gruposHistorialReciente = gruposRecientes.filter((g) => grupoCompleto(g) || grupoCancelado(g));
-  const gruposArchivados = agruparPorReserva(archivadasResult.data ?? []).filter(
+  const gruposArchivados = agruparPorReserva((archivadasResult.data ?? []).flatMap(({ tareas_operacion, ...reserva }) =>
+    tareas_operacion.map((tarea) => ({ ...tarea, reservas: reserva })),
+  )).filter(
     (g) => grupoCompleto(g) || grupoCancelado(g),
   );
-  const gruposHistorial = [...gruposHistorialReciente, ...gruposArchivados].sort(
+  const gruposHistorial = [...(currentPage === 1 ? gruposHistorialReciente : []), ...gruposArchivados].sort(
     (a, b) => (b[0].reservas?.salida ?? "").localeCompare(a[0].reservas?.salida ?? ""),
   );
 
@@ -440,26 +430,29 @@ export default function OperacionPage() {
         })}
       </div>
 
-      {!tableQuery.isLoading && !tableQuery.isError && !archivadasQuery.isLoading && gruposHistorial.length > 0 && (
+      {!tableQuery.isLoading && !tableQuery.isError && (
         <div className="mt-8">
           <button
             type="button"
             onClick={() => setHistorialAbierto((v) => !v)}
             className="flex w-full items-center justify-between rounded-xl border border-line bg-panel px-4 py-3 text-left"
           >
-            <span className="font-semibold">
-              Historial{" "}
-              <span className="font-normal text-ink-2">
-                ({gruposHistorial.length} reserva{gruposHistorial.length === 1 ? "" : "s"} archivada
-                {gruposHistorial.length === 1 ? "" : "s"})
-              </span>
-            </span>
+            <span className="font-semibold">Historial</span>
             <span className={`text-ink-2 transition-transform ${historialAbierto ? "rotate-180" : ""}`}>▾</span>
           </button>
 
           {historialAbierto && (
             <div className="mt-2 space-y-2">
-              {gruposHistorial.map((tareasReserva) => {
+              {archivadasQuery.isError && (
+                <p role="alert" className="text-sm text-caoba">
+                  No se pudo cargar el historial. <button type="button" className="underline" onClick={() => void archivadasQuery.refetch()}>Reintentar</button>
+                </p>
+              )}
+              {archivadasQuery.isFetching && <p role="status" className="text-sm text-ink-2">Cargando historial…</p>}
+              {!archivadasQuery.isFetching && !archivadasQuery.isError && gruposHistorial.length === 0 && (
+                <p className="text-sm text-ink-2">No hay reservas completadas o canceladas en esta página.</p>
+              )}
+              {!archivadasQuery.isFetching && !archivadasQuery.isError && gruposHistorial.map((tareasReserva) => {
                 const reservaId = tareasReserva[0].reserva_id;
                 return (
                   <GrupoReserva
@@ -475,6 +468,11 @@ export default function OperacionPage() {
                   />
                 );
               })}
+              <nav aria-label="Páginas del historial" className="flex items-center justify-between gap-3 pt-3">
+                <button type="button" disabled={currentPage <= 1 || archivadasQuery.isFetching} onClick={() => { setCurrentPage(currentPage - 1); setReservaAbierta(null); setTareaAbierta(null); }} className="rounded-md border border-line px-3 py-2 text-sm disabled:opacity-50">Anterior</button>
+                <span className="text-sm text-ink-2">Página {currentPage} de {Math.max(1, pageCount)}</span>
+                <button type="button" disabled={currentPage >= pageCount || archivadasQuery.isFetching || archivadasQuery.isError} onClick={() => { setCurrentPage(currentPage + 1); setReservaAbierta(null); setTareaAbierta(null); }} className="rounded-md border border-line px-3 py-2 text-sm disabled:opacity-50">Siguiente</button>
+              </nav>
             </div>
           )}
         </div>

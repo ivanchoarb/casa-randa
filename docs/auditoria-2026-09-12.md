@@ -71,3 +71,58 @@ recibir un código concreto y devolver únicamente los datos necesarios.
 
 Siguiente paso recomendado: corregir sincronización transaccional y consulta de
 tareas vigentes, seguido de restringir la consulta pública de descuentos.
+
+## Segunda revisión: commit ea2ddf5
+
+Revisor: Codex. Revisión del cambio de Operación y migración 0014, sin cambios
+funcionales ni acceso a producción.
+
+La consulta de recientes ahora filtra por reservas.salida en servidor mediante
+reservas!inner y no aplica el antiguo límite de 300. Se comprobó la URL generada
+por las versiones instaladas de @refinedev/supabase y supabase-js usando un fetch
+simulado (sin red). La migración 0014 actualiza únicamente fechas desalineadas y
+mantiene el mapeo preparación=entrada, turnover/limpieza=salida. No se repitió la
+verificación de datos desplegados descrita por Claude.
+
+### P2 nuevo: el orden del historial no se aplica a las filas principales
+
+En operacion/page.tsx:338, el sorter `reservas.salida` se transforma mediante
+@refinedev/supabase 6.0.2 en `.order('salida', {foreignTable: 'reservas'})`.
+La consulta generada contiene `reservas.order=salida.desc`, `limit=500` y ningún
+`order` de nivel superior. Esto ordena la relación embebida, no el conjunto de
+tareas que se limita a 500 filas. Por tanto, al superar ese tamaño no hay garantía
+de conservar las reservas archivadas más recientes, pese a lo que indica el
+comentario. El sort posterior en JavaScript no recupera las filas excluidas.
+
+Usar ordenación de las filas raíz por la fecha relacionada (por ejemplo mediante
+una consulta personalizada o vista) y paginación real del historial por reserva,
+para no cortar grupos de tareas en el límite de página. La página actual tampoco
+ofrece navegación para acceder a las filas posteriores a las primeras 500.
+
+Validación: TypeScript y ESLint de intranet pasan. La captura de consultas con
+fetch simulado reproduce el defecto de orden y confirma el filtro de recientes.
+No se repitió el build, bloqueado por el entorno en la revisión anterior.
+Los hallazgos originales 1 (iCal sin transacción) y 5 (descuentos públicos)
+siguen abiertos y no fueron modificados en este commit.
+
+## Corrección del historial por Codex
+
+Autorizada por el usuario después de la segunda revisión. La consulta de historial
+ahora usa reservas como recurso raíz y embebe tareas_operacion!inner(*). Ordena
+por salida descendente y después id descendente antes de paginar en bloques de
+20 reservas, manteniendo todas las tareas de cada reserva juntas. Anterior y
+Siguiente permiten recorrer todo el resultado. Las reservas recientes archivadas
+se muestran al comienzo de la primera página. La clasificación de archivadas
+(canceladas o todas sus tareas completadas) se mantiene; una página de reservas
+antiguas que aún no cumplan esa condición muestra un mensaje y permite continuar.
+
+El historial muestra errores y permite reintentar. Guardar una tarea invalida
+también las consultas de reservas para actualizar el historial embebido.
+
+Prueba de regresión: tests/operacion-pagination.test.mjs extrae la configuración
+actual de la página y la ejecuta con el proveedor Refine/Supabase instalado y
+fetch simulado. Comprueba el orden a nivel raíz y recorre 181 reservas (543 tareas),
+sin perder ni duplicar reservas ni separar sus tareas. No utiliza datos reales.
+Ejecutar desde apps/intranet: `node --test tests/*.test.mjs` (script `test`).
+No se aplicaron migraciones ni cambios a la base desplegada. Los pendientes iCal
+y descuentos quedan fuera del alcance de esta corrección del historial.

@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="flex-1 bg-ground p-8">{children}</main>
+      <main className="min-w-0 flex-1 bg-ground p-4 sm:p-8">{children}</main>
     </div>
   );
 }
