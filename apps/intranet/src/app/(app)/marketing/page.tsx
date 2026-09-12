@@ -1,9 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useTable } from "@refinedev/core";
+import { useMemo, useRef, useState } from "react";
+import { useGetIdentity, useTable } from "@refinedev/core";
 import * as XLSX from "xlsx";
 import type { CancellationPolicy, PaymentPlan } from "@casa-randa/pricing";
+import {
+  CAMPO_LABEL,
+  importarContactos,
+  leerArchivoContactos,
+  sugerirMapeo,
+  type ArchivoContactos,
+  type CampoContacto,
+  type Mapeo,
+  type ResultadoImportContactos,
+} from "@/lib/importar-contactos";
 
 interface Solicitud {
   id: string;
@@ -22,33 +32,291 @@ interface Solicitud {
   created_at: string;
 }
 
+interface ContactoMarketing {
+  id: string;
+  nombre: string;
+  email: string;
+  telefono: string | null;
+  pais: string | null;
+  ciudad: string | null;
+  fuente: "formulario_web" | "importado" | "manual";
+  created_at: string;
+}
+
 const ESTADO_LABEL: Record<Solicitud["estado"], string> = {
   pendiente: "Pendiente",
   aprobada: "Aprobada",
   rechazada: "Rechazada",
   convertida: "Convertida en reserva",
 };
+const FUENTE_LABEL: Record<ContactoMarketing["fuente"], string> = {
+  formulario_web: "Formulario web",
+  importado: "Importado",
+  manual: "Manual",
+};
+
+interface Contacto {
+  id: string;
+  nombre: string;
+  email: string;
+  telefono: string | null;
+  pais: string | null;
+  ciudad: string | null;
+  fuente: string;
+  estado: Solicitud["estado"] | null;
+  entrada: string | null;
+  salida: string | null;
+  created_at: string;
+}
 
 type Filtro = "todos" | Solicitud["estado"];
 
+function ImportarContactos({ onImportado }: { onImportado: () => void }) {
+  const { data: identity } = useGetIdentity<{ id: string }>();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [archivo, setArchivo] = useState<ArchivoContactos | null>(null);
+  const [mapeo, setMapeo] = useState<Mapeo | null>(null);
+  const [confirmaConsentimiento, setConfirmaConsentimiento] = useState(false);
+  const [leyendo, setLeyendo] = useState(false);
+  const [importando, setImportando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [resultado, setResultado] = useState<ResultadoImportContactos | null>(null);
+
+  async function leer() {
+    const file = inputRef.current?.files?.[0];
+    if (!file) return;
+    setError(null);
+    setResultado(null);
+    setLeyendo(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const a = leerArchivoContactos(buf);
+      setArchivo(a);
+      setMapeo(sugerirMapeo(a.encabezados));
+      setConfirmaConsentimiento(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo leer el archivo.");
+      setArchivo(null);
+      setMapeo(null);
+    } finally {
+      setLeyendo(false);
+    }
+  }
+
+  async function confirmar() {
+    if (!archivo || !mapeo) return;
+    setImportando(true);
+    setError(null);
+    try {
+      const r = await importarContactos(archivo, mapeo, identity?.id);
+      setResultado(r);
+      setArchivo(null);
+      setMapeo(null);
+      setConfirmaConsentimiento(false);
+      if (inputRef.current) inputRef.current.value = "";
+      if (r.procesados > 0) onImportado();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo importar el archivo.");
+    } finally {
+      setImportando(false);
+    }
+  }
+
+  const listo = !!mapeo && mapeo.nombre !== null && mapeo.email !== null && confirmaConsentimiento;
+
+  return (
+    <details className="mt-6 rounded-xl border border-line bg-panel p-5">
+      <summary className="cursor-pointer font-semibold">Importar contactos desde CSV o Excel</summary>
+      <p className="mt-3 text-xs text-ink-2">
+        Para contactos que ya tengas en FormsApp u otra herramienta. Sube un CSV o Excel, indica
+        qué columna del archivo es cuál de nuestros campos, y confirma el consentimiento antes de
+        guardar — no se asume solo porque venga en el archivo. Si vuelves a importar un correo ya
+        existente, se actualiza en vez de duplicarse. Los PDF no están soportados todavía: si tus
+        datos solo existen en PDF, expórtalos primero a CSV/Excel desde FormsApp, o manda un
+        ejemplo real para revisar si se puede leer directo.
+      </p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" aria-label="Archivo de contactos" className="text-sm" />
+        <button
+          type="button"
+          onClick={() => void leer()}
+          disabled={leyendo}
+          className="rounded-md border border-line px-4 py-1.5 text-sm font-semibold disabled:opacity-60"
+        >
+          {leyendo ? "Leyendo…" : "Leer archivo"}
+        </button>
+      </div>
+
+      {error && <p className="mt-3 text-sm text-caoba">{error}</p>}
+
+      {resultado && (
+        <div className="mt-3 text-sm">
+          <p>{resultado.procesados} contactos importados.</p>
+          {resultado.omitidos.length > 0 && (
+            <details className="mt-1 text-xs text-ink-2">
+              <summary className="cursor-pointer">{resultado.omitidos.length} fila(s) omitida(s)</summary>
+              <ul className="mt-1 list-disc pl-4">
+                {resultado.omitidos.map((o, i) => (
+                  <li key={i}>
+                    Fila {o.fila}: {o.motivo}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </div>
+      )}
+
+      {archivo && mapeo && (
+        <div className="mt-4 space-y-4 rounded-lg border border-line p-4">
+          <div>
+            <p className="text-sm font-semibold">¿Qué columna es cada campo?</p>
+            <p className="mt-1 text-xs text-ink-2">Nombre y Correo son obligatorios; el resto es opcional.</p>
+            <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {(Object.keys(CAMPO_LABEL) as CampoContacto[]).map((campo) => (
+                <label key={campo} className="text-xs text-ink-2">
+                  {CAMPO_LABEL[campo]}
+                  <select
+                    value={mapeo[campo] ?? ""}
+                    onChange={(e) =>
+                      setMapeo({ ...mapeo, [campo]: e.target.value === "" ? null : Number(e.target.value) })
+                    }
+                    className="mt-1 block w-full rounded-md border border-line bg-ground px-2 py-1.5 text-sm"
+                  >
+                    <option value="">Ninguna</option>
+                    {archivo.encabezados.map((h, i) => (
+                      <option key={i} value={i}>
+                        {h || `Columna ${i + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {archivo.filas.length > 0 && mapeo.nombre !== null && mapeo.email !== null && (
+            <div>
+              <p className="text-xs font-semibold text-ink-2 uppercase">Vista previa</p>
+              <div className="mt-1 overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-line">
+                      <th className="py-1 pr-4">Nombre</th>
+                      <th className="py-1 pr-4">Correo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {archivo.filas.slice(0, 3).map((f, i) => (
+                      <tr key={i}>
+                        <td className="py-1 pr-4">{f[mapeo.nombre as number]}</td>
+                        <td className="py-1 pr-4">{f[mapeo.email as number]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-1 text-xs text-ink-2">{archivo.filas.length} fila(s) en total.</p>
+            </div>
+          )}
+
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={confirmaConsentimiento}
+              onChange={(e) => setConfirmaConsentimiento(e.target.checked)}
+            />
+            Confirmo que estos contactos aceptaron ser contactados con fines de marketing (por
+            ejemplo, marcaron una casilla de consentimiento equivalente en el formulario de
+            origen).
+          </label>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => void confirmar()}
+              disabled={!listo || importando}
+              className="rounded-md bg-caoba px-4 py-2 text-sm font-semibold text-panel disabled:opacity-50"
+            >
+              {importando ? "Importando…" : "Importar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setArchivo(null);
+                setMapeo(null);
+                if (inputRef.current) inputRef.current.value = "";
+              }}
+              disabled={importando}
+              className="rounded-md border border-line px-4 py-2 text-sm"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </details>
+  );
+}
+
 /**
- * Audiencia = solicitudes con consentimiento de marketing marcado en el
- * formulario público (QuoteCalculator.tsx) — no las reservas reales
- * (Airbnb/Vrbo/CSV): esas nunca piden ni guardan ese consentimiento, así
- * que incluirlas aquí sería contactar gente que nunca aceptó recibir
- * marketing. `solicitudes` no tiene columnas financieras, así que a
- * diferencia de `reservas` no hace falta enmascarar nada por permiso — solo
- * filtrar filas, que ya hace la política RLS (0018_permiso_marketing.sql).
+ * Audiencia = dos fuentes, unificadas:
+ * - `solicitudes` con consentimiento de marketing marcado en el formulario
+ *   público (QuoteCalculator.tsx).
+ * - `contactos_marketing` (0019_contactos_marketing.sql): subidos por CSV/
+ *   Excel, o eventualmente desde un formulario de registro nativo en la
+ *   página — ver ImportarContactos arriba.
+ * En ningún caso las reservas reales (Airbnb/Vrbo/CSV): esas nunca piden ni
+ * guardan consentimiento de marketing, así que incluirlas sería contactar
+ * gente que nunca aceptó recibirlo.
  */
 export default function MarketingPage() {
-  const { result, tableQuery } = useTable<Solicitud>({
+  const solicitudesTable = useTable<Solicitud>({
     resource: "solicitudes",
     filters: { permanent: [{ field: "consentimiento", operator: "eq", value: true }] },
     sorters: { initial: [{ field: "created_at", order: "desc" }] },
     pagination: { mode: "off" },
   });
+  const contactosTable = useTable<ContactoMarketing>({
+    resource: "contactos_marketing",
+    sorters: { initial: [{ field: "created_at", order: "desc" }] },
+    pagination: { mode: "off" },
+  });
 
-  const contactos = useMemo(() => result.data ?? [], [result.data]);
+  const cargando = solicitudesTable.tableQuery.isLoading || contactosTable.tableQuery.isLoading;
+  const conError = solicitudesTable.tableQuery.isError || contactosTable.tableQuery.isError;
+
+  const contactos = useMemo<Contacto[]>(() => {
+    const deSolicitudes: Contacto[] = (solicitudesTable.result.data ?? []).map((s) => ({
+      id: `solicitud-${s.id}`,
+      nombre: s.nombre,
+      email: s.email,
+      telefono: s.telefono,
+      pais: s.pais,
+      ciudad: s.ciudad,
+      fuente: "Cotización web",
+      estado: s.estado,
+      entrada: s.entrada,
+      salida: s.salida,
+      created_at: s.created_at,
+    }));
+    const deImportados: Contacto[] = (contactosTable.result.data ?? []).map((c) => ({
+      id: `contacto-${c.id}`,
+      nombre: c.nombre,
+      email: c.email,
+      telefono: c.telefono,
+      pais: c.pais,
+      ciudad: c.ciudad,
+      fuente: FUENTE_LABEL[c.fuente],
+      estado: null,
+      entrada: null,
+      salida: null,
+      created_at: c.created_at,
+    }));
+    return [...deSolicitudes, ...deImportados].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }, [solicitudesTable.result.data, contactosTable.result.data]);
+
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<Filtro>("todos");
 
@@ -70,8 +338,9 @@ export default function MarketingPage() {
     const d = new Date(c.created_at);
     return d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth();
   }).length;
-  const convertidos = contactos.filter((c) => c.estado === "aprobada" || c.estado === "convertida").length;
-  const tasaConversion = contactos.length > 0 ? (convertidos / contactos.length) * 100 : 0;
+  const conSolicitud = contactos.filter((c) => c.estado !== null);
+  const convertidos = conSolicitud.filter((c) => c.estado === "aprobada" || c.estado === "convertida").length;
+  const tasaConversion = conSolicitud.length > 0 ? (convertidos / conSolicitud.length) * 100 : 0;
 
   function exportar() {
     const filas = filtrados.map((c) => ({
@@ -80,9 +349,9 @@ export default function MarketingPage() {
       Teléfono: c.telefono ?? "",
       País: c.pais ?? "",
       Ciudad: c.ciudad ?? "",
-      "Fechas solicitadas": `${c.entrada} → ${c.salida}`,
-      Huéspedes: c.huespedes,
-      Estado: ESTADO_LABEL[c.estado],
+      Origen: c.fuente,
+      "Fechas solicitadas": c.entrada && c.salida ? `${c.entrada} → ${c.salida}` : "",
+      Estado: c.estado ? ESTADO_LABEL[c.estado] : "",
       "Registrado el": c.created_at.slice(0, 10),
     }));
     const wb = XLSX.utils.book_new();
@@ -90,27 +359,34 @@ export default function MarketingPage() {
     XLSX.writeFile(wb, "casa-randa-clientes-potenciales.xlsx");
   }
 
+  function recargar() {
+    void solicitudesTable.tableQuery.refetch();
+    void contactosTable.tableQuery.refetch();
+  }
+
   return (
     <div>
       <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Ventas directas</p>
       <h1 className="mt-1 text-2xl font-bold">Clientes potenciales y marketing</h1>
       <p className="mt-2 max-w-2xl text-sm text-ink-2">
-        Personas que pidieron una cotización desde la página y marcaron la casilla de
-        consentimiento para ser contactadas — útil como lista base para una campaña de correo o
-        WhatsApp fuera de esta app.
+        Personas que pidieron una cotización desde la página, o que importaste, y aceptaron ser
+        contactadas — útil como lista base para una campaña de correo o WhatsApp fuera de esta
+        app.
       </p>
 
-      {tableQuery.isLoading && <p className="mt-6 text-sm text-ink-2">Cargando…</p>}
-      {tableQuery.isError && (
+      <ImportarContactos onImportado={recargar} />
+
+      {cargando && <p className="mt-6 text-sm text-ink-2">Cargando…</p>}
+      {conError && (
         <p role="alert" className="mt-6 text-caoba">
           No se pudo cargar la lista.{" "}
-          <button onClick={() => void tableQuery.refetch()} className="underline">
+          <button onClick={recargar} className="underline">
             Reintentar
           </button>
         </p>
       )}
 
-      {!tableQuery.isLoading && !tableQuery.isError && (
+      {!cargando && !conError && (
         <>
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="rounded-xl border border-line bg-panel p-4">
@@ -124,7 +400,7 @@ export default function MarketingPage() {
             <div className="rounded-xl border border-line bg-panel p-4">
               <p className="text-xs font-medium text-ink-2 uppercase">Tasa de conversión</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">{tasaConversion.toFixed(0)}%</p>
-              <p className="mt-1 text-xs text-ink-2">Aprobadas o convertidas en reserva</p>
+              <p className="mt-1 text-xs text-ink-2">De quienes pidieron cotización — aprobadas o convertidas</p>
             </div>
           </div>
 
@@ -160,7 +436,8 @@ export default function MarketingPage() {
           {contactos.length === 0 ? (
             <p className="mt-6 text-sm text-ink-2">
               Todavía no hay contactos con consentimiento de marketing. Aparecen aquí en cuanto
-              alguien pida una cotización desde la página y acepte ser contactado.
+              alguien pida una cotización desde la página y acepte ser contactado, o cuando
+              importes un archivo arriba.
             </p>
           ) : filtrados.length === 0 ? (
             <p className="mt-6 text-sm text-ink-2">Ningún contacto coincide con ese filtro.</p>
@@ -187,23 +464,28 @@ export default function MarketingPage() {
                         {c.telefono && <p className="text-xs text-ink-2">{c.telefono}</p>}
                       </td>
                       <td className="p-4 text-xs text-ink-2">
-                        {[c.ciudad, c.pais].filter(Boolean).join(", ") || "—"}
+                        {c.fuente}
+                        {[c.ciudad, c.pais].filter(Boolean).length > 0
+                          ? ` · ${[c.ciudad, c.pais].filter(Boolean).join(", ")}`
+                          : ""}
                       </td>
-                      <td className="p-4 text-xs">
-                        {c.entrada} → {c.salida}
-                      </td>
+                      <td className="p-4 text-xs">{c.entrada && c.salida ? `${c.entrada} → ${c.salida}` : "—"}</td>
                       <td className="p-4">
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            c.estado === "pendiente"
-                              ? "bg-lamp-bg text-lamp"
-                              : c.estado === "rechazada"
-                                ? "bg-panel-2 text-ink-2"
-                                : "bg-good-bg text-good"
-                          }`}
-                        >
-                          {ESTADO_LABEL[c.estado]}
-                        </span>
+                        {c.estado ? (
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              c.estado === "pendiente"
+                                ? "bg-lamp-bg text-lamp"
+                                : c.estado === "rechazada"
+                                  ? "bg-panel-2 text-ink-2"
+                                  : "bg-good-bg text-good"
+                            }`}
+                          >
+                            {ESTADO_LABEL[c.estado]}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-ink-2">—</span>
+                        )}
                       </td>
                       <td className="p-4 text-xs text-ink-2">{c.created_at.slice(0, 10)}</td>
                       <td className="p-4">
