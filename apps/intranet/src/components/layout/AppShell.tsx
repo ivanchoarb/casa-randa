@@ -10,6 +10,20 @@ interface Identity {
   rol?: string;
 }
 
+// "Cotizaciones" no es un resource de Refine (no hay tabla detrás — la
+// página es una calculadora sin estado, ver src/lib/cotizacion.ts), así
+// que no aparece solo en useMenu() como los otros 7. Se inserta a mano en
+// la posición que tiene en staging: después de "Análisis y planificación",
+// antes de "Usuarios y permisos" (el último resource).
+function conCotizaciones<T extends { key: string }>(menuItems: T[]) {
+  const idx = menuItems.length - 1;
+  return [
+    ...menuItems.slice(0, idx),
+    { key: "/cotizaciones", route: "/cotizaciones", label: "Cotizaciones" } as unknown as T,
+    ...menuItems.slice(idx),
+  ];
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { menuItems, selectedKey } = useMenu();
   const { data: identity } = useGetIdentity<Identity>();
@@ -34,7 +48,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             Inicio
           </Link>
-          {menuItems.map((item) => (
+          {conCotizaciones(menuItems).map((item) => (
             <Link
               key={item.key}
               href={item.route ?? "#"}
