@@ -77,7 +77,15 @@ const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "O
 // enero aparece bajo "Dic", el de febrero bajo "Ene", etc. — los NÚMEROS
 // son correctos, solo el nombre del mes está mal). No se replica ese
 // desfase aquí — los conteos van bajo su mes real.
-function ComparativoAnual({ reservas, cargando }: { reservas: Reserva[]; cargando: boolean }) {
+function ComparativoAnual({
+  reservas,
+  cargando,
+  error,
+}: {
+  reservas: Reserva[];
+  cargando: boolean;
+  error: boolean;
+}) {
   const anios = useMemo(() => {
     const set = new Set(reservas.map((r) => Number(r.entrada.slice(0, 4))));
     return Array.from(set).sort((a, b) => b - a);
@@ -104,6 +112,18 @@ function ComparativoAnual({ reservas, cargando }: { reservas: Reserva[]; cargand
   );
 
   if (cargando) return null;
+  // Distinguir "falló la conexión" de "no hay datos todavía" — antes
+  // mostraban el mismo mensaje ("Todavía no hay reservas"), lo cual es
+  // engañoso cuando en realidad hubo un problema de red o de sesión y sí
+  // hay reservas reales en Supabase.
+  if (error) {
+    return (
+      <p className="text-sm text-caoba">
+        No se pudo conectar a Supabase — completa <code>.env.local</code>, o si ya lo tienes
+        configurado, recarga la página.
+      </p>
+    );
+  }
   if (anios.length === 0) {
     return <p className="text-sm text-ink-2">Todavía no hay reservas para comparar año a año.</p>;
   }
@@ -790,7 +810,11 @@ export default function AnalisisPage() {
       </p>
 
       <div className="mt-8">
-        <ComparativoAnual reservas={reservasResult.data ?? []} cargando={reservasQuery.isLoading} />
+        <ComparativoAnual
+          reservas={reservasResult.data ?? []}
+          cargando={reservasQuery.isLoading}
+          error={reservasQuery.isError}
+        />
         <PlanDeCompras planes={planes} cargando={planesQuery.isLoading} error={planesQuery.isError} />
         <CuentasPorPagar planes={planes} cargando={planesQuery.isLoading} />
         <CodigosDeDescuento />
