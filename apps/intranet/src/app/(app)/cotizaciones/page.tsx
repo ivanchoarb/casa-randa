@@ -3,10 +3,12 @@
 import { useMemo, useState } from "react";
 import { supabaseClient } from "@/lib/supabase-client";
 import {
+  acortarUrl,
   calcularCotizacion,
   descargarCotizacionPDF,
   enlaceWhatsApp,
   generarCotizacionPDF,
+  resumenWhatsApp,
   subirCotizacionPDF,
   type CotizacionInput,
 } from "@/lib/cotizacion";
@@ -136,7 +138,8 @@ export default function CotizacionesPage() {
     setMensajeWhatsapp(null);
     try {
       const bytes = await generarCotizacionPDF(input, calculo);
-      const urlPdf = await subirCotizacionPDF(bytes, calculo.codigo);
+      const urlLarga = await subirCotizacionPDF(bytes, calculo.codigo);
+      const urlPdf = await acortarUrl(urlLarga);
 
       if (telefonoWhatsapp.trim()) {
         const { data } = await supabaseClient.auth.getSession();
@@ -147,8 +150,8 @@ export default function CotizacionesPage() {
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({
               telefono: telefonoWhatsapp,
-              urlPdf,
-              caption: `Tu cotización de Casa Randa — ${calculo.codigo}. Total ${money(calculo.total)}.`,
+              urlPdf: urlLarga, // Meta va a buscar el archivo directo, no hace falta acortarla aquí
+              caption: resumenWhatsApp(input, calculo).join("\n"),
               codigo: calculo.codigo,
             }),
           });

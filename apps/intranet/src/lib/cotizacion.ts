@@ -291,21 +291,41 @@ export async function subirCotizacionPDF(bytes: Uint8Array, codigo: string, expi
   return data.signedUrl;
 }
 
-function resumenWhatsApp(input: CotizacionInput, calculo: CotizacionCalculo) {
-  return [
-    `Hola${input.clienteNombre ? " " + input.clienteNombre : ""}, aquí tu cotización de Casa Randa (${calculo.codigo}):`,
-    `${fechaLarga(input.entrada)} → ${fechaLarga(input.salida)} · ${calculo.noches} noches · ${input.huespedes} huéspedes`,
-    `Total: ${money(calculo.total)} · Anticipo (${input.anticipoPct}%): ${money(calculo.anticipo)} · Saldo: ${money(calculo.saldo)}`,
-    `Válida por ${input.validezDias} días.`,
+/**
+ * Formato de texto propio de WhatsApp — *negrita*, _cursiva_ — con
+ * emojis como anclas visuales por sección, no uno por línea. Pensado
+ * para leerse bien en la ventana angosta de un chat, no como un correo.
+ */
+export function resumenWhatsApp(input: CotizacionInput, calculo: CotizacionCalculo, urlPdf?: string) {
+  const saludo = input.clienteNombre ? `Hola ${input.clienteNombre} 👋` : "Hola 👋";
+  const lineas = [
+    `🏡 *Casa Randa* — Cotización ${calculo.codigo}`,
+    "",
+    `${saludo}, aquí el detalle de tu estadía:`,
+    "",
+    "📅 *Fechas*",
+    `${fechaLarga(input.entrada)} → ${fechaLarga(input.salida)}`,
+    `_${calculo.noches} noches · ${input.huespedes} huéspedes_`,
+    "",
+    "💵 *Resumen*",
+    `Total: *${money(calculo.total)}*`,
+    `Anticipo (${input.anticipoPct}%): ${money(calculo.anticipo)}`,
+    `Saldo: ${money(calculo.saldo)}`,
+    "",
+    `⏳ Válida por ${input.validezDias} días`,
   ];
+  if (urlPdf) lineas.push("", `📎 *PDF completo:* ${urlPdf}`);
+  lineas.push("", "¿Dudas? Escríbenos, ¡será un gusto ayudarte! 😊");
+  return lineas;
 }
 
 /**
  * WhatsApp no tiene forma de adjuntar un archivo vía un enlace wa.me — su
  * API de "click to chat" solo admite texto prellenado (documentado por
- * Meta). `urlPdf` (de subirCotizacionPDF) se agrega como un link de
- * descarga dentro del texto — no es un adjunto real, pero el cliente
- * puede abrirlo y bajar el PDF desde el mismo chat.
+ * Meta). `urlPdf` (de subirCotizacionPDF, idealmente ya acortada con
+ * acortarUrl) se agrega como un link de descarga dentro del texto — no
+ * es un adjunto real, pero el cliente puede abrirlo y bajar el PDF desde
+ * el mismo chat.
  */
 export function enlaceWhatsApp(
   input: CotizacionInput,
@@ -313,10 +333,31 @@ export function enlaceWhatsApp(
   telefono: string,
   urlPdf?: string,
 ) {
-  const lineas = resumenWhatsApp(input, calculo);
-  if (urlPdf) lineas.push(`PDF: ${urlPdf}`);
-  else lineas.push("Te comparto el PDF con el detalle completo.");
-  const texto = encodeURIComponent(lineas.join("\n"));
+  const texto = encodeURIComponent(resumenWhatsApp(input, calculo, urlPdf).join("\n"));
   const numero = telefono.replace(/[^0-9]/g, "");
   return numero ? `https://wa.me/${numero}?text=${texto}` : `https://wa.me/?text=${texto}`;
+}
+
+/**
+ * Acorta una URL vía /api/cotizaciones/acortar (TinyURL del lado del
+ * servidor — ver esa ruta). Si algo falla, devuelve la URL original sin
+ * acortar en vez de tumbar el envío completo por un problema de un
+ * servicio de terceros que no es el punto central de la función.
+ */
+export async function acortarUrl(url: string): Promise<string> {
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) return url;
+    const res = await fetch("/api/cotizaciones/acortar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) return url;
+    const json = await res.json();
+    return json.corta || url;
+  } catch {
+    return url;
+  }
 }
