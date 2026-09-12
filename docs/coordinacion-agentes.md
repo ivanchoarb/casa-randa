@@ -12,6 +12,18 @@ correcta de Claude confirmando la lectura de AGENTS.md y este registro.
 
 ## Estado del trabajo
 
+Claude: correo de activación al crear usuario + recuperación/cambio de
+contraseña, a pedido directo del usuario (2026-09-12). Archivos nuevos:
+`src/lib/mailer.ts`, `src/app/api/usuarios/recuperar/route.ts`,
+`src/app/restablecer-password/page.tsx`. Tocados: `src/lib/usuarios-api.ts`
+(envía el correo tras crear), `src/app/(app)/usuarios/page.tsx` (panel
+"Cambiar mi contraseña" para cualquier usuario), `src/app/login/page.tsx`
+(enlace "¿Olvidaste tu contraseña?"), `tests/usuarios-api.test.mjs`. Detalle
+completo, incluida la verificación con entrega real de correo, en
+"Correo de activación y recuperación de contraseña" en
+docs/gestion-usuarios.md. `pnpm build`/`pnpm lint`/`node --test` (11/11)
+pasan. Sin commit todavía.
+
 Codex: permisos por usuario terminados en la sesión de ChatGPT, que se quedó sin
 créditos antes de hacer commit. Claude retomó (2026-09-12), revisó cada diff y
 verificó antes de continuar: catálogo de 18 permisos, excepciones por usuario en

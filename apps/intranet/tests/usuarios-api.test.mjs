@@ -6,7 +6,17 @@ import ts from 'typescript';
 const code = fs.readFileSync(new URL('../src/lib/usuarios-api.ts', import.meta.url), 'utf8');
 const permsCtx = { exports: {} };
 vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL('../src/lib/permisos.ts', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, permsCtx);
-const ctx = { exports: {}, Response, require: name => { assert.equal(name, './permisos'); return permsCtx.exports; } };
+let smtpConfigurado = true;
+const enviosMock = [];
+const mailerCtx = { exports: {
+  transporteDisponible: () => smtpConfigurado,
+  crearTransporte: () => ({ transporte: { sendMail: async msg => { enviosMock.push(msg); } }, remitente: '"Casa Randa" <test@example.invalid>' }),
+} };
+const ctx = { exports: {}, Response, URL, require: name => {
+  if (name === './permisos') return permsCtx.exports;
+  if (name === './mailer') return mailerCtx.exports;
+  assert.fail('import inesperado: ' + name);
+} };
 vm.runInNewContext(ts.transpileModule(code, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, ctx);
 const actorId = '11111111-1111-1111-1111-111111111111';
 const targetId = '22222222-2222-2222-2222-222222222222';
@@ -19,6 +29,7 @@ function setup(role = 'administrador', profileFailure = false, permisos = {}) {
       getUserById: async () => ({ data: { user: { id: targetId, email: 'old@example.invalid', user_metadata: { nombre: 'Antes' } } } }),
       updateUserById: async (id, v) => { calls.push(['authUpdate', id, v]); return {}; },
       deleteUser: async id => { calls.push(['delete', id]); return {}; },
+      generateLink: async ({ email }) => ({ data: { properties: { hashed_token: `tok-${email}` } }, error: null }),
     } },
     from: () => {
       let updating = false, selectedId;
@@ -49,6 +60,27 @@ test('prevents self deletion, self demotion and invalid input', async () => {
 test('creates account and assigns the profile role', async () => {
   const s = setup(); assert.equal((await s.handle(req('POST', valid))).status, 201);
   assert.deepEqual(s.calls.map(c => c[0]), ['create', 'profile']);
+});
+test('sends an activation email with a self-service password link on creation', async () => {
+  smtpConfigurado = true; enviosMock.length = 0;
+  const s = setup();
+  const res = await s.handle(req('POST', valid));
+  assert.equal(res.status, 201);
+  const json = await res.json();
+  assert.equal(json.correoEnviado, true);
+  assert.equal(enviosMock.length, 1);
+  assert.equal(enviosMock[0].to, valid.email);
+  assert.match(enviosMock[0].text, /restablecer-password\?token_hash=tok-test%40example\.invalid&type=recovery/);
+});
+test('account creation still succeeds when SMTP is not configured', async () => {
+  smtpConfigurado = false; enviosMock.length = 0;
+  const s = setup();
+  const res = await s.handle(req('POST', valid));
+  assert.equal(res.status, 201);
+  const json = await res.json();
+  assert.equal(json.correoEnviado, false);
+  assert.equal(enviosMock.length, 0);
+  smtpConfigurado = true;
 });
 test('edits auth and profile; deletion removes the auth account', async () => {
   const s = setup(); assert.equal((await s.handle(req('PATCH', valid))).status, 200);

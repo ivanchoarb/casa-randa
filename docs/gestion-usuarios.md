@@ -5,8 +5,12 @@ Implementado por Codex el 2026-09-12.
 Usuarios y permisos permite crear cuentas con nombre, correo, contraseña inicial
 (12–128 caracteres) y rol; editar nombre, correo y rol; y eliminar cuenta/perfil
 con confirmación explícita. Se mantienen administrador, dueño y empleado y las
-políticas existentes de base de datos. No se añadió una matriz de permisos por
-módulo ni cambios de contraseña desde esta pantalla.
+políticas existentes de base de datos.
+
+(2026-09-12: los dos huecos que dejaba el párrafo anterior — matriz de permisos
+por módulo y cambio de contraseña desde esta pantalla — ya están cubiertos, ver
+"Rol Host y permisos por usuario" y "Correo de activación y recuperación de
+contraseña" más abajo.)
 
 POST/PATCH/DELETE /api/usuarios verifica el token con Supabase Auth y consulta el
 rol actual del solicitante en perfiles antes de usar el cliente service-role.
@@ -96,3 +100,51 @@ política nueva, acotada solo a las columnas necesarias.
 
 Ya no queda pendiente acordar el alcance de Host: `HOST_PERMISOS` en
 `permisos.ts` es la lista que pidió el usuario.
+
+## Correo de activación y recuperación de contraseña (Claude, 2026-09-12)
+
+A pedido de Ivan: "cada vez que se cree un usuario el sistema envia un correo
+electronico informando que la cuenta ha sido activada, debe haber la
+posibilidad que cada usuario pueda cambiar y recordar la contraseña si se le
+ha olvidado". Tres piezas nuevas, ninguna depende del envío de correo propio
+de Supabase Auth (que usa su propio SMTP y su propia lista de redirect URLs,
+ninguno de los dos gestionado desde esta app) — las tres reutilizan el SMTP
+transaccional de Dongee ya activo para cotizaciones (`src/lib/mailer.ts`,
+helper compartido) y el mismo mecanismo: `admin.generateLink({ type:
+"recovery", email })` da un `hashed_token`; el enlace que se manda por correo
+apunta a `/restablecer-password?token_hash=...&type=recovery` en esta misma
+app, no al `action_link` que genera Supabase. Esa página verifica el token del
+lado del cliente con `supabase.auth.verifyOtp({ token_hash, type: "recovery"
+})`, sin pasar por el endpoint hospedado `/auth/v1/verify` de Supabase — así
+nunca depende de una lista de redirect URLs permitidas que esta app no
+administra.
+
+- **Correo de activación**: `usuariosHandler` (POST) lo manda después de crear
+  la cuenta y asignar el perfil, con un enlace para elegir contraseña propia
+  además de la que asignó quien la creó. Best-effort: si SMTP no está
+  configurado o el envío falla, la cuenta se crea igual y la respuesta trae
+  `correoEnviado: false` — la UI se lo dice a quien la creó para que avise por
+  otro medio.
+- **Olvidé mi contraseña**: `/api/usuarios/recuperar` (pública, sin sesión),
+  enlazada desde `/login`. Responde siempre el mismo mensaje genérico exista o
+  no la cuenta, para no exponer qué correos están registrados.
+- **Cambiar mi contraseña**: panel en Usuarios y permisos, visible para
+  cualquier usuario con sesión (no solo administradores) — llama
+  `supabase.auth.updateUser({ password })` directo sobre la sesión activa, sin
+  pedir la contraseña anterior.
+
+Verificado en vivo con entrega real, no solo que la API respondiera 201: se
+creó una cuenta de prueba real desde la app corriendo, se encontró el correo
+de activación real en la bandeja (Gmail), se siguió el enlace hasta
+`/restablecer-password`, se guardó una contraseña y quedó autenticada. Se
+repitió lo mismo con el enlace de "olvidé mi contraseña" desde `/login`. Nota
+para quien reuse este patrón de verificación: la extracción a texto plano de
+la herramienta de Gmail usada corrompió el token (le quitó un `=`) en la
+primera prueba — decodificar el MIME crudo (quoted-printable) a mano dio el
+enlace correcto. Cuenta de prueba eliminada al terminar, vía la Admin API
+directamente (sin pasar por la sesión de administrador, que para ese momento
+ya no era válida: Ivan había editado esa misma cuenta con su nombre y correo
+reales mientras esto se probaba — evidencia de que ya está usando la función
+en vivo, no un error de esta verificación).
+
+`pnpm build`, `pnpm lint` y `node --test tests/*.test.mjs` (11/11) pasan.

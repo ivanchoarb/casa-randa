@@ -1,9 +1,35 @@
 import { puede, permisosValidos } from "./permisos";
+import { crearTransporte, transporteDisponible } from "./mailer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const roles = ["dueño", "administrador", "host", "empleado"];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const fail = (error: string, status = 400) => Response.json({ error }, { status });
+
+// Aviso de cuenta activa, con enlace opcional para que el usuario elija su
+// propia contraseña — mismo mecanismo de recuperar.ts (generateLink +
+// verifyOtp en /restablecer-password), no el correo por defecto de Supabase.
+// Nunca bloquea la creación de la cuenta: es un best-effort.
+async function enviarActivacion(db: SupabaseClient, email: string, origin: string): Promise<boolean> {
+  try {
+    if (!transporteDisponible()) return false;
+    const { data, error } = await db.auth.admin.generateLink({ type: "recovery", email });
+    const hashedToken = data?.properties?.hashed_token;
+    const enlace = !error && hashedToken ? `${origin}/restablecer-password?token_hash=${encodeURIComponent(hashedToken)}&type=recovery` : null;
+    const { transporte, remitente } = crearTransporte();
+    await transporte.sendMail({
+      from: remitente,
+      to: email,
+      subject: "Tu cuenta de la intranet de Casa Randa está activa",
+      text: enlace
+        ? `Tu cuenta en la intranet de Casa Randa ya está activa. Puedes entrar con la contraseña que te asignaron, o elegir una propia ahora mismo:\n${enlace}\n\nSi no reconoces esta cuenta, ignora este correo.`
+        : "Tu cuenta en la intranet de Casa Randa ya está activa. Puedes entrar con la contraseña que te asignaron.",
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // The service-role client is supplied only by the server route.
 export function usuariosHandler(getAdmin: () => SupabaseClient) {
@@ -55,7 +81,8 @@ export function usuariosHandler(getAdmin: () => SupabaseClient) {
           const { error: cleanup } = await db.auth.admin.deleteUser(data.user.id);
           return fail(cleanup ? "La cuenta se creó, pero no se pudo asignar el rol ni deshacer la creación. Revisa el listado antes de reintentar." : "No se pudo asignar el rol. La creación fue deshecha.", 500);
         }
-        return Response.json({ ok: true }, { status: 201 });
+        const correoEnviado = await enviarActivacion(db, email, new URL(req.url).origin);
+        return Response.json({ ok: true, correoEnviado }, { status: 201 });
       }
       if (req.method !== "PATCH") return fail("Método no permitido.", 405);
       const { data: previous, error: previousError } = await db.auth.admin.getUserById(id);

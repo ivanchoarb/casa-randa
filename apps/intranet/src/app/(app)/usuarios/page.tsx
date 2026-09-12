@@ -12,6 +12,43 @@ const ROL_LABEL: Record<Rol, string> = { dueño: "Dueño", administrador: "Admin
 const input = "mt-1 w-full rounded-md border border-line bg-ground px-3 py-2";
 const button = "rounded-md border border-line px-3 py-2 text-sm disabled:opacity-50";
 
+function CambiarContrasena() {
+  const [nueva, setNueva] = useState("");
+  const [confirmar, setConfirmar] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  async function guardar(e: FormEvent) {
+    e.preventDefault();
+    setError(""); setNotice("");
+    if (nueva !== confirmar) { setError("Las contraseñas no coinciden."); return; }
+    if (nueva.length < 12) { setError("La contraseña debe tener al menos 12 caracteres."); return; }
+    setBusy(true);
+    const { error: err } = await supabaseClient.auth.updateUser({ password: nueva });
+    setBusy(false);
+    if (err) { setError(err.message); return; }
+    setNueva(""); setConfirmar(""); setNotice("Contraseña actualizada.");
+  }
+
+  return (
+    <details className="mt-6 rounded-xl border border-line bg-panel p-5">
+      <summary className="cursor-pointer font-semibold">Cambiar mi contraseña</summary>
+      <form onSubmit={guardar} className="mt-4 grid gap-4 sm:grid-cols-2">
+        <fieldset disabled={busy} className="contents">
+          <label className="text-sm">Nueva contraseña<input className={input} type="password" autoComplete="new-password" required minLength={12} maxLength={128} value={nueva} onChange={e => setNueva(e.target.value)} /></label>
+          <label className="text-sm">Confirmar contraseña<input className={input} type="password" autoComplete="new-password" required minLength={12} maxLength={128} value={confirmar} onChange={e => setConfirmar(e.target.value)} /></label>
+        </fieldset>
+        <div className="sm:col-span-2">
+          {notice && <p role="status" className="mb-2 text-sm text-good">{notice}</p>}
+          {error && <p role="alert" className="mb-2 text-sm text-caoba">{error}</p>}
+          <button type="submit" disabled={busy} className={button}>{busy ? "Guardando…" : "Guardar contraseña"}</button>
+        </div>
+      </form>
+    </details>
+  );
+}
+
 export default function UsuariosPage() {
   const { data: identity } = useGetIdentity<{ id: string; rol: Rol; permisos?: Permisos }>();
   const esAdmin = puede(identity?.rol, identity?.permisos, "usuarios");
@@ -42,7 +79,7 @@ export default function UsuariosPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "No se pudo completar la operación.");
       setEditing(null); setDeleting(null); setPassword("");
-      setNotice(method === "DELETE" ? "Usuario eliminado." : method === "POST" ? "Usuario creado." : "Usuario actualizado.");
+      setNotice(method === "DELETE" ? "Usuario eliminado." : method === "POST" ? (json.correoEnviado ? "Usuario creado. Le enviamos un correo avisando que su cuenta está activa." : "Usuario creado, pero no se pudo enviar el correo de aviso — comunícaselo por otro medio.") : "Usuario actualizado.");
       await tableQuery.refetch();
     } catch (e) { setError(e instanceof Error ? e.message : "No se pudo completar la operación."); }
     finally { setBusy(false); }
@@ -60,6 +97,7 @@ export default function UsuariosPage() {
         {esAdmin && <button className={button} disabled={busy} onClick={() => abrir("nuevo")}>Crear usuario</button>}
       </div>
       <p className="mt-2 text-sm text-ink-2">{esAdmin ? "Gestiona cuentas y asigna los roles de Dueño, Administrador, Host y Empleado." : "Consulta tu perfil. La gestión de usuarios está reservada a administradores."}</p>
+      <CambiarContrasena />
       {notice && <p role="status" className="mt-4 text-good">{notice}</p>}
       {error && <p role="alert" className="mt-4 text-caoba">{error}</p>}
       {esAdmin && editing && (
@@ -69,7 +107,7 @@ export default function UsuariosPage() {
             <label className="text-sm">Nombre<input className={input} required maxLength={120} value={nombre} onChange={e => setNombre(e.target.value)} /></label>
             <label className="text-sm">Correo<input className={input} type="email" required maxLength={254} value={email} onChange={e => setEmail(e.target.value)} /></label>
             <label className="text-sm">Rol<select className={input} value={rol} disabled={editing !== "nuevo" && editing.id === identity?.id} onChange={e => { setRol(e.target.value as Rol); setPermisos({}); }}>{ROLES.map(r => <option key={r} value={r}>{ROL_LABEL[r]}</option>)}</select></label>
-            {editing === "nuevo" && <label className="text-sm">Contraseña inicial<input className={input} type="password" autoComplete="new-password" required minLength={12} maxLength={128} value={password} onChange={e => setPassword(e.target.value)} /><span className="text-xs text-ink-2">Mínimo 12 caracteres. La cuenta queda activa; no se envía correo automático.</span></label>}
+            {editing === "nuevo" && <label className="text-sm">Contraseña inicial<input className={input} type="password" autoComplete="new-password" required minLength={12} maxLength={128} value={password} onChange={e => setPassword(e.target.value)} /><span className="text-xs text-ink-2">Mínimo 12 caracteres. La cuenta queda activa y se le envía un correo avisando que puede entrar.</span></label>}
           </fieldset>
           <fieldset disabled={busy} className="rounded-lg border border-line p-4">
             <legend className="px-2 font-semibold">Secciones y áreas permitidas</legend>
