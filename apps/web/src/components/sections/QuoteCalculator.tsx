@@ -31,8 +31,10 @@ export function QuoteCalculator() {
   // policy "publico_crea_solicitud" ya restringe a insert-only.
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
+  const [pais, setPais] = useState("");
   const [consentimiento, setConsentimiento] = useState(false);
   const [consentimientoPolitica, setConsentimientoPolitica] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -46,8 +48,10 @@ export function QuoteCalculator() {
     try {
       const { error } = await supabaseClient.from("solicitudes").insert({
         nombre,
+        apellido: apellido.trim() || null,
         email,
         telefono: telefono.trim() || null,
+        pais: pais.trim() || null,
         entrada: checkIn,
         salida: checkOut,
         huespedes: pax,
@@ -250,17 +254,31 @@ export function QuoteCalculator() {
               </p>
             ) : mostrarFormulario ? (
               <form onSubmit={enviarSolicitud} className="mt-5 flex flex-col gap-3">
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="q-nombre" className={fieldLabel}>
-                    {lang === "es" ? "Nombre" : "Name"}
-                  </label>
-                  <input
-                    id="q-nombre"
-                    required
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
-                    className={fieldInput}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="q-nombre" className={fieldLabel}>
+                      {lang === "es" ? "Nombre" : "First name"}
+                    </label>
+                    <input
+                      id="q-nombre"
+                      required
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      className={fieldInput}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="q-apellido" className={fieldLabel}>
+                      {lang === "es" ? "Apellido" : "Last name"}
+                    </label>
+                    <input
+                      id="q-apellido"
+                      required
+                      value={apellido}
+                      onChange={(e) => setApellido(e.target.value)}
+                      className={fieldInput}
+                    />
+                  </div>
                 </div>
                 <div className="flex flex-col gap-1">
                   <label htmlFor="q-email" className={fieldLabel}>
@@ -275,16 +293,30 @@ export function QuoteCalculator() {
                     className={fieldInput}
                   />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="q-telefono" className={fieldLabel}>
-                    {lang === "es" ? "Teléfono (opcional)" : "Phone (optional)"}
-                  </label>
-                  <input
-                    id="q-telefono"
-                    value={telefono}
-                    onChange={(e) => setTelefono(e.target.value)}
-                    className={fieldInput}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="q-telefono" className={fieldLabel}>
+                      {lang === "es" ? "Teléfono (opcional)" : "Phone (optional)"}
+                    </label>
+                    <input
+                      id="q-telefono"
+                      value={telefono}
+                      onChange={(e) => setTelefono(e.target.value)}
+                      className={fieldInput}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="q-pais" className={fieldLabel}>
+                      {lang === "es" ? "País" : "Country"}
+                    </label>
+                    <input
+                      id="q-pais"
+                      required
+                      value={pais}
+                      onChange={(e) => setPais(e.target.value)}
+                      className={fieldInput}
+                    />
+                  </div>
                 </div>
 
                 <label className="mt-1 flex items-start gap-2 text-xs text-[var(--on-dark-2)]">

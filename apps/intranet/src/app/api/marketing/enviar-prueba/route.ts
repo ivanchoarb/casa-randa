@@ -30,12 +30,15 @@ export async function POST(req: Request) {
 
   try {
     const { transporte, remitente } = crearTransporte();
-    const cuerpoPersonalizado = personalizar(body.cuerpo_html, perfil?.nombre || "Amigo");
+    // El staff no tiene un apellido guardado en perfiles (es un dato del
+    // huésped, no del equipo) — se usa un ejemplo fijo solo para la vista
+    // previa, [APELLIDO] real siempre sale del destinatario de verdad.
+    const cuerpoPersonalizado = personalizar(body.cuerpo_html, perfil?.nombre || "Amigo", "Apellido");
     await transporte.sendMail({
       from: remitente,
       to: authData.user.email,
       subject: `[PRUEBA] ${body.asunto}`,
-      html: `<p style="background:#fff3cd;padding:8px 12px;font-size:12px">Esto es una prueba — no se mandó a ningún contacto real. [NOMBRE] se reemplazó por "${(perfil?.nombre || "Amigo").split(/\s+/)[0]}" a modo de ejemplo.</p>${cuerpoPersonalizado}`,
+      html: `<p style="background:#fff3cd;padding:8px 12px;font-size:12px">Esto es una prueba — no se mandó a ningún contacto real. [NOMBRE] se reemplazó por "${(perfil?.nombre || "Amigo").split(/\s+/)[0]}" y [APELLIDO] por "Apellido" a modo de ejemplo.</p>${cuerpoPersonalizado}`,
     });
   } catch (e) {
     return fail(`Error al enviar la prueba: ${e instanceof Error ? e.message : String(e)}`, 502);

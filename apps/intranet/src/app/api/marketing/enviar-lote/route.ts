@@ -66,11 +66,11 @@ export async function POST(req: Request) {
     return Response.json({ enviado: false, motivo: "limite_diario_alcanzado", enviadosHoy: enviadosHoy ?? 0, limite: campana.limite_diario });
   }
 
-  let siguiente: { id: string; nombre: string; email: string } | null = null;
+  let siguiente: { id: string; nombre: string; apellido: string | null; email: string } | null = null;
   for (let intento = 0; intento < INTENTOS_MAXIMOS && !siguiente; intento++) {
     const { data: candidatos } = await db
       .from("campana_destinatarios")
-      .select("id, nombre, email")
+      .select("id, nombre, apellido, email")
       .eq("campana_id", campana.id)
       .eq("estado", "pendiente")
       .order("created_at")
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
 
   const origin = new URL(req.url).origin;
   const enlaceBaja = `${origin}/darse-de-baja?token=${siguiente.id}`;
-  const cuerpoPersonalizado = personalizar(campana.cuerpo_html, siguiente.nombre);
+  const cuerpoPersonalizado = personalizar(campana.cuerpo_html, siguiente.nombre, siguiente.apellido);
   const html = `${cuerpoPersonalizado}<hr style="margin-top:24px;border:none;border-top:1px solid #ddd" /><p style="font-size:11px;color:#888">Si no quieres seguir recibiendo estos correos, <a href="${enlaceBaja}">haz clic aquí para darte de baja</a>.</p>`;
   const texto = `${html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()}\n\nDarte de baja: ${enlaceBaja}`;
 

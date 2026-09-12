@@ -7,12 +7,12 @@ export function transporteDisponible() {
   return !!(process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASS);
 }
 
-// Mail-merge sencillo para campañas: `[NOMBRE]` en cualquier parte del HTML
-// se reemplaza por el primer nombre de quien recibe el correo — no el
-// nombre completo, para que "Hola [NOMBRE]," quede natural.
-export function personalizar(html: string, nombreCompleto: string) {
-  const primerNombre = nombreCompleto.trim().split(/\s+/)[0] || nombreCompleto;
-  return html.replace(/\[NOMBRE\]/gi, primerNombre);
+// Mail-merge sencillo para campañas: `[NOMBRE]` se reemplaza por el primer
+// nombre de quien recibe el correo (no el nombre completo, para que "Hola
+// [NOMBRE]," quede natural) y `[APELLIDO]` por su apellido, si se tiene.
+export function personalizar(html: string, nombre: string, apellido?: string | null) {
+  const primerNombre = nombre.trim().split(/\s+/)[0] || nombre;
+  return html.replace(/\[NOMBRE\]/gi, primerNombre).replace(/\[APELLIDO\]/gi, apellido?.trim() || "");
 }
 
 export function crearTransporte() {

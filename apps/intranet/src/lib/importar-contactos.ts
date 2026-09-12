@@ -25,35 +25,71 @@ export function leerArchivoContactos(buf: ArrayBuffer): ArchivoContactos {
   return { encabezados, filas: resto };
 }
 
-export type CampoContacto = "nombre" | "email" | "telefono" | "pais" | "ciudad" | "notas";
+export type CampoContacto =
+  | "nombre"
+  | "apellido"
+  | "email"
+  | "telefono"
+  | "pais"
+  | "ciudad"
+  | "entrada"
+  | "salida"
+  | "notas";
 export type Mapeo = Record<CampoContacto, number | null>;
 
 export const CAMPO_LABEL: Record<CampoContacto, string> = {
   nombre: "Nombre",
+  apellido: "Apellido",
   email: "Correo",
   telefono: "Teléfono",
   pais: "País",
   ciudad: "Ciudad",
+  entrada: "Llegada (arrival)",
+  salida: "Salida (departure)",
   notas: "Notas",
 };
 
 const PISTAS: Record<CampoContacto, string[]> = {
-  nombre: ["nombre", "name", "nombre completo", "full name"],
+  nombre: ["nombre", "name", "first name", "nombre completo", "full name"],
+  apellido: ["apellido", "last name", "surname", "apellidos"],
   email: ["email", "correo", "e-mail", "mail"],
   telefono: ["telefono", "teléfono", "phone", "celular", "whatsapp", "número"],
   pais: ["pais", "país", "country"],
   ciudad: ["ciudad", "city"],
+  entrada: ["entrada", "llegada", "arrival", "check-in", "checkin"],
+  salida: ["salida", "departure", "check-out", "checkout"],
   notas: ["notas", "comentario", "comentarios", "message", "mensaje", "notes"],
 };
 
 export function sugerirMapeo(encabezados: string[]): Mapeo {
-  const mapeo = { nombre: null, email: null, telefono: null, pais: null, ciudad: null, notas: null } as Mapeo;
+  const mapeo = {
+    nombre: null,
+    apellido: null,
+    email: null,
+    telefono: null,
+    pais: null,
+    ciudad: null,
+    entrada: null,
+    salida: null,
+    notas: null,
+  } as Mapeo;
   const normalizados = encabezados.map((h) => h.toLowerCase().trim());
   for (const campo of Object.keys(PISTAS) as CampoContacto[]) {
     const idx = normalizados.findIndex((h) => PISTAS[campo].some((p) => h === p || h.includes(p)));
     if (idx !== -1) mapeo[campo] = idx;
   }
   return mapeo;
+}
+
+// Mismo criterio que importar-reservas.ts: acepta ISO (2026-11-20) o
+// DD/MM/YYYY (formato más común en exports no técnicos como FormsApp).
+function normalizarFecha(v: string): string | null {
+  const s = v.trim();
+  if (!s) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  return null;
 }
 
 export interface ResultadoImportContactos {
@@ -82,10 +118,13 @@ export async function importarContactos(
   const omitidos: ResultadoImportContactos["omitidos"] = [];
   const filasValidas: {
     nombre: string;
+    apellido: string | null;
     email: string;
     telefono: string | null;
     pais: string | null;
     ciudad: string | null;
+    entrada: string | null;
+    salida: string | null;
     notas: string | null;
     fuente: "importado";
     consentimiento: true;
@@ -111,12 +150,19 @@ export async function importarContactos(
     }
     vistos.add(email);
     const campo = (c: CampoContacto) => (mapeo[c] !== null ? fila[mapeo[c] as number] || null : null);
+    const fecha = (c: "entrada" | "salida") => {
+      const v = campo(c);
+      return v ? normalizarFecha(v) : null;
+    };
     filasValidas.push({
       nombre,
+      apellido: campo("apellido"),
       email,
       telefono: campo("telefono"),
       pais: campo("pais"),
       ciudad: campo("ciudad"),
+      entrada: fecha("entrada"),
+      salida: fecha("salida"),
       notas: campo("notas"),
       fuente: "importado",
       consentimiento: true,

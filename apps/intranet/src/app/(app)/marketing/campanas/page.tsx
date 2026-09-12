@@ -230,16 +230,16 @@ export default function CampanasPage() {
       // snapshot al crear, no una vista en vivo (ver 0020_campanas_
       // marketing.sql).
       const [{ data: sol, error: eSol }, { data: con, error: eCon }] = await Promise.all([
-        supabaseClient.from("solicitudes").select("nombre, email").eq("consentimiento", true),
-        supabaseClient.from("contactos_marketing").select("nombre, email").eq("consentimiento", true),
+        supabaseClient.from("solicitudes").select("nombre, apellido, email").eq("consentimiento", true),
+        supabaseClient.from("contactos_marketing").select("nombre, apellido, email").eq("consentimiento", true),
       ]);
       if (eSol) throw new Error(eSol.message);
       if (eCon) throw new Error(eCon.message);
 
-      const vistos = new Map<string, string>();
+      const vistos = new Map<string, { nombre: string; apellido: string | null }>();
       for (const r of [...(sol ?? []), ...(con ?? [])]) {
         const email = r.email.toLowerCase();
-        if (!vistos.has(email)) vistos.set(email, r.nombre);
+        if (!vistos.has(email)) vistos.set(email, { nombre: r.nombre, apellido: r.apellido });
       }
       if (vistos.size === 0) throw new Error("No hay contactos con consentimiento todavía — revisa Marketing.");
 
@@ -255,9 +255,10 @@ export default function CampanasPage() {
         .single();
       if (eCampana) throw new Error(eCampana.message);
 
-      const filas = Array.from(vistos.entries()).map(([email, nombre]) => ({
+      const filas = Array.from(vistos.entries()).map(([email, { nombre, apellido }]) => ({
         campana_id: campana.id,
         nombre,
+        apellido,
         email,
       }));
       const { error: eDest } = await supabaseClient.from("campana_destinatarios").insert(filas);
@@ -313,17 +314,22 @@ export default function CampanasPage() {
             className="mt-1 block w-full rounded-md border border-line bg-ground px-3 py-2 text-sm font-mono"
           />
           <span className="mt-1 block text-xs text-ink-2">
-            Escribe <code>[NOMBRE]</code> donde quieras que aparezca el nombre de cada
-            destinatario (por ejemplo &quot;Hola [NOMBRE],&quot;) — se reemplaza solo por su
-            primer nombre al enviar.
+            Escribe <code>[NOMBRE]</code> y <code>[APELLIDO]</code> donde quieras que aparezca el
+            nombre de cada destinatario (por ejemplo &quot;Hola [NOMBRE],&quot;) — se reemplazan
+            solos al enviar. Si un contacto no tiene apellido guardado, <code>[APELLIDO]</code>{" "}
+            queda vacío.
           </span>
         </label>
         {cuerpoHtml.trim() && (
           <div>
-            <p className="text-xs font-semibold text-ink-2 uppercase">Vista previa (con &quot;Juan&quot; de ejemplo)</p>
+            <p className="text-xs font-semibold text-ink-2 uppercase">
+              Vista previa (con &quot;Juan Pérez&quot; de ejemplo)
+            </p>
             <div
               className="mt-1 max-h-96 overflow-auto rounded-md border border-line bg-white p-4 text-black"
-              dangerouslySetInnerHTML={{ __html: cuerpoHtml.replace(/\[NOMBRE\]/gi, "Juan") }}
+              dangerouslySetInnerHTML={{
+                __html: cuerpoHtml.replace(/\[NOMBRE\]/gi, "Juan").replace(/\[APELLIDO\]/gi, "Pérez"),
+              }}
             />
           </div>
         )}

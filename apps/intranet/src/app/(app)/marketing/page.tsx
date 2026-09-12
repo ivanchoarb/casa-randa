@@ -15,10 +15,12 @@ import {
   type Mapeo,
   type ResultadoImportContactos,
 } from "@/lib/importar-contactos";
+import { IDIOMA_LABEL, idiomaSugerido } from "@/lib/idioma";
 
 interface Solicitud {
   id: string;
   nombre: string;
+  apellido: string | null;
   email: string;
   telefono: string | null;
   pais: string | null;
@@ -36,10 +38,13 @@ interface Solicitud {
 interface ContactoMarketing {
   id: string;
   nombre: string;
+  apellido: string | null;
   email: string;
   telefono: string | null;
   pais: string | null;
   ciudad: string | null;
+  entrada: string | null;
+  salida: string | null;
   fuente: "formulario_web" | "importado" | "manual";
   created_at: string;
 }
@@ -59,6 +64,7 @@ const FUENTE_LABEL: Record<ContactoMarketing["fuente"], string> = {
 interface Contacto {
   id: string;
   nombre: string;
+  apellido: string | null;
   email: string;
   telefono: string | null;
   pais: string | null;
@@ -71,6 +77,7 @@ interface Contacto {
 }
 
 type Filtro = "todos" | Solicitud["estado"];
+type FiltroIdioma = "todos" | "es" | "en" | "desconocido";
 
 function ImportarContactos({ onImportado }: { onImportado: () => void }) {
   const { data: identity } = useGetIdentity<{ id: string }>();
@@ -205,14 +212,18 @@ function ImportarContactos({ onImportado }: { onImportado: () => void }) {
                   <thead>
                     <tr className="border-b border-line">
                       <th className="py-1 pr-4">Nombre</th>
+                      <th className="py-1 pr-4">Apellido</th>
                       <th className="py-1 pr-4">Correo</th>
+                      <th className="py-1 pr-4">País</th>
                     </tr>
                   </thead>
                   <tbody>
                     {archivo.filas.slice(0, 3).map((f, i) => (
                       <tr key={i}>
                         <td className="py-1 pr-4">{f[mapeo.nombre as number]}</td>
+                        <td className="py-1 pr-4">{mapeo.apellido !== null ? f[mapeo.apellido] : "—"}</td>
                         <td className="py-1 pr-4">{f[mapeo.email as number]}</td>
+                        <td className="py-1 pr-4">{mapeo.pais !== null ? f[mapeo.pais] : "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -292,6 +303,7 @@ export default function MarketingPage() {
     const deSolicitudes: Contacto[] = (solicitudesTable.result.data ?? []).map((s) => ({
       id: `solicitud-${s.id}`,
       nombre: s.nombre,
+      apellido: s.apellido,
       email: s.email,
       telefono: s.telefono,
       pais: s.pais,
@@ -305,14 +317,15 @@ export default function MarketingPage() {
     const deImportados: Contacto[] = (contactosTable.result.data ?? []).map((c) => ({
       id: `contacto-${c.id}`,
       nombre: c.nombre,
+      apellido: c.apellido,
       email: c.email,
       telefono: c.telefono,
       pais: c.pais,
       ciudad: c.ciudad,
       fuente: FUENTE_LABEL[c.fuente],
       estado: null,
-      entrada: null,
-      salida: null,
+      entrada: c.entrada,
+      salida: c.salida,
       created_at: c.created_at,
     }));
     return [...deSolicitudes, ...deImportados].sort((a, b) => b.created_at.localeCompare(a.created_at));
@@ -320,19 +333,22 @@ export default function MarketingPage() {
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<Filtro>("todos");
+  const [filtroIdioma, setFiltroIdioma] = useState<FiltroIdioma>("todos");
 
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     return contactos.filter((c) => {
       if (filtroEstado !== "todos" && c.estado !== filtroEstado) return false;
+      if (filtroIdioma !== "todos" && (idiomaSugerido(c.pais) ?? "desconocido") !== filtroIdioma) return false;
       if (!q) return true;
       return (
         c.nombre.toLowerCase().includes(q) ||
+        (c.apellido ?? "").toLowerCase().includes(q) ||
         c.email.toLowerCase().includes(q) ||
         (c.telefono ?? "").toLowerCase().includes(q)
       );
     });
-  }, [contactos, busqueda, filtroEstado]);
+  }, [contactos, busqueda, filtroEstado, filtroIdioma]);
 
   const hoy = new Date();
   const nuevosDelMes = contactos.filter((c) => {
@@ -346,12 +362,15 @@ export default function MarketingPage() {
   function exportar() {
     const filas = filtrados.map((c) => ({
       Nombre: c.nombre,
+      Apellido: c.apellido ?? "",
       Correo: c.email,
       Teléfono: c.telefono ?? "",
       País: c.pais ?? "",
       Ciudad: c.ciudad ?? "",
+      Idioma: idiomaSugerido(c.pais) ? IDIOMA_LABEL[idiomaSugerido(c.pais) as "es" | "en"] : "",
       Origen: c.fuente,
-      "Fechas solicitadas": c.entrada && c.salida ? `${c.entrada} → ${c.salida}` : "",
+      "Llegada (arrival)": c.entrada ?? "",
+      "Salida (departure)": c.salida ?? "",
       Estado: c.estado ? ESTADO_LABEL[c.estado] : "",
       "Registrado el": c.created_at.slice(0, 10),
     }));
@@ -428,6 +447,16 @@ export default function MarketingPage() {
                 </option>
               ))}
             </select>
+            <select
+              value={filtroIdioma}
+              onChange={(e) => setFiltroIdioma(e.target.value as FiltroIdioma)}
+              className="rounded-md border border-line bg-ground px-3 py-2 text-sm"
+            >
+              <option value="todos">Cualquier idioma</option>
+              <option value="es">Español</option>
+              <option value="en">Inglés</option>
+              <option value="desconocido">Sin país registrado</option>
+            </select>
             <button
               type="button"
               onClick={exportar}
@@ -454,7 +483,8 @@ export default function MarketingPage() {
                     <th className="p-4">Nombre</th>
                     <th className="p-4">Contacto</th>
                     <th className="p-4">Origen</th>
-                    <th className="p-4">Fechas pedidas</th>
+                    <th className="p-4">Idioma</th>
+                    <th className="p-4">Fechas</th>
                     <th className="p-4">Estado</th>
                     <th className="p-4">Registrado</th>
                     <th className="p-4">Acciones</th>
@@ -463,7 +493,10 @@ export default function MarketingPage() {
                 <tbody>
                   {filtrados.map((c) => (
                     <tr key={c.id} className="border-b border-line last:border-0">
-                      <td className="p-4 font-medium">{c.nombre}</td>
+                      <td className="p-4 font-medium">
+                        {c.nombre}
+                        {c.apellido ? ` ${c.apellido}` : ""}
+                      </td>
                       <td className="p-4">
                         <p>{c.email}</p>
                         {c.telefono && <p className="text-xs text-ink-2">{c.telefono}</p>}
@@ -473,6 +506,9 @@ export default function MarketingPage() {
                         {[c.ciudad, c.pais].filter(Boolean).length > 0
                           ? ` · ${[c.ciudad, c.pais].filter(Boolean).join(", ")}`
                           : ""}
+                      </td>
+                      <td className="p-4 text-xs text-ink-2">
+                        {idiomaSugerido(c.pais) ? IDIOMA_LABEL[idiomaSugerido(c.pais) as "es" | "en"] : "—"}
                       </td>
                       <td className="p-4 text-xs">{c.entrada && c.salida ? `${c.entrada} → ${c.salida}` : "—"}</td>
                       <td className="p-4">
