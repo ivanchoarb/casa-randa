@@ -1,5 +1,13 @@
 # CLAUDE.md
 
+## Shared coordination with Codex
+
+Before starting work, read [AGENTS.md](AGENTS.md) and
+[docs/coordinacion-agentes.md](docs/coordinacion-agentes.md). They record shared
+task ownership, review findings, and handoffs. Keep that record updated when
+claiming or completing work. These files share context; they do not establish
+an automatic connection to another agent or confirm that it has read a handoff.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## What this is
