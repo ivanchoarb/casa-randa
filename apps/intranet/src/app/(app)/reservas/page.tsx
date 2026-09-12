@@ -1,8 +1,6 @@
 "use client";
 
-import { useGetIdentity, useTable, useUpdate } from "@refinedev/core";
-
-const NUMEROS_HUESPEDES = Array.from({ length: 16 }, (_, i) => i + 1); // constraint huespedes_en_rango: 1-16
+import { useTable } from "@refinedev/core";
 
 interface Reserva {
   id: string;
@@ -12,7 +10,6 @@ interface Reserva {
   entrada: string;
   salida: string;
   noches: number;
-  huespedes: number;
   bruto: number;
   neto: number;
   estado: "pendiente" | "confirmada" | "completada" | "cancelada";
@@ -34,13 +31,6 @@ export default function ReservasPage() {
     sorters: { initial: [{ field: "entrada", order: "desc" }] },
     pagination: { pageSize: 20 },
   });
-
-  // Editar huéspedes está limitado a admin/dueño (política RLS
-  // "gestor_actualiza_reservas" en 0006_rls.sql) — un empleado lo vería de
-  // solo lectura, no un <select> que falla al guardar.
-  const { data: identity } = useGetIdentity<{ rol?: "administrador" | "dueño" | "empleado" }>();
-  const esGestor = identity?.rol === "administrador" || identity?.rol === "dueño";
-  const { mutate: actualizar, mutation } = useUpdate<Reserva>();
 
   return (
     <div>
@@ -70,7 +60,6 @@ export default function ReservasPage() {
                 <th className="px-4 py-3 font-medium">Entrada</th>
                 <th className="px-4 py-3 font-medium">Salida</th>
                 <th className="px-4 py-3 text-right font-medium">Noches</th>
-                <th className="px-4 py-3 text-right font-medium">Huéspedes</th>
                 <th className="px-4 py-3 text-right font-medium">Neto</th>
                 <th className="px-4 py-3 font-medium">Estado</th>
               </tr>
@@ -88,30 +77,6 @@ export default function ReservasPage() {
                   <td className="px-4 py-3">{r.entrada}</td>
                   <td className="px-4 py-3">{r.salida}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{r.noches}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    {esGestor ? (
-                      <select
-                        value={r.huespedes}
-                        disabled={mutation.isPending}
-                        onChange={(e) =>
-                          actualizar({
-                            resource: "reservas",
-                            id: r.id,
-                            values: { huespedes: Number(e.target.value) },
-                          })
-                        }
-                        className="rounded-md border border-line bg-ground px-2 py-1 text-sm tabular-nums"
-                      >
-                        {NUMEROS_HUESPEDES.map((n) => (
-                          <option key={n} value={n}>
-                            {n}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      r.huespedes
-                    )}
-                  </td>
                   <td className="px-4 py-3 text-right tabular-nums">${r.neto.toFixed(2)}</td>
                   <td className="px-4 py-3">{ESTADO_LABEL[r.estado]}</td>
                 </tr>
