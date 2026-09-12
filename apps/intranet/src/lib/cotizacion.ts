@@ -292,30 +292,30 @@ export async function subirCotizacionPDF(bytes: Uint8Array, codigo: string, expi
 }
 
 /**
- * Formato de texto propio de WhatsApp — *negrita*, _cursiva_ — con
- * emojis como anclas visuales por sección, no uno por línea. Pensado
- * para leerse bien en la ventana angosta de un chat, no como un correo.
+ * Formato exacto pedido por Ivan el 2026-09-12 (pegó la plantilla completa,
+ * con emojis por línea, no solo por sección) — se reproduce literal, sin
+ * agregar énfasis en negrita o cursiva que él no puso.
  */
 export function resumenWhatsApp(input: CotizacionInput, calculo: CotizacionCalculo, urlPdf?: string) {
-  const saludo = input.clienteNombre ? `Hola ${input.clienteNombre} 👋` : "Hola 👋";
+  const saludo = input.clienteNombre ? `¡Hola ${input.clienteNombre}!` : "¡Hola!";
   const lineas = [
-    `🏡 *Casa Randa* — Cotización ${calculo.codigo}`,
+    `🌴 Casa Randa — Cotización ${calculo.codigo}`,
     "",
-    `${saludo}, aquí el detalle de tu estadía:`,
+    `${saludo} 👋 Aquí tienes el detalle de tu próxima estadía:`,
     "",
-    "📅 *Fechas*",
-    `${fechaLarga(input.entrada)} → ${fechaLarga(input.salida)}`,
-    `_${calculo.noches} noches · ${input.huespedes} huéspedes_`,
+    "🗓️ Fechas de Reserva",
+    `🛫 ${fechaLarga(input.entrada)} ➡️ 🛬 ${fechaLarga(input.salida)}`,
+    `🌙 ${calculo.noches} noches | 👥 ${input.huespedes} huéspedes`,
     "",
-    "💵 *Resumen*",
-    `Total: *${money(calculo.total)}*`,
-    `Anticipo (${input.anticipoPct}%): ${money(calculo.anticipo)}`,
-    `Saldo: ${money(calculo.saldo)}`,
+    "💳 Resumen Financiero",
+    `💰 Total: ${money(calculo.total)}`,
+    `📉 Anticipo (${input.anticipoPct}%): ${money(calculo.anticipo)}`,
+    `⚖️ Saldo: ${money(calculo.saldo)}`,
     "",
-    `⏳ Válida por ${input.validezDias} días`,
+    `⏱️ Cotización válida por ${input.validezDias} días`,
   ];
-  if (urlPdf) lineas.push("", `📎 *PDF completo:* ${urlPdf}`);
-  lineas.push("", "¿Dudas? Escríbenos, ¡será un gusto ayudarte! 😊");
+  if (urlPdf) lineas.push("", "📥 Descarga tu PDF completo aquí:", `🔗 ${urlPdf}`);
+  lineas.push("", "¿Tienes alguna duda? Escríbenos, ¡será un gusto ayudarte a planear tu viaje! 🌊🏖️");
   return lineas;
 }
 
