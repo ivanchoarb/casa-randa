@@ -143,8 +143,9 @@ la herramienta de Gmail usada corrompió el token (le quitó un `=`) en la
 primera prueba — decodificar el MIME crudo (quoted-printable) a mano dio el
 enlace correcto. Cuenta de prueba eliminada al terminar, vía la Admin API
 directamente (sin pasar por la sesión de administrador, que para ese momento
-ya no era válida: Ivan había editado esa misma cuenta con su nombre y correo
-reales mientras esto se probaba — evidencia de que ya está usando la función
-en vivo, no un error de esta verificación).
+fallaba con el correo de prueba: Ivan había editado esa cuenta con su correo
+real, `airbnbparrado@gmail.com`, mientras esto se probaba — la contraseña
+nunca cambió, confirmado entrando con el correo nuevo y la contraseña
+original).
 
 `pnpm build`, `pnpm lint` y `node --test tests/*.test.mjs` (11/11) pasan.
