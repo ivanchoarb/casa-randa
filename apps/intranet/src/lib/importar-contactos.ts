@@ -15,13 +15,34 @@ export interface ArchivoContactos {
   filas: string[][];
 }
 
+// `cellDates: true` es necesario para que una celda de fecha real de Excel
+// (no texto) llegue como un objeto Date en vez del número de serie interno
+// de Excel — sin esto, "20/11/2026" escrito como fecha de verdad en la
+// hoja (no como texto) llegaba como algo como "46246" y normalizarFecha()
+// no lo reconocía, dejando Llegada/Salida vacías para esas filas. Mismo
+// motivo por el que importar-reservas.ts ya usaba esta opción.
+function celdaATexto(v: unknown): string {
+  if (v instanceof Date) {
+    if (Number.isNaN(v.getTime())) return "";
+    // Getters UTC, no locales: SheetJS arma las celdas de fecha "solo
+    // fecha" como medianoche UTC — con getFullYear()/getMonth()/getDate()
+    // (hora local) el resultado queda un día atrás en cualquier huso
+    // detrás de UTC (Panamá es UTC-5). Probado con una celda de fecha
+    // real de Excel: con getters locales el 20/11/2026 llegaba como
+    // 19/11/2026.
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${v.getUTCFullYear()}-${pad(v.getUTCMonth() + 1)}-${pad(v.getUTCDate())}`;
+  }
+  return String(v ?? "").trim();
+}
+
 export function leerArchivoContactos(buf: ArrayBuffer): ArchivoContactos {
-  const wb = XLSX.read(buf, { type: "array" });
+  const wb = XLSX.read(buf, { type: "array", cellDates: true });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const filas: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: "" });
   if (filas.length === 0) throw new Error("El archivo está vacío.");
   const encabezados = filas[0].map((c) => String(c).trim());
-  const resto = filas.slice(1).map((f) => encabezados.map((_, i) => String(f[i] ?? "").trim()));
+  const resto = filas.slice(1).map((f) => encabezados.map((_, i) => celdaATexto(f[i])));
   return { encabezados, filas: resto };
 }
 
@@ -54,7 +75,7 @@ const PISTAS: Record<CampoContacto, string[]> = {
   apellido: ["apellido", "last name", "surname", "apellidos"],
   email: ["email", "correo", "e-mail", "mail"],
   telefono: ["telefono", "teléfono", "phone", "celular", "whatsapp", "número"],
-  pais: ["pais", "país", "country"],
+  pais: ["pais", "país", "country", "nacionalidad", "nationality", "origen", "ubicacion", "ubicación"],
   ciudad: ["ciudad", "city"],
   entrada: ["entrada", "llegada", "arrival", "check-in", "checkin"],
   salida: ["salida", "departure", "check-out", "checkout"],

@@ -52,8 +52,15 @@ export interface ResultadoImport {
 function normalizarFecha(v: unknown): string | null {
   if (v instanceof Date) {
     if (Number.isNaN(v.getTime())) return null;
+    // Getters UTC, no locales: SheetJS arma las celdas de fecha "solo
+    // fecha" (sin hora) como medianoche UTC — leerlas con getFullYear()/
+    // getMonth()/getDate() (hora local) las corre un día atrás en
+    // cualquier huso horario detrás de UTC (Panamá es UTC-5). Encontrado
+    // el 2026-09-12 mientras se corregía el mismo bug en
+    // importar-contactos.ts — probado con una celda de fecha real de
+    // Excel (no texto): con getters locales llegaba un día antes.
     const pad = (n: number) => String(n).padStart(2, "0");
-    return `${v.getFullYear()}-${pad(v.getMonth() + 1)}-${pad(v.getDate())}`;
+    return `${v.getUTCFullYear()}-${pad(v.getUTCMonth() + 1)}-${pad(v.getUTCDate())}`;
   }
   const s = String(v ?? "").trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;

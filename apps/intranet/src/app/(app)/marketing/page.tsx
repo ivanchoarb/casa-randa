@@ -181,6 +181,17 @@ function ImportarContactos({ onImportado }: { onImportado: () => void }) {
           <div>
             <p className="text-sm font-semibold">¿Qué columna es cada campo?</p>
             <p className="mt-1 text-xs text-ink-2">Nombre y Correo son obligatorios; el resto es opcional.</p>
+            {(() => {
+              const sinDetectar = (Object.keys(CAMPO_LABEL) as CampoContacto[]).filter(
+                (c) => c !== "notas" && mapeo[c] === null,
+              );
+              return sinDetectar.length > 0 ? (
+                <p className="mt-2 rounded-md bg-lamp-bg px-3 py-2 text-xs text-lamp">
+                  No se detectó sola una columna para: {sinDetectar.map((c) => CAMPO_LABEL[c]).join(", ")}. Si tu
+                  archivo sí trae esos datos, selecciona la columna correcta a mano abajo antes de importar.
+                </p>
+              ) : null;
+            })()}
             <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {(Object.keys(CAMPO_LABEL) as CampoContacto[]).map((campo) => (
                 <label key={campo} className="text-xs text-ink-2">
