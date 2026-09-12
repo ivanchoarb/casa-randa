@@ -134,6 +134,18 @@ export default function CotizacionesPage() {
   // token vencido), siempre cae al enlace de click-to-chat — nunca se
   // queda sin poder mandar nada.
   async function enviarWhatsApp() {
+    // La ventana se abre AQUÍ, en blanco, de forma síncrona dentro del
+    // propio manejador del clic — es lo único que Chrome/Safari cuentan
+    // como "gesto real del usuario". Si `window.open` se llama después de
+    // los `await` de abajo (subir el PDF, acortar el link), el navegador
+    // ya no lo reconoce como resultado directo del clic y lo bloquea en
+    // silencio — sin aviso, sin error en consola, nada visible. Eso es lo
+    // que estaba pasando: no es que faltaran los emojis, es que la
+    // ventana con el mensaje nunca llegaba a abrirse. Se le pone la URL
+    // real más abajo, una vez lista (sin "noopener" a propósito: con eso
+    // el navegador no devuelve la referencia a la ventana, y sin la
+    // referencia no se le puede poner la URL después).
+    const ventana = window.open("", "_blank");
     setEnviandoWhatsapp(true);
     setMensajeWhatsapp(null);
     try {
@@ -156,6 +168,7 @@ export default function CotizacionesPage() {
             }),
           });
           if (res.ok) {
+            ventana?.close(); // se mandó directo por la API real, no hace falta abrir wa.me
             setMensajeWhatsapp(`Documento enviado por WhatsApp a ${telefonoWhatsapp}.`);
             setEnviandoWhatsapp(false);
             return;
@@ -165,8 +178,11 @@ export default function CotizacionesPage() {
         }
       }
 
-      window.open(enlaceWhatsApp(input, calculo, telefonoWhatsapp, urlPdf), "_blank", "noopener,noreferrer");
+      const url = enlaceWhatsApp(input, calculo, telefonoWhatsapp, urlPdf);
+      if (ventana) ventana.location.href = url;
+      else window.open(url, "_blank"); // por si el open en blanco también se bloqueó
     } catch (e) {
+      ventana?.close();
       setMensajeWhatsapp(e instanceof Error ? e.message : "Error al preparar el envío por WhatsApp.");
     } finally {
       setEnviandoWhatsapp(false);
