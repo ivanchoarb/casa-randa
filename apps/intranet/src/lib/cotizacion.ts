@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { supabaseClient } from "@/lib/supabase-client";
 
 export interface CotizacionInput {
   clienteNombre: string;
@@ -260,18 +261,53 @@ export function descargarCotizacionPDF(bytes: Uint8Array, codigo: string) {
 }
 
 /**
- * WhatsApp no tiene forma de adjuntar un archivo vía un enlace wa.me — su
- * API de "click to chat" solo admite texto prellenado (documentado por
- * Meta). Por eso esto abre WhatsApp con un resumen de la cotización, no
- * el PDF en sí; el PDF hay que adjuntarlo a mano desde donde se descargó.
+ * Sube el PDF al bucket privado "cotizaciones" (creado 2026-09-12, ver
+ * supabase/migrations/0011_storage_cotizaciones.sql) y devuelve una signed
+ * URL — no el bucket completo expuesto público. Existe porque ni el
+ * enlace wa.me ni (todavía) la API de WhatsApp Business tienen forma de
+ * adjuntar bytes directo: necesitan una URL a la que puedan ir a buscar
+ * el archivo.
  */
-export function enlaceWhatsApp(input: CotizacionInput, calculo: CotizacionCalculo, telefono: string) {
-  const lineas = [
+export async function subirCotizacionPDF(bytes: Uint8Array, codigo: string, expiraEnSegundos = 3600) {
+  const ruta = `${codigo}.pdf`;
+  const cuerpo = bytes.slice().buffer as ArrayBuffer;
+  const { error: errorSubida } = await supabaseClient.storage
+    .from("cotizaciones")
+    .upload(ruta, cuerpo, { contentType: "application/pdf", upsert: true });
+  if (errorSubida) throw new Error(`Error al subir el PDF: ${errorSubida.message}`);
+
+  const { data, error: errorUrl } = await supabaseClient.storage
+    .from("cotizaciones")
+    .createSignedUrl(ruta, expiraEnSegundos);
+  if (errorUrl || !data) throw new Error(`Error al generar el enlace: ${errorUrl?.message}`);
+  return data.signedUrl;
+}
+
+function resumenWhatsApp(input: CotizacionInput, calculo: CotizacionCalculo) {
+  return [
     `Hola${input.clienteNombre ? " " + input.clienteNombre : ""}, aquí tu cotización de Casa Randa (${calculo.codigo}):`,
     `${fechaLarga(input.entrada)} → ${fechaLarga(input.salida)} · ${calculo.noches} noches · ${input.huespedes} huéspedes`,
     `Total: ${money(calculo.total)} · Anticipo (${input.anticipoPct}%): ${money(calculo.anticipo)} · Saldo: ${money(calculo.saldo)}`,
-    `Válida por ${input.validezDias} días. Te comparto el PDF con el detalle completo.`,
+    `Válida por ${input.validezDias} días.`,
   ];
+}
+
+/**
+ * WhatsApp no tiene forma de adjuntar un archivo vía un enlace wa.me — su
+ * API de "click to chat" solo admite texto prellenado (documentado por
+ * Meta). `urlPdf` (de subirCotizacionPDF) se agrega como un link de
+ * descarga dentro del texto — no es un adjunto real, pero el cliente
+ * puede abrirlo y bajar el PDF desde el mismo chat.
+ */
+export function enlaceWhatsApp(
+  input: CotizacionInput,
+  calculo: CotizacionCalculo,
+  telefono: string,
+  urlPdf?: string,
+) {
+  const lineas = resumenWhatsApp(input, calculo);
+  if (urlPdf) lineas.push(`PDF: ${urlPdf}`);
+  else lineas.push("Te comparto el PDF con el detalle completo.");
   const texto = encodeURIComponent(lineas.join("\n"));
   const numero = telefono.replace(/[^0-9]/g, "");
   return numero ? `https://wa.me/${numero}?text=${texto}` : `https://wa.me/?text=${texto}`;

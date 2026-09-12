@@ -7,6 +7,7 @@ import {
   descargarCotizacionPDF,
   enlaceWhatsApp,
   generarCotizacionPDF,
+  subirCotizacionPDF,
   type CotizacionInput,
 } from "@/lib/cotizacion";
 
@@ -47,6 +48,8 @@ export default function CotizacionesPage() {
   const [enviandoCorreo, setEnviandoCorreo] = useState(false);
   const [mensajeCorreo, setMensajeCorreo] = useState<string | null>(null);
   const [errorCorreo, setErrorCorreo] = useState<string | null>(null);
+  const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
+  const [mensajeWhatsapp, setMensajeWhatsapp] = useState<string | null>(null);
 
   const input: CotizacionInput = useMemo(
     () => ({
@@ -122,8 +125,49 @@ export default function CotizacionesPage() {
     }
   }
 
-  function abrirWhatsApp() {
-    window.open(enlaceWhatsApp(input, calculo, telefonoWhatsapp), "_blank", "noopener,noreferrer");
+  // Sube el PDF una sola vez y lo reutiliza: como link de descarga dentro
+  // del texto de wa.me, y como el `document.link` que la API de WhatsApp
+  // Business necesita si ya está configurada. Si la API real falla por
+  // cualquier motivo (no configurada, número fuera de la ventana de 24h,
+  // token vencido), siempre cae al enlace de click-to-chat — nunca se
+  // queda sin poder mandar nada.
+  async function enviarWhatsApp() {
+    setEnviandoWhatsapp(true);
+    setMensajeWhatsapp(null);
+    try {
+      const bytes = await generarCotizacionPDF(input, calculo);
+      const urlPdf = await subirCotizacionPDF(bytes, calculo.codigo);
+
+      if (telefonoWhatsapp.trim()) {
+        const { data } = await supabaseClient.auth.getSession();
+        const token = data.session?.access_token;
+        if (token) {
+          const res = await fetch("/api/cotizaciones/enviar-whatsapp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              telefono: telefonoWhatsapp,
+              urlPdf,
+              caption: `Tu cotización de Casa Randa — ${calculo.codigo}. Total ${money(calculo.total)}.`,
+              codigo: calculo.codigo,
+            }),
+          });
+          if (res.ok) {
+            setMensajeWhatsapp(`Documento enviado por WhatsApp a ${telefonoWhatsapp}.`);
+            setEnviandoWhatsapp(false);
+            return;
+          }
+          // No configurada, o Meta lo rechazó (número, ventana de 24h,
+          // token) — cae al enlace de click-to-chat en vez de bloquear.
+        }
+      }
+
+      window.open(enlaceWhatsApp(input, calculo, telefonoWhatsapp, urlPdf), "_blank", "noopener,noreferrer");
+    } catch (e) {
+      setMensajeWhatsapp(e instanceof Error ? e.message : "Error al preparar el envío por WhatsApp.");
+    } finally {
+      setEnviandoWhatsapp(false);
+    }
   }
 
   return (
@@ -293,15 +337,18 @@ export default function CotizacionesPage() {
               </label>
               <button
                 type="button"
-                onClick={abrirWhatsApp}
-                className="rounded-md border border-line px-4 py-1.5 text-sm font-semibold text-ink"
+                onClick={enviarWhatsApp}
+                disabled={enviandoWhatsapp}
+                className="rounded-md border border-line px-4 py-1.5 text-sm font-semibold text-ink disabled:opacity-60"
               >
-                Enviar por WhatsApp
+                {enviandoWhatsapp ? "Preparando…" : "Enviar por WhatsApp"}
               </button>
             </div>
+            {mensajeWhatsapp && <p className="text-xs text-ink-2">{mensajeWhatsapp}</p>}
             <p className="text-xs text-ink-2">
-              WhatsApp abre un chat con el resumen ya escrito — adjunta el PDF descargado a mano,
-              su enlace de mensaje no admite archivos.
+              Si la API de WhatsApp Business está conectada, manda el PDF como documento real. Si
+              no, abre un chat con un link de descarga (el enlace de mensaje de WhatsApp no admite
+              archivos directo).
             </p>
           </div>
 
