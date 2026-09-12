@@ -19,6 +19,13 @@ const OPCIONES_HUESPEDES = Array.from({ length: MAX_PAX }, (_, i) => i + 1); // 
 const money = (n: number) =>
   `USD ${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+interface Conflicto {
+  fuente: "airbnb" | "vrbo" | "directo";
+  inicio: string;
+  fin: string;
+}
+const FUENTE_LABEL: Record<Conflicto["fuente"], string> = { airbnb: "Airbnb", vrbo: "Vrbo", directo: "Reserva directa" };
+
 function hoyISO() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -102,6 +109,40 @@ export default function CotizacionesPage() {
         setTarifaPriceLabs({ promedio, noches: data.length });
         setTarifaNoche(promedio.toFixed(2));
       });
+    return () => {
+      cancelado = true;
+    };
+  }, [entrada, salida]);
+
+  const [conflictos, setConflictos] = useState<Conflicto[]>([]);
+  const [fechasConfirmadas, setFechasConfirmadas] = useState<string | null>(null);
+  const confirmaConflicto = fechasConfirmadas === `${entrada}|${salida}`;
+
+  // Ivan encontró que se podía generar (y mandar) una cotización para
+  // fechas ya ocupadas — la página nunca consultaba disponibilidad real,
+  // solo calculaba precio. bloqueos_calendario (Airbnb/Vrbo, ya público) no
+  // basta solo: nada inserta ahí las reservas directas/CSV, así que también
+  // se consulta reservas_fechas_ocupadas (0017_disponibilidad_reservas_
+  // directas.sql) — una vista sin columnas financieras ni de huésped,
+  // igual de pública que bloqueos_calendario por diseño, para que esto
+  // funcione también para un Host que solo tiene el permiso "cotizaciones"
+  // y no "reservas"/"contabilidad". Superposición de rangos [entrada,
+  // salida) con inicio < salida && fin > entrada, la salida no cuenta como
+  // noche ocupada. No bloquea nada — el aviso más abajo exige una
+  // confirmación explícita antes de habilitar descargar/enviar.
+  useEffect(() => {
+    if (!entrada || !salida || salida <= entrada) return;
+    let cancelado = false;
+    void Promise.all([
+      supabaseClient.from("bloqueos_calendario").select("inicio, fin, fuente").lt("inicio", salida).gt("fin", entrada),
+      supabaseClient.from("reservas_fechas_ocupadas").select("entrada, salida").lt("entrada", salida).gt("salida", entrada),
+    ]).then(([bloqueos, reservas]) => {
+      if (cancelado) return;
+      const encontrados: Conflicto[] = [];
+      for (const b of bloqueos.data ?? []) encontrados.push({ fuente: b.fuente, inicio: b.inicio, fin: b.fin });
+      for (const r of reservas.data ?? []) encontrados.push({ fuente: "directo", inicio: r.entrada, fin: r.salida });
+      setConflictos(encontrados);
+    });
     return () => {
       cancelado = true;
     };
@@ -411,11 +452,36 @@ export default function CotizacionesPage() {
             </label>
           </div>
 
+          {salida > entrada && conflictos.length > 0 && (
+            <div className="mt-5 rounded-md border border-caoba bg-caoba/10 px-3 py-2 text-xs text-caoba">
+              <p className="font-semibold">
+                Estas fechas ya están ocupadas — se cruzan con {conflictos.length}{" "}
+                {conflictos.length === 1 ? "bloqueo" : "bloqueos"}:
+              </p>
+              <ul className="mt-1 list-disc pl-4">
+                {conflictos.map((c, i) => (
+                  <li key={i}>
+                    {FUENTE_LABEL[c.fuente]}: {c.inicio} → {c.fin}
+                  </li>
+                ))}
+              </ul>
+              <label className="mt-2 flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={confirmaConflicto}
+                  onChange={(e) => setFechasConfirmadas(e.target.checked ? `${entrada}|${salida}` : null)}
+                />
+                Entiendo que estas fechas están ocupadas y quiero continuar de todas formas.
+              </label>
+            </div>
+          )}
+
           <div className="mt-5 space-y-3 border-t border-line pt-4">
             <button
               type="button"
               onClick={descargarPDF}
-              className="w-full rounded-md bg-caoba px-4 py-2 text-sm font-semibold text-panel"
+              disabled={conflictos.length > 0 && !confirmaConflicto}
+              className="w-full rounded-md bg-caoba px-4 py-2 text-sm font-semibold text-panel disabled:opacity-60"
             >
               Descargar cotización PDF
             </button>
@@ -434,7 +500,7 @@ export default function CotizacionesPage() {
               <button
                 type="button"
                 onClick={enviarPorCorreo}
-                disabled={enviandoCorreo || !correoDestino.trim()}
+                disabled={enviandoCorreo || !correoDestino.trim() || (conflictos.length > 0 && !confirmaConflicto)}
                 className="rounded-md border border-line px-4 py-1.5 text-sm font-semibold text-ink disabled:opacity-60"
               >
                 {enviandoCorreo ? "Enviando…" : "Enviar por correo"}
@@ -456,7 +522,7 @@ export default function CotizacionesPage() {
               <button
                 type="button"
                 onClick={enviarWhatsApp}
-                disabled={enviandoWhatsapp}
+                disabled={enviandoWhatsapp || (conflictos.length > 0 && !confirmaConflicto)}
                 className="rounded-md border border-line px-4 py-1.5 text-sm font-semibold text-ink disabled:opacity-60"
               >
                 {enviandoWhatsapp ? "Preparando…" : "Enviar por WhatsApp"}
