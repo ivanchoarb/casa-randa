@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { EXTRA_GUEST, FREE_PAX } from "@casa-randa/pricing";
 import { supabaseClient } from "@/lib/supabase-client";
 
 export interface CotizacionInput {
@@ -19,6 +20,8 @@ export interface CotizacionInput {
 export interface CotizacionCalculo {
   noches: number;
   alojamiento: number;
+  huespedesExtra: number;
+  cargoHuespedesExtra: number;
   subtotal: number;
   descuento: number;
   baseImpuesto: number;
@@ -37,6 +40,12 @@ export interface CotizacionCalculo {
  * 500 × 3 noches + limpieza 75 + otros 25 = subtotal 1600; descuento 15%
  * = -240; base de impuesto 1360; impuesto 7% = 95.20; total 1455.20;
  * anticipo 40% = 582.08; saldo 873.12 — reproducido exacto.
+ *
+ * 2026-09-12: recargo por huésped adicional (Ivan) — usa las mismas
+ * constantes FREE_PAX (14) y EXTRA_GUEST (40 USD) que ya aplica el motor
+ * de reservas directas (@casa-randa/pricing), no un número inventado
+ * aparte: a partir del huésped 15, cada uno cuesta EXTRA_GUEST por noche,
+ * igual que en QuoteCalculator/SolicitudCard.
  */
 export function calcularCotizacion(input: CotizacionInput): CotizacionCalculo {
   const noches = Math.max(
@@ -47,7 +56,9 @@ export function calcularCotizacion(input: CotizacionInput): CotizacionCalculo {
     ),
   );
   const alojamiento = round2(input.tarifaNoche * noches);
-  const subtotal = round2(alojamiento + input.limpieza + input.otrosCargos);
+  const huespedesExtra = Math.max(0, input.huespedes - FREE_PAX);
+  const cargoHuespedesExtra = round2(huespedesExtra * EXTRA_GUEST * noches);
+  const subtotal = round2(alojamiento + cargoHuespedesExtra + input.limpieza + input.otrosCargos);
   const descuento = round2(subtotal * (input.descuentoPct / 100));
   const baseImpuesto = round2(subtotal - descuento);
   const impuestos = round2(baseImpuesto * (input.impuestosPct / 100));
@@ -58,6 +69,8 @@ export function calcularCotizacion(input: CotizacionInput): CotizacionCalculo {
   return {
     noches,
     alojamiento,
+    huespedesExtra,
+    cargoHuespedesExtra,
     subtotal,
     descuento,
     baseImpuesto,
@@ -206,6 +219,7 @@ export async function generarCotizacionPDF(input: CotizacionInput, calculo: Coti
 
   const filas: [string, number][] = [
     [`Tarifa cotizada · ${calculo.noches} noches × ${money(input.tarifaNoche)}`, calculo.alojamiento],
+    [`Huéspedes adicionales · ${calculo.huespedesExtra} × ${money(EXTRA_GUEST)} × ${calculo.noches} noches`, calculo.cargoHuespedesExtra],
     ["Limpieza", input.limpieza],
     ["Otros cargos", input.otrosCargos],
     [`Descuento comercial · ${input.descuentoPct.toFixed(2)}%`, -calculo.descuento],

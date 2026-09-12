@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { EXTRA_GUEST, FREE_PAX, MAX_PAX } from "@casa-randa/pricing";
 import { supabaseClient } from "@/lib/supabase-client";
 import {
   acortarUrl,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/cotizacion";
 
 const inputClass = "rounded-md border border-line bg-ground px-2 py-1.5 text-sm";
+const OPCIONES_HUESPEDES = Array.from({ length: MAX_PAX }, (_, i) => i + 1); // 1..MAX_PAX (16)
 const money = (n: number) =>
   `USD ${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -280,12 +282,22 @@ export default function CotizacionesPage() {
             </label>
             <label className="text-xs text-ink-2">
               Número de huéspedes
-              <input
-                type="number"
+              <select
                 value={huespedes}
                 onChange={(e) => setHuespedes(e.target.value)}
                 className={`${inputClass} mt-1 block w-full`}
-              />
+              >
+                {OPCIONES_HUESPEDES.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+              {Number(huespedes) > FREE_PAX && (
+                <span className="mt-1 block text-xs text-ink-2">
+                  +{Number(huespedes) - FREE_PAX} sobre {FREE_PAX} × {money(EXTRA_GUEST)}/noche.
+                </span>
+              )}
             </label>
             <label className="text-xs text-ink-2">
               Entrada
@@ -478,6 +490,9 @@ export default function CotizacionesPage() {
           <div className="mt-4 space-y-2 text-sm">
             <Fila label="Noches" valor={String(calculo.noches)} />
             <Fila label="Alojamiento" valor={money(calculo.alojamiento)} />
+            {calculo.cargoHuespedesExtra > 0 && (
+              <Fila label={`Huéspedes adicionales (${calculo.huespedesExtra})`} valor={money(calculo.cargoHuespedesExtra)} />
+            )}
             <Fila label="Limpieza" valor={money(input.limpieza)} />
             <Fila label="Otros cargos" valor={money(input.otrosCargos)} />
             <Fila label="Subtotal" valor={money(calculo.subtotal)} />
