@@ -5,31 +5,28 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 export const dynamic = "force-dynamic";
 
 /**
- * NOTE ON THE RESPONSE SHAPE: this parses PriceLabs' documented
- * `/v1/listing_prices` response as best-effort — {listings: [{id, pms,
- * data: [{date, price, min_stay}]}]} — but this has never been run against
- * a real response (no PriceLabs API key available while writing this, see
- * docs/arquitectura-migracion.md "Tareas de producción"). Treat the field
- * names below as a first guess, not a verified contract: the first real
- * run should log `data` raw (see the console.error below on parse
- * mismatch) and this file should be corrected against what actually comes
- * back before being trusted for real pricing.
+ * NOTE ON THE RESPONSE SHAPE: verified live on 2026-09-11 against a real
+ * `/v1/listing_prices` response (see the commit that added this comment) —
+ * it's a **top-level array** of listings, not `{listings: [...]}` as first
+ * guessed. Each day also carries `user_price` (a manual override, -1 when
+ * unset) and `uncustomized_price` (PriceLabs' algorithmic price before any
+ * override) alongside `price`, which is the one that actually applies —
+ * that's the field used below. `min_stay` came back as `-1` (PriceLabs'
+ * "not set" sentinel, not a real value) for every day in the real
+ * response, so a non-positive value falls back to the schema's own
+ * default (2) instead of writing -1 into `estancia_minima`.
  */
 interface PriceLabsDay {
-  date: string; // expected: "YYYY-MM-DD"
+  date: string; // "YYYY-MM-DD"
   price: number;
-  min_stay?: number;
+  min_stay?: number; // -1 = not set by PriceLabs, not a real minimum
 }
 interface PriceLabsListing {
   id: string;
   pms: string;
   data: PriceLabsDay[];
 }
-interface PriceLabsResponse {
-  listings?: PriceLabsListing[];
-  // Older/alternate shape some PriceLabs accounts return: a flat array.
-  [key: string]: unknown;
-}
+type PriceLabsResponse = PriceLabsListing[];
 
 export async function GET(req: NextRequest) {
   if (!checkSyncSecret(req)) {
@@ -65,7 +62,7 @@ export async function GET(req: NextRequest) {
   }
 
   const body = (await res.json()) as PriceLabsResponse;
-  const dias = body.listings?.[0]?.data;
+  const dias = Array.isArray(body) ? body[0]?.data : undefined;
 
   if (!Array.isArray(dias)) {
     console.error(
@@ -76,7 +73,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "La respuesta de PriceLabs no tiene la forma esperada (listings[0].data). " +
+          "La respuesta de PriceLabs no tiene la forma esperada (array[0].data). " +
           "Revisada en los logs del servidor — hay que ajustar el parseo antes de confiar en esto.",
       },
       { status: 502 },
@@ -90,7 +87,7 @@ export async function GET(req: NextRequest) {
       fecha: d.date,
       tarifa: d.price,
       fuente: "pricelabs" as const,
-      estancia_minima: d.min_stay ?? 2,
+      estancia_minima: d.min_stay && d.min_stay > 0 ? d.min_stay : 2,
       updated_at: new Date().toISOString(),
     }));
 
