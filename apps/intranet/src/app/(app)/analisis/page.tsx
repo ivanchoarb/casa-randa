@@ -1,6 +1,6 @@
 "use client";
 
-import { useCreate, useTable } from "@refinedev/core";
+import { useCreate, useDelete, useTable, useUpdate } from "@refinedev/core";
 import { useMemo, useState } from "react";
 
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
@@ -190,12 +190,254 @@ function ComparativoAnual({ reservas, cargando }: { reservas: Reserva[]; cargand
   );
 }
 
-function PlanDeCompras() {
-  const { result, tableQuery } = useTable<PlanCompra>({
-    resource: "plan_compras",
-    sorters: { initial: [{ field: "anio", order: "desc" }] },
-    pagination: { pageSize: 100 },
-  });
+// Lo que todavía se le debe a un proveedor: cualquier plan_compras con un
+// monto cotizado que no esté marcado como "realizada" (ya pagada/hecha).
+// No es una tabla nueva — se deriva de plan_compras, así que nunca puede
+// desincronizarse de lo que se ve más abajo en "Plan anual de compras".
+function CuentasPorPagar({ planes, cargando }: { planes: PlanCompra[]; cargando: boolean }) {
+  const pendientes = planes.filter((p) => p.estado !== "realizada" && p.cotizacion_usd != null);
+  const total = pendientes.reduce((s, p) => s + (p.cotizacion_usd ?? 0), 0);
+
+  const porProveedor = new Map<string, number>();
+  for (const p of pendientes) {
+    const clave = p.proveedor ?? "Sin proveedor";
+    porProveedor.set(clave, (porProveedor.get(clave) ?? 0) + (p.cotizacion_usd ?? 0));
+  }
+
+  if (cargando) return null;
+
+  return (
+    <section className="mt-12">
+      <h2 className="text-lg font-bold">Cuentas por pagar</h2>
+      <p className="mt-1 text-sm text-ink-2">
+        Compras del plan anual con cotización, todavía no marcadas como realizadas.
+      </p>
+
+      <div className="mt-4 rounded-xl border border-line bg-panel p-4">
+        <p className="text-xs font-medium text-ink-2 uppercase">Total pendiente</p>
+        <p className="mt-1 text-2xl font-bold tabular-nums">{money(total)}</p>
+        <p className="mt-1 text-xs text-ink-2">
+          {pendientes.length} compra{pendientes.length === 1 ? "" : "s"} · {porProveedor.size} proveedor
+          {porProveedor.size === 1 ? "" : "es"}
+        </p>
+      </div>
+
+      {pendientes.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {Array.from(porProveedor.entries())
+            .sort((a, b) => b[1] - a[1])
+            .map(([proveedor, monto]) => (
+              <div
+                key={proveedor}
+                className="flex items-center justify-between rounded-lg border border-line bg-panel px-4 py-3 text-sm"
+              >
+                <span className="font-medium">{proveedor}</span>
+                <span className="font-semibold tabular-nums">{money(monto)}</span>
+              </div>
+            ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function PlanCompraItem({ item }: { item: PlanCompra }) {
+  const { mutate: actualizar, mutation: actualizando } = useUpdate<PlanCompra>();
+  const { mutate: eliminar, mutation: eliminando } = useDelete<PlanCompra>();
+  const [editando, setEditando] = useState(false);
+
+  const [categoria, setCategoria] = useState(item.categoria);
+  const [concepto, setConcepto] = useState(item.concepto);
+  const [proveedor, setProveedor] = useState(item.proveedor ?? "");
+  const [cotizacion, setCotizacion] = useState(item.cotizacion_usd?.toString() ?? "");
+  const [fechaProgramada, setFechaProgramada] = useState(item.fecha_programada ?? "");
+  const [prioridad, setPrioridad] = useState(item.prioridad);
+  const [estado, setEstado] = useState(item.estado);
+  const [enlace, setEnlace] = useState(item.enlace_cotizacion ?? "");
+  const [notas, setNotas] = useState(item.notas ?? "");
+
+  function guardar() {
+    actualizar(
+      {
+        resource: "plan_compras",
+        id: item.id,
+        values: {
+          categoria,
+          concepto,
+          proveedor: proveedor || null,
+          cotizacion_usd: cotizacion ? Number(cotizacion) : null,
+          fecha_programada: fechaProgramada || null,
+          prioridad,
+          estado,
+          enlace_cotizacion: enlace || null,
+          notas: notas || null,
+        },
+      },
+      { onSuccess: () => setEditando(false) },
+    );
+  }
+
+  function eliminarItem() {
+    if (!window.confirm(`¿Eliminar "${item.concepto}"?`)) return;
+    eliminar({ resource: "plan_compras", id: item.id });
+  }
+
+  return (
+    <div className="rounded-lg border border-line bg-panel px-4 py-3 text-sm">
+      <button type="button" onClick={() => setEditando(!editando)} className="flex w-full items-center justify-between text-left">
+        <p className="font-medium">{item.concepto}</p>
+        <span
+          className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${ESTADO_STYLE[item.estado]}`}
+        >
+          {item.estado}
+        </span>
+      </button>
+      <p className="mt-1 text-xs text-ink-2 capitalize">
+        {item.anio} · {item.categoria.replace("_", " ")}
+        {item.proveedor ? ` · ${item.proveedor}` : ""}
+        {item.cotizacion_usd ? ` · ${money(item.cotizacion_usd)}` : ""}
+        {item.fecha_programada ? ` · ${item.fecha_programada}` : ""}
+      </p>
+      {item.enlace_cotizacion && (
+        <a
+          href={item.enlace_cotizacion}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-1 inline-block text-xs text-caoba hover:underline"
+        >
+          Ver cotización →
+        </a>
+      )}
+      {item.notas && <p className="mt-1 text-xs text-ink-2">{item.notas}</p>}
+
+      {editando && (
+        <div className="mt-4 grid grid-cols-1 gap-3 border-t border-line pt-4 sm:grid-cols-2">
+          <label className="text-xs text-ink-2">
+            Categoría
+            <select
+              value={categoria}
+              onChange={(e) => setCategoria(e.target.value as CategoriaCapex)}
+              className={`${inputClass} mt-1 block w-full capitalize`}
+            >
+              {CATEGORIAS.map((c) => (
+                <option key={c} value={c}>
+                  {c.replace("_", " ")}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-ink-2">
+            Concepto
+            <input
+              value={concepto}
+              onChange={(e) => setConcepto(e.target.value)}
+              className={`${inputClass} mt-1 block w-full`}
+            />
+          </label>
+          <label className="text-xs text-ink-2">
+            Proveedor
+            <input
+              value={proveedor}
+              onChange={(e) => setProveedor(e.target.value)}
+              className={`${inputClass} mt-1 block w-full`}
+            />
+          </label>
+          <label className="text-xs text-ink-2">
+            Cotización USD
+            <input
+              type="number"
+              value={cotizacion}
+              onChange={(e) => setCotizacion(e.target.value)}
+              className={`${inputClass} mt-1 block w-full`}
+            />
+          </label>
+          <label className="text-xs text-ink-2">
+            Fecha programada
+            <input
+              type="date"
+              value={fechaProgramada}
+              onChange={(e) => setFechaProgramada(e.target.value)}
+              className={`${inputClass} mt-1 block w-full`}
+            />
+          </label>
+          <label className="text-xs text-ink-2">
+            Prioridad
+            <select
+              value={prioridad}
+              onChange={(e) => setPrioridad(e.target.value as PrioridadCapex)}
+              className={`${inputClass} mt-1 block w-full capitalize`}
+            >
+              {PRIORIDADES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-ink-2">
+            Estado
+            <select
+              value={estado}
+              onChange={(e) => setEstado(e.target.value as EstadoCapex)}
+              className={`${inputClass} mt-1 block w-full capitalize`}
+            >
+              {ESTADOS_CAPEX.map((e) => (
+                <option key={e} value={e}>
+                  {e}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-ink-2 sm:col-span-2">
+            Enlace a cotización
+            <input
+              value={enlace}
+              onChange={(e) => setEnlace(e.target.value)}
+              className={`${inputClass} mt-1 block w-full`}
+            />
+          </label>
+          <label className="text-xs text-ink-2 sm:col-span-2">
+            Notas
+            <textarea
+              value={notas}
+              onChange={(e) => setNotas(e.target.value)}
+              rows={2}
+              className={`${inputClass} mt-1 block w-full`}
+            />
+          </label>
+          <div className="flex gap-2 sm:col-span-2">
+            <button
+              type="button"
+              onClick={guardar}
+              disabled={actualizando.isPending}
+              className="rounded-md bg-caoba px-4 py-1.5 text-sm font-semibold text-panel disabled:opacity-60"
+            >
+              {actualizando.isPending ? "Guardando…" : "Guardar cambios"}
+            </button>
+            <button
+              type="button"
+              onClick={eliminarItem}
+              disabled={eliminando.isPending}
+              className="rounded-md border border-line px-4 py-1.5 text-sm font-semibold text-caoba disabled:opacity-60"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PlanDeCompras({
+  planes,
+  cargando,
+  error,
+}: {
+  planes: PlanCompra[];
+  cargando: boolean;
+  error: boolean;
+}) {
   const { mutate: crear, mutation } = useCreate<PlanCompra>();
   const isPending = mutation.isPending;
 
@@ -363,42 +605,16 @@ function PlanDeCompras() {
         </button>
       </div>
 
-      {tableQuery.isError && (
+      {error && (
         <p className="mt-4 text-sm text-caoba">
           No se pudo conectar a Supabase — completa <code>.env.local</code>.
         </p>
       )}
 
-      {!tableQuery.isLoading && result.data.length > 0 && (
+      {!cargando && planes.length > 0 && (
         <div className="mt-4 space-y-2">
-          {result.data.map((item) => (
-            <div key={item.id} className="rounded-lg border border-line bg-panel px-4 py-3 text-sm">
-              <div className="flex items-center justify-between">
-                <p className="font-medium">{item.concepto}</p>
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${ESTADO_STYLE[item.estado]}`}
-                >
-                  {item.estado}
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-ink-2 capitalize">
-                {item.anio} · {item.categoria.replace("_", " ")}
-                {item.proveedor ? ` · ${item.proveedor}` : ""}
-                {item.cotizacion_usd ? ` · ${money(item.cotizacion_usd)}` : ""}
-                {item.fecha_programada ? ` · ${item.fecha_programada}` : ""}
-              </p>
-              {item.enlace_cotizacion && (
-                <a
-                  href={item.enlace_cotizacion}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-1 inline-block text-xs text-caoba hover:underline"
-                >
-                  Ver cotización →
-                </a>
-              )}
-              {item.notas && <p className="mt-1 text-xs text-ink-2">{item.notas}</p>}
-            </div>
+          {planes.map((item) => (
+            <PlanCompraItem key={item.id} item={item} />
           ))}
         </div>
       )}
@@ -553,6 +769,15 @@ export default function AnalisisPage() {
     pagination: { pageSize: 500 },
   });
 
+  // plan_compras se lee una sola vez aquí arriba — Cuentas por pagar y el
+  // Plan anual de compras son dos vistas del mismo dato, no dos fuentes.
+  const { result: planesResult, tableQuery: planesQuery } = useTable<PlanCompra>({
+    resource: "plan_compras",
+    sorters: { initial: [{ field: "anio", order: "desc" }] },
+    pagination: { pageSize: 100 },
+  });
+  const planes = planesResult.data ?? [];
+
   return (
     <div>
       <p className="text-xs font-semibold tracking-wide text-caoba uppercase">
@@ -566,7 +791,8 @@ export default function AnalisisPage() {
 
       <div className="mt-8">
         <ComparativoAnual reservas={reservasResult.data ?? []} cargando={reservasQuery.isLoading} />
-        <PlanDeCompras />
+        <PlanDeCompras planes={planes} cargando={planesQuery.isLoading} error={planesQuery.isError} />
+        <CuentasPorPagar planes={planes} cargando={planesQuery.isLoading} />
         <CodigosDeDescuento />
       </div>
     </div>
