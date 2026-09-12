@@ -12,6 +12,18 @@ correcta de Claude confirmando la lectura de AGENTS.md y este registro.
 
 ## Estado del trabajo
 
+Claude: sección Marketing (`/marketing`, `/marketing/campanas`) construida en
+varias tandas el 2026-09-12, a pedido directo del usuario. Archivos nuevos:
+`app/(app)/marketing/page.tsx`, `app/(app)/marketing/campanas/page.tsx`,
+`lib/importar-contactos.ts`, `app/api/marketing/{enviar-lote,enviar-prueba,
+baja}/route.ts`, `app/darse-de-baja/page.tsx`, migraciones 0018-0021. Tocados:
+`lib/permisos.ts` (nuevo permiso `marketing`), `components/layout/AppShell.tsx`.
+Detalle completo en CLAUDE.md (sección `marketing`). Todas las migraciones ya
+aplicadas y verificadas contra la base real (transacciones revertidas, o
+campañas/contactos sintéticos creados y borrados después — nunca se tocó
+audiencia real, incluidos los ~95 contactos reales que el usuario ya había
+importado). `pnpm build`/`pnpm lint` pasan en apps/intranet.
+
 Claude: correo de activación al crear usuario + recuperación/cambio de
 contraseña, a pedido directo del usuario (2026-09-12). Archivos nuevos:
 `src/lib/mailer.ts`, `src/app/api/usuarios/recuperar/route.ts`,

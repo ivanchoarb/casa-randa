@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useGetIdentity, useTable } from "@refinedev/core";
+import Link from "next/link";
 import * as XLSX from "xlsx";
 import type { CancellationPolicy, PaymentPlan } from "@casa-randa/pricing";
 import {
@@ -367,11 +368,15 @@ export default function MarketingPage() {
   return (
     <div>
       <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Ventas directas</p>
-      <h1 className="mt-1 text-2xl font-bold">Clientes potenciales y marketing</h1>
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold">Clientes potenciales y marketing</h1>
+        <Link href="/marketing/campanas" className="text-sm font-semibold text-caoba hover:underline">
+          Campañas de correo →
+        </Link>
+      </div>
       <p className="mt-2 max-w-2xl text-sm text-ink-2">
         Personas que pidieron una cotización desde la página, o que importaste, y aceptaron ser
-        contactadas — útil como lista base para una campaña de correo o WhatsApp fuera de esta
-        app.
+        contactadas.
       </p>
 
       <ImportarContactos onImportado={recargar} />
@@ -515,10 +520,13 @@ export default function MarketingPage() {
       )}
 
       <p className="mt-6 text-xs text-ink-2">
-        Esta lista es para exportar o contactar de uno en uno — no manda campañas masivas desde
-        aquí. El correo transaccional que usan las cotizaciones no está pensado para envíos
-        masivos de marketing; usar esta lista con una herramienta dedicada (Mailchimp, WhatsApp
-        Business, etc.) evita poner en riesgo la entrega de los correos reales de reservas.
+        Esta lista también exporta para usarla con una herramienta externa (Mailchimp, WhatsApp
+        Business, etc.), o se puede mandar por correo directo desde aquí en{" "}
+        <Link href="/marketing/campanas" className="underline">
+          Campañas de correo
+        </Link>{" "}
+        — de a uno, con un límite diario, nunca todo de golpe, para no arriesgar la entrega de
+        los correos reales de reservas que usan la misma cuenta.
       </p>
     </div>
   );
