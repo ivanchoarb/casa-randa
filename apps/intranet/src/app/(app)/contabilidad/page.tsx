@@ -1,7 +1,8 @@
 "use client";
 
 import { useCreate, useDelete, useTable } from "@refinedev/core";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { importarReservasCSV, type ResultadoImport } from "@/lib/importar-reservas";
 
 type Persona = "marquelda" | "ivan";
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
@@ -294,6 +295,88 @@ function AnticiposComision({ reservas }: { reservas: Reserva[] }) {
   );
 }
 
+// Solo el "formato Casa Randa" (mismas columnas que "Descargar Excel" más
+// abajo) — verificado bajando y desarmando un export real de staging el
+// 2026-09-11. Los reportes crudos de Airbnb/Vrbo todavía no, por falta de
+// una muestra real para verificar sus columnas (ver src/lib/importar-reservas.ts).
+function ImportarCSV({ onImportado }: { onImportado: () => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [procesando, setProcesando] = useState(false);
+  const [resultado, setResultado] = useState<ResultadoImport | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function procesar() {
+    const file = inputRef.current?.files?.[0];
+    if (!file) return;
+    setProcesando(true);
+    setError(null);
+    setResultado(null);
+    try {
+      const r = await importarReservasCSV(file);
+      setResultado(r);
+      if (inputRef.current) inputRef.current.value = "";
+      if (r.procesadas > 0) onImportado();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error desconocido al procesar el archivo.");
+    } finally {
+      setProcesando(false);
+    }
+  }
+
+  return (
+    <section className="mt-12">
+      <h2 className="text-lg font-bold">Importar o actualizar CSV</h2>
+      <p className="mt-1 text-sm text-ink-2">
+        Acepta el formato Casa Randa (las mismas columnas que produce &quot;Descargar Excel&quot; más
+        abajo — Cliente, Plataforma, Reserva, Check-in, Check-out, Valor bruto, Comisión
+        plataforma, Estado). Al volver a cargar un archivo, las reservas se actualizan por código
+        y no se duplican. Las comisiones internas se calculan solas (10% Marquelda, 9% Iván sobre
+        el valor recibido). Los reportes crudos de Airbnb o Vrbo (exportados directo desde su
+        panel de anfitrión) todavía no están soportados — si tienes uno real, compártelo para
+        agregar soporte.
+      </p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-line bg-panel p-3">
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".csv,.xlsx,.xls"
+          aria-label="Archivo de reservas"
+          className="text-sm"
+        />
+        <button
+          type="button"
+          onClick={procesar}
+          disabled={procesando}
+          className="rounded-md bg-caoba px-4 py-1.5 text-sm font-semibold text-panel disabled:opacity-60"
+        >
+          {procesando ? "Procesando…" : "Procesar archivo"}
+        </button>
+      </div>
+
+      {error && <p className="mt-3 text-sm text-caoba">{error}</p>}
+
+      {resultado && (
+        <div className="mt-3 text-sm">
+          <p className="text-ink">{resultado.procesadas} reservas procesadas.</p>
+          {resultado.omitidas.length > 0 && (
+            <div className="mt-2 text-ink-2">
+              <p>{resultado.omitidas.length} filas omitidas:</p>
+              <ul className="mt-1 list-inside list-disc">
+                {resultado.omitidas.map((o, i) => (
+                  <li key={i}>
+                    Fila {o.fila}: {o.motivo}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function Gastos() {
   const { result, tableQuery } = useTable<Gasto>({
     resource: "gastos",
@@ -500,9 +583,10 @@ export default function ContabilidadPage() {
   // Sexto módulo conectado a datos reales, y el primero de la Fase 4
   // (mayor riesgo financiero — ver docs/arquitectura-migracion.md).
   // Deliberadamente NO incluye: envío de liquidaciones por correo (falta
-  // conectar el SMTP de Dongee, ver docs/logica-negocio-y-flujos.md) ni
-  // importación de CSV de Airbnb/Vrbo (no hay un archivo de muestra real
-  // para verificar el formato — mejor no inventarlo que adivinar mal).
+  // conectar el SMTP de Dongee, ver docs/logica-negocio-y-flujos.md).
+  // El import de CSV (más abajo) solo cubre el formato Casa Randa —
+  // los reportes crudos de Airbnb/Vrbo siguen pendientes por falta de
+  // una muestra real para verificar sus columnas.
   const { result: reservasResult, tableQuery: reservasQuery } = useTable<Reserva>({
     resource: "reservas",
     sorters: { initial: [{ field: "entrada", order: "desc" }] },
@@ -537,6 +621,7 @@ export default function ContabilidadPage() {
             <ResumenFinanciero reservas={reservas} gastos={gastos} />
           </div>
           <AnticiposComision reservas={reservas} />
+          <ImportarCSV onImportado={() => reservasQuery.refetch()} />
           <Gastos />
           <IngresosYReservas reservas={reservas} loading={reservasQuery.isLoading} />
         </>
