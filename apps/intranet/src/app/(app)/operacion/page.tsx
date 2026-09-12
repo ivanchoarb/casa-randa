@@ -30,6 +30,12 @@ function hoyISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function sumarDias(fechaISO: string, dias: number): string {
+  const d = new Date(`${fechaISO}T00:00:00`);
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
 function agruparPorReserva(tareas: TareaConReserva[]) {
   const grupos = new Map<string, TareaConReserva[]>();
   for (const t of tareas) {
@@ -52,8 +58,16 @@ export default function OperacionPage() {
     pagination: { pageSize: 300 },
   });
 
-  const tareas = result.data ?? [];
   const hoy = hoyISO();
+  // Vigentes: la estadía todavía no terminó, o terminó hace poco (margen
+  // para la limpieza de salida) — igual al recorte que ya se ve en
+  // staging.randahome.com/intranet/operacion/ (comparado en vivo el
+  // 2026-09-11: mismas 11 reservas, mismas 33 tareas). Sin esto, la
+  // pantalla se llena de tareas de estadías de hace 1-2 años que a nadie
+  // le sirve ver en el día a día.
+  const desde = sumarDias(hoy, -3);
+  const tareas = (result.data ?? []).filter((t) => (t.reservas?.salida ?? "9999-99-99") >= desde);
+
   const paraHoy = tareas.filter((t) => t.fecha === hoy).length;
   const pendientes = tareas.filter((t) => t.estado === "pendiente").length;
   const completadas = tareas.filter((t) => t.estado === "completada").length;
@@ -66,9 +80,11 @@ export default function OperacionPage() {
       <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Operación</p>
       <h1 className="mt-1 text-2xl font-bold">Check-in, check-out y limpieza</h1>
       <p className="mt-2 max-w-2xl text-sm text-ink-2">
-        Las tareas se crean automáticamente a partir de las reservas confirmadas — hoy no hay
-        ninguna reserva creando tareas todavía, ver Reservas.
+        Las tareas se crean automáticamente a partir de las reservas activas.
       </p>
+      {!tableQuery.isLoading && !tableQuery.isError && (
+        <p className="mt-1 text-sm text-ink-2">{tareas.length} tareas</p>
+      )}
 
       {tableQuery.isError && (
         <p className="mt-6 text-sm text-caoba">

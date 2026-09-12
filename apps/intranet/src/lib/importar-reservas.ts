@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { supabaseClient } from "@/lib/supabase-client";
+import { asegurarTareasDeReserva } from "@/lib/tareas-operacion";
 
 type Canal = "airbnb" | "vrbo" | "directo";
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
@@ -198,8 +199,12 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
     const paraActualizar = filasValidas.filter((f) => idPorCodigo.has(f.codigo_externo));
 
     if (paraInsertar.length > 0) {
-      const { error } = await supabaseClient.from("reservas").insert(paraInsertar);
+      const { data: creadas, error } = await supabaseClient
+        .from("reservas")
+        .insert(paraInsertar)
+        .select("id, codigo_externo");
       if (error) throw new Error(`Error al crear reservas nuevas: ${error.message}`);
+      for (const c of creadas ?? []) idPorCodigo.set(c.codigo_externo as string, c.id as string);
     }
     for (const fila of paraActualizar) {
       const { error } = await supabaseClient
@@ -207,6 +212,16 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
         .update(fila)
         .eq("id", idPorCodigo.get(fila.codigo_externo));
       if (error) throw new Error(`Error al actualizar "${fila.codigo_externo}": ${error.message}`);
+    }
+
+    // "Las tareas se crean automáticamente a partir de las reservas
+    // activas" (staging) — ver src/lib/tareas-operacion.ts para por qué
+    // esto vive aquí y no en un trigger de Postgres todavía.
+    for (const fila of filasValidas) {
+      if (fila.estado !== "confirmada" && fila.estado !== "completada") continue;
+      const reservaId = idPorCodigo.get(fila.codigo_externo);
+      if (!reservaId) continue;
+      await asegurarTareasDeReserva(reservaId, fila.entrada, fila.salida);
     }
   }
 
