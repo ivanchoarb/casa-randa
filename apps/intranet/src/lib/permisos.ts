@@ -16,6 +16,7 @@ export const PERMISOS = {
   cuentas_pagar: "Análisis: cuentas por pagar",
   descuentos: "Gestionar códigos de descuento",
   cotizaciones: "Generar y modificar cotizaciones",
+  marketing: "Clientes potenciales y marketing",
   usuarios: "Gestionar usuarios y permisos (solo administradores)",
 } as const;
 export type Permiso = keyof typeof PERMISOS;
@@ -41,5 +42,5 @@ export const RUTAS: Record<string, Permiso[]> = {
   "/calendario": ["calendario"], "/operacion": ["operacion"],
   "/contabilidad": ["contabilidad"], "/conciliacion": ["conciliacion"],
   "/analisis": ["analisis_financiero", "plan_compras", "cuentas_pagar", "descuentos"],
-  "/cotizaciones": ["cotizaciones"], "/usuarios": ["usuarios"],
+  "/cotizaciones": ["cotizaciones"], "/marketing": ["marketing"], "/usuarios": ["usuarios"],
 };
