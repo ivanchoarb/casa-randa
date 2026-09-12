@@ -315,6 +315,13 @@ export default function CotizacionesPage() {
           <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Previsualización</p>
           <h2 className="mt-1 text-lg font-bold">Así quedará la cotización</h2>
 
+          {salida <= entrada && (
+            <p className="mt-3 rounded-md bg-lamp-bg px-3 py-2 text-xs text-lamp">
+              La salida ({salida || "—"}) no es posterior a la entrada ({entrada || "—"}) — por eso
+              Noches y Alojamiento dan 0. Revisa las fechas.
+            </p>
+          )}
+
           <div className="mt-4 space-y-2 text-sm">
             <Fila label="Noches" valor={String(calculo.noches)} />
             <Fila label="Alojamiento" valor={money(calculo.alojamiento)} />
