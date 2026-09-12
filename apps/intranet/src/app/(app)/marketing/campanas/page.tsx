@@ -312,13 +312,18 @@ export default function CampanasPage() {
             placeholder="Pega aquí el HTML del diseño del correo."
             className="mt-1 block w-full rounded-md border border-line bg-ground px-3 py-2 text-sm font-mono"
           />
+          <span className="mt-1 block text-xs text-ink-2">
+            Escribe <code>[NOMBRE]</code> donde quieras que aparezca el nombre de cada
+            destinatario (por ejemplo &quot;Hola [NOMBRE],&quot;) — se reemplaza solo por su
+            primer nombre al enviar.
+          </span>
         </label>
         {cuerpoHtml.trim() && (
           <div>
-            <p className="text-xs font-semibold text-ink-2 uppercase">Vista previa</p>
+            <p className="text-xs font-semibold text-ink-2 uppercase">Vista previa (con &quot;Juan&quot; de ejemplo)</p>
             <div
               className="mt-1 max-h-96 overflow-auto rounded-md border border-line bg-white p-4 text-black"
-              dangerouslySetInnerHTML={{ __html: cuerpoHtml }}
+              dangerouslySetInnerHTML={{ __html: cuerpoHtml.replace(/\[NOMBRE\]/gi, "Juan") }}
             />
           </div>
         )}

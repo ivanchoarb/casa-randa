@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { crearTransporte, transporteDisponible } from "@/lib/mailer";
+import { crearTransporte, personalizar, transporteDisponible } from "@/lib/mailer";
 import { puede } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
@@ -106,7 +106,8 @@ export async function POST(req: Request) {
 
   const origin = new URL(req.url).origin;
   const enlaceBaja = `${origin}/darse-de-baja?token=${siguiente.id}`;
-  const html = `${campana.cuerpo_html}<hr style="margin-top:24px;border:none;border-top:1px solid #ddd" /><p style="font-size:11px;color:#888">Si no quieres seguir recibiendo estos correos, <a href="${enlaceBaja}">haz clic aquí para darte de baja</a>.</p>`;
+  const cuerpoPersonalizado = personalizar(campana.cuerpo_html, siguiente.nombre);
+  const html = `${cuerpoPersonalizado}<hr style="margin-top:24px;border:none;border-top:1px solid #ddd" /><p style="font-size:11px;color:#888">Si no quieres seguir recibiendo estos correos, <a href="${enlaceBaja}">haz clic aquí para darte de baja</a>.</p>`;
   const texto = `${html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()}\n\nDarte de baja: ${enlaceBaja}`;
 
   try {
