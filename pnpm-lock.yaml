@@ -194,6 +194,9 @@ importers:
       '@casa-randa/pricing':
         specifier: workspace:*
         version: link:../../packages/pricing
+      '@supabase/supabase-js':
+        specifier: ^2.116.0
+        version: 2.116.0
       gsap:
         specifier: ^3.15.0
         version: 3.15.0

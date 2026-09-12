@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type FormEvent } from "react";
 import { VS } from "@casa-randa/data";
 import { MIN_NIGHTS, RATE, computeQuote, type CancellationPolicy, type PaymentPlan } from "@casa-randa/pricing";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -8,6 +9,7 @@ import { PaxSelect } from "@/components/ui/PaxSelect";
 import { openDatePickerOnClick, openDatePickerOnKey } from "@/lib/dom/openDatePicker";
 import { MagneticLink } from "@/components/ui/MagneticLink";
 import { Reveal } from "@/components/ui/Reveal";
+import { supabaseClient } from "@/lib/supabase-client";
 
 const fieldLabel = "font-[var(--font-display)] text-xs tracking-wide text-[var(--ink-2)]";
 const fieldInput =
@@ -19,6 +21,55 @@ export function QuoteCalculator() {
     useBooking();
 
   const quote = computeQuote({ checkIn, checkOut, pax, cancellation, plan });
+
+  // Flujo 1 (docs/logica-negocio-y-flujos.md): "Solicitar estas fechas"
+  // crea una fila en `solicitudes`, no una Reserva todavía — eso pasa
+  // recién cuando el administrador aprueba y se confirma el pago, algo
+  // que esta pantalla no hace. La tabla y sus políticas RLS ya existían
+  // (supabase/migrations/0002_reservas.sql, 0006_rls.sql) — el insert
+  // público solo necesita la anon key, sin ruta de servidor, porque la
+  // policy "publico_crea_solicitud" ya restringe a insert-only.
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [consentimiento, setConsentimiento] = useState(false);
+  const [consentimientoPolitica, setConsentimientoPolitica] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+  const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
+
+  async function enviarSolicitud(e: FormEvent) {
+    e.preventDefault();
+    setErrorEnvio(null);
+    setEnviando(true);
+    try {
+      const { error } = await supabaseClient.from("solicitudes").insert({
+        nombre,
+        email,
+        telefono: telefono.trim() || null,
+        entrada: checkIn,
+        salida: checkOut,
+        huespedes: pax,
+        plan_tarifa: cancellation,
+        plan_pago: plan,
+        consentimiento,
+        consentimiento_politica: consentimientoPolitica,
+      });
+      if (error) throw error;
+      setEnviado(true);
+    } catch (err) {
+      setErrorEnvio(
+        err instanceof Error
+          ? err.message
+          : lang === "es"
+            ? "No se pudo enviar la solicitud. Intente de nuevo o escríbanos directamente."
+            : "Couldn't send the request. Try again or email us directly.",
+      );
+    } finally {
+      setEnviando(false);
+    }
+  }
 
   return (
     <div className="border-y border-[var(--ink)]/10 bg-[var(--panel)]">
@@ -191,12 +242,105 @@ export function QuoteCalculator() {
               </>
             )}
 
-            <MagneticLink
-              href="#"
-              className="mt-5 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[#f0ce86]"
-            >
-              {lang === "es" ? "Solicitar estas fechas" : "Request these dates"}
-            </MagneticLink>
+            {enviado ? (
+              <p className="mt-5 rounded-[1px] border border-[var(--lamp-fill)]/40 bg-[var(--lamp-fill)]/10 px-4 py-3 text-sm text-[var(--on-dark)]">
+                {lang === "es"
+                  ? "Recibimos su solicitud. Le responderemos desde booking@randahome.com en las próximas horas."
+                  : "We received your request. We'll reply from booking@randahome.com within a few hours."}
+              </p>
+            ) : mostrarFormulario ? (
+              <form onSubmit={enviarSolicitud} className="mt-5 flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="q-nombre" className={fieldLabel}>
+                    {lang === "es" ? "Nombre" : "Name"}
+                  </label>
+                  <input
+                    id="q-nombre"
+                    required
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    className={fieldInput}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="q-email" className={fieldLabel}>
+                    Email
+                  </label>
+                  <input
+                    id="q-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={fieldInput}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="q-telefono" className={fieldLabel}>
+                    {lang === "es" ? "Teléfono (opcional)" : "Phone (optional)"}
+                  </label>
+                  <input
+                    id="q-telefono"
+                    value={telefono}
+                    onChange={(e) => setTelefono(e.target.value)}
+                    className={fieldInput}
+                  />
+                </div>
+
+                <label className="mt-1 flex items-start gap-2 text-xs text-[var(--on-dark-2)]">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={consentimiento}
+                    onChange={(e) => setConsentimiento(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  {lang === "es"
+                    ? "Autorizo a Casa Randa a contactarme sobre esta solicitud."
+                    : "I allow Casa Randa to contact me about this request."}
+                </label>
+                <label className="flex items-start gap-2 text-xs text-[var(--on-dark-2)]">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={consentimientoPolitica}
+                    onChange={(e) => setConsentimientoPolitica(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  {lang === "es"
+                    ? "Entiendo que esto es una solicitud, no una reserva confirmada — se confirma por escrito antes de cobrar."
+                    : "I understand this is a request, not a confirmed booking — it's confirmed in writing before anything is charged."}
+                </label>
+
+                {errorEnvio && <p className="text-xs text-[var(--caoba)]">{errorEnvio}</p>}
+
+                <button
+                  type="submit"
+                  disabled={enviando}
+                  className="mt-1 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[#f0ce86] disabled:opacity-60"
+                >
+                  {enviando
+                    ? lang === "es"
+                      ? "Enviando…"
+                      : "Sending…"
+                    : lang === "es"
+                      ? "Enviar solicitud"
+                      : "Send request"}
+                </button>
+              </form>
+            ) : (
+              <MagneticLink
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMostrarFormulario(true);
+                }}
+                aria-disabled={!quote}
+                className={`mt-5 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[#f0ce86] ${!quote ? "pointer-events-none opacity-50" : ""}`}
+              >
+                {lang === "es" ? "Solicitar estas fechas" : "Request these dates"}
+              </MagneticLink>
+            )}
           </aside>
           </Reveal>
         </div>
