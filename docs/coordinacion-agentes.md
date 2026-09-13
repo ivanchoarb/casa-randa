@@ -12,6 +12,18 @@ correcta de Claude confirmando la lectura de AGENTS.md y este registro.
 
 ## Estado del trabajo
 
+Claude (2026-09-13): catálogo de la tienda pasó a administrarse desde la
+intranet y se muestra también en el inicio del sitio público. Alcance:
+`supabase/migrations/0025_catalogo_tienda_admin.sql` (columnas sku/categoria/
+imagen_url en `productos_tienda` + bucket público `imagenes-tienda` con RLS),
+`apps/intranet/src/app/(app)/tienda/page.tsx` (nueva, CRUD completo con subida
+de imagen), `apps/web/src/lib/tienda.ts` (query compartida), `apps/web/src/
+app/page.tsx` y `components/sections/Extras.tsx` (vitrina de 3 productos en
+el inicio, ISR cada 5 min). Detalle completo en CLAUDE.md. Migración ya
+aplicada a la base real; producto de prueba creado, verificado en ambos
+sitios (inicio y /tienda) y borrado después. `pnpm build`/`pnpm lint` pasan
+en ambas apps.
+
 Claude (2026-09-13): `/tienda` (apps/web) pasó de catálogo estático a
 pedido real con reserva. Alcance: `supabase/migrations/0024_codigo_tienda_reservas.sql`
 (columna `reservas.codigo_tienda` + trigger de generación + backfill de
