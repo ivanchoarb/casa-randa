@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { SiteFooter } from "@/components/ui/SiteFooter";
 import { PageHero } from "@/components/ui/PageHero";
-import { supabaseClient } from "@/lib/supabase-client";
-import { ShopSections, type Producto } from "./ShopSections";
+import { obtenerProductosDisponibles } from "@/lib/tienda";
+import { ShopSections } from "./ShopSections";
 
 export const metadata: Metadata = {
   title: "Tienda",
@@ -13,16 +13,9 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  // `productos_tienda` es pública de lectura (policy "publico_lee_catalogo",
-  // 0006_rls.sql) — se trae acá, en el server component, en vez de un
-  // fetch del lado del cliente, para que el catálogo aparezca ya
-  // renderizado sin parpadeo de "cargando".
-  const { data } = await supabaseClient
-    .from("productos_tienda")
-    .select("id, nombre, descripcion, precio, disponible")
-    .eq("disponible", true)
-    .order("precio", { ascending: true });
-  const productos: Producto[] = data ?? [];
+  // Traído en el server component, no del lado del cliente, para que el
+  // catálogo aparezca ya renderizado sin parpadeo de "cargando".
+  const productos = await obtenerProductosDisponibles();
 
   return (
     <>

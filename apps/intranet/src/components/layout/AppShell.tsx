@@ -12,18 +12,19 @@ interface Identity {
   rol?: string;
 }
 
-// "Cotizaciones" y "Marketing" no son resources de Refine (no hay
+// "Cotizaciones", "Marketing" y "Tienda" no son resources de Refine (no hay
 // `useTable`/CRUD genérico detrás con el que useMenu() los liste solo — ver
-// src/lib/cotizacion.ts y marketing/page.tsx), así que se insertan a mano.
-// Cotizaciones en la posición que tiene en staging (después de "Análisis y
-// planificación"); Marketing justo después, ambas antes de "Usuarios y
-// permisos" (el último resource real).
+// src/lib/cotizacion.ts, marketing/page.tsx y tienda/page.tsx), así que se
+// insertan a mano. Cotizaciones en la posición que tiene en staging
+// (después de "Análisis y planificación"); Marketing y Tienda justo
+// después, todas antes de "Usuarios y permisos" (el último resource real).
 function conCotizaciones<T extends { key: string }>(menuItems: T[]) {
   const idx = menuItems.length - 1;
   return [
     ...menuItems.slice(0, idx),
     { key: "/cotizaciones", route: "/cotizaciones", label: "Cotizaciones" } as unknown as T,
     { key: "/marketing", route: "/marketing", label: "Marketing" } as unknown as T,
+    { key: "/tienda", route: "/tienda", label: "Tienda" } as unknown as T,
     ...menuItems.slice(idx),
   ];
 }

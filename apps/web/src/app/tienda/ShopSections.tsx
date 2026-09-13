@@ -1,16 +1,10 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Image from "next/image";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { Reveal } from "@/components/ui/Reveal";
-
-export interface Producto {
-  id: string;
-  nombre: string;
-  descripcion: string | null;
-  precio: number;
-  disponible: boolean;
-}
+import type { Producto } from "@/lib/tienda";
 
 const CLAVE_SESION = "cr_tienda_codigo_validado";
 const RETRASO_POPUP_MS = 5000;
@@ -149,33 +143,40 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
           {productos.map((p) => {
             const cantidad = cantidades[p.id] ?? 0;
             return (
-              <div key={p.id} className="border border-[var(--ink)]/10 bg-[var(--panel)] p-5">
-                <div className="flex items-baseline justify-between gap-3">
-                  <h3 className="font-[var(--font-display)] text-base font-semibold">{p.nombre}</h3>
-                  <span className="font-[var(--font-display)] font-semibold tabular-nums text-[var(--caoba)]">
-                    {money(p.precio)}
-                  </span>
-                </div>
-                {p.descripcion && <p className="mt-2 text-sm text-[var(--ink-2)]">{p.descripcion}</p>}
-                <div className="mt-4 flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => cambiarCantidad(p.id, -1)}
-                    disabled={cantidad === 0}
-                    aria-label={lang === "es" ? "Quitar una unidad" : "Remove one"}
-                    className="h-8 w-8 border border-[var(--ink)]/25 font-[var(--font-display)] text-sm transition-colors hover:border-[var(--caoba)] disabled:opacity-30"
-                  >
-                    −
-                  </button>
-                  <span className="w-6 text-center font-[var(--font-display)] tabular-nums">{cantidad}</span>
-                  <button
-                    type="button"
-                    onClick={() => cambiarCantidad(p.id, 1)}
-                    aria-label={lang === "es" ? "Agregar una unidad" : "Add one"}
-                    className="h-8 w-8 border border-[var(--ink)]/25 font-[var(--font-display)] text-sm transition-colors hover:border-[var(--caoba)]"
-                  >
-                    +
-                  </button>
+              <div key={p.id} className="border border-[var(--ink)]/10 bg-[var(--panel)]">
+                {p.imagen_url && (
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-[var(--ink)]/5">
+                    <Image src={p.imagen_url} alt={p.nombre} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover" />
+                  </div>
+                )}
+                <div className="p-5">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <h3 className="font-[var(--font-display)] text-base font-semibold">{p.nombre}</h3>
+                    <span className="font-[var(--font-display)] font-semibold tabular-nums text-[var(--caoba)]">
+                      {money(p.precio)}
+                    </span>
+                  </div>
+                  {p.descripcion && <p className="mt-2 text-sm text-[var(--ink-2)]">{p.descripcion}</p>}
+                  <div className="mt-4 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => cambiarCantidad(p.id, -1)}
+                      disabled={cantidad === 0}
+                      aria-label={lang === "es" ? "Quitar una unidad" : "Remove one"}
+                      className="h-8 w-8 border border-[var(--ink)]/25 font-[var(--font-display)] text-sm transition-colors hover:border-[var(--caoba)] disabled:opacity-30"
+                    >
+                      −
+                    </button>
+                    <span className="w-6 text-center font-[var(--font-display)] tabular-nums">{cantidad}</span>
+                    <button
+                      type="button"
+                      onClick={() => cambiarCantidad(p.id, 1)}
+                      aria-label={lang === "es" ? "Agregar una unidad" : "Add one"}
+                      className="h-8 w-8 border border-[var(--ink)]/25 font-[var(--font-display)] text-sm transition-colors hover:border-[var(--caoba)]"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
             );

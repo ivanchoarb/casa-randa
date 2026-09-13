@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { Reveal } from "@/components/ui/Reveal";
+import type { Producto } from "@/lib/tienda";
 
-export function Extras() {
-  const { lang } = useLanguage();
+export function Extras({ productos }: { productos: Producto[] }) {
+  const { lang, money } = useLanguage();
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-20">
@@ -35,6 +37,28 @@ export function Extras() {
           </Link>
         </Reveal>
       </div>
+
+      {productos.length > 0 && (
+        <Reveal delayMs={180} className="mt-10 grid gap-4 sm:grid-cols-3">
+          {productos.map((p) => (
+            <Link
+              key={p.id}
+              href="/tienda"
+              className="group flex items-center gap-3 border border-[var(--ink)]/10 bg-[var(--panel)] p-3 transition-colors hover:border-[var(--caoba)]/40"
+            >
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden bg-[var(--ink)]/5">
+                {p.imagen_url && (
+                  <Image src={p.imagen_url} alt={p.nombre} fill sizes="56px" className="object-cover" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate font-[var(--font-display)] text-sm font-semibold">{p.nombre}</p>
+                <p className="text-sm text-[var(--caoba)]">{money(p.precio)}</p>
+              </div>
+            </Link>
+          ))}
+        </Reveal>
+      )}
     </div>
   );
 }
