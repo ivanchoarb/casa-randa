@@ -12,6 +12,27 @@ correcta de Claude confirmando la lectura de AGENTS.md y este registro.
 
 ## Estado del trabajo
 
+Codex (2026-09-12): ampliación autorizada del correo con fotos existentes.
+Alcance: `docs/emails/bienvenida-registro.html`, `docs/emails/imagenes/`,
+`docs/emails/README.md` y este registro. Se preparan recursos locales para
+previsualización; no publicación ni envío.
+Terminado: fotos de fachada y patio inspeccionadas e incorporadas con ancho
+adaptable y texto alternativo. Copias locales de 91 KB y 57 KB; rutas existentes
+y `git diff --check` verificados. README explica reemplazo de fotos y conversión
+a URLs HTTPS antes del envío. Pendiente del integrador: alojar imágenes y probar
+en clientes de correo; no verificado contra producción.
+
+Codex (2026-09-12): creación del email HTML de bienvenida solicitado, con
+descuento del 5% y código literal `REGISTRO$RANDA5%`. Alcance: nuevo archivo
+`docs/emails/bienvenida-registro.html` y este registro. Solo artefacto local;
+sin envío, cambios de campañas ni activación del cupón.
+Terminado: HTML adaptable de 600 px, colores tomados de globals.css, dirección
+del paquete data, asunto y preheader incluidos. Comprobación de parseo HTML,
+código literal y `git diff --check` correctos. No verificado en bandejas reales.
+Antes de usarlo, quien integre el envío debe sustituir `{{unsubscribe_url}}`
+por la baja personal y verificar la activación del descuento. No se inventaron
+vencimientos ni restricciones comerciales.
+
 Claude: sección Marketing (`/marketing`, `/marketing/campanas`) construida en
 varias tandas el 2026-09-12, a pedido directo del usuario. Archivos nuevos:
 `app/(app)/marketing/page.tsx`, `app/(app)/marketing/campanas/page.tsx`,
@@ -60,6 +81,24 @@ pasan. Sin commit todavía.
 Roles definidos por el usuario: Dueño, Administrador, Host, Empleado. Host y
 Empleado ya tienen su conjunto de permisos por defecto (0015 y 0016 aplicadas y
 verificadas); ya no queda pendiente acordar el alcance de Host.
+
+Claude: popup de captura de email con cupón de bienvenida del 5%, a pedido
+directo del usuario (2026-09-12). Construido sobre el HTML de Codex
+(`docs/emails/bienvenida-registro.html`, ver entradas de Codex arriba) — el
+diseño y el copy del correo son suyos, sin modificar; Claude lo hizo enviable
+de verdad (imágenes alojadas en Storage, `{{unsubscribe_url}}` real) y le
+agregó un párrafo sobre reservar directo sin comisión de plataforma, a pedido
+del usuario. Archivos nuevos en `apps/web`: `components/ui/PopupDescuento.tsx`,
+`app/api/suscribirse/route.ts`, `app/api/darse-de-baja/route.ts`,
+`app/darse-de-baja/page.tsx`, `lib/correo-bienvenida.ts`, `lib/mailer.ts`,
+`lib/supabase-admin.ts`. Escribe en `contactos_marketing` (tabla de
+`apps/intranet`, ver sección Marketing arriba) vía service role. Cupón real
+`REGISTRO$RANDA5%` insertado en `codigos_descuento`; sin mecanismo de canje
+en el flujo de reserva todavía. Detalle completo en CLAUDE.md (sección
+`apps/web`). Verificado en vivo de extremo a extremo (popup real → correo
+real recibido con el cupón y el nuevo párrafo → fila real en
+`contactos_marketing`), datos de prueba borrados después. `pnpm build`/
+`pnpm lint` pasan en `apps/web`. Sin commit todavía.
 
 Codex: CRUD de usuarios implementado con roles existentes, API restringida a
 administradores y confirmación de eliminación. Alcance: usuarios/page.tsx,

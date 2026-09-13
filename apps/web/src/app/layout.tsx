@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Archivo, Source_Serif_4 } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { SmoothScrollProvider } from "@/lib/scroll/SmoothScrollProvider";
+import { PopupDescuento } from "@/components/ui/PopupDescuento";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -56,7 +57,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="es" className={`${archivo.variable} ${sourceSerif.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <SmoothScrollProvider>
-          <LanguageProvider>{children}</LanguageProvider>
+          <LanguageProvider>
+            {children}
+            <PopupDescuento />
+          </LanguageProvider>
         </SmoothScrollProvider>
       </body>
     </html>
