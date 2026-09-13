@@ -70,20 +70,39 @@ export default function ConciliacionPage() {
     );
   }, [reservas, movimientos]);
 
+  // 2026-09-13, a pedido de Ivan: los totales de esta página sumaban TODOS
+  // los movimientos bancarios sin importar el año — un depósito de una
+  // reserva de 2027 se sumaba al acumulado de 2026 y seguiría creciendo
+  // para siempre. Se filtra por el año de `fecha` del movimiento (la fecha
+  // real del depósito, no la de `entrada` de la reserva — hay movimientos
+  // sin reserva relacionada todavía, `reserva_id` null, que no tienen otra
+  // fecha de la cual partir), mismo patrón de selector de año que ya usa
+  // "Anticipos de comisiones de Iván" en Contabilidad. `reservasSinRelacionar`
+  // se deja sin filtrar a propósito: hace falta poder registrar un depósito
+  // atrasado de un año anterior aunque la vista esté mirando el año actual.
+  const anioActual = new Date().getFullYear();
+  const [anio, setAnio] = useState(anioActual);
+  const anios = Array.from({ length: 4 }, (_, i) => anioActual - 2 + i);
+
+  const movimientosDelAnio = useMemo(
+    () => movimientos.filter((m) => new Date(`${m.fecha}T12:00:00`).getFullYear() === anio),
+    [movimientos, anio],
+  );
+
   const [fecha, setFecha] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [referencia, setReferencia] = useState("");
   const [valorRecibido, setValorRecibido] = useState("");
   const [reservaId, setReservaId] = useState("");
 
-  const registrados = movimientos.reduce((sum, m) => sum + (m.valor_recibido ?? 0), 0);
-  const conciliado = movimientos
+  const registrados = movimientosDelAnio.reduce((sum, m) => sum + (m.valor_recibido ?? 0), 0);
+  const conciliado = movimientosDelAnio
     .filter((m) => m.estado === "conciliado")
     .reduce((sum, m) => sum + (m.valor_recibido ?? 0), 0);
-  const pendiente = movimientos
+  const pendiente = movimientosDelAnio
     .filter((m) => m.estado === "pendiente")
     .reduce((sum, m) => sum + m.valor_esperado, 0);
-  const diferencias = movimientos
+  const diferencias = movimientosDelAnio
     .filter((m) => m.estado === "diferencia")
     .reduce((sum, m) => sum + Math.abs((m.valor_recibido ?? 0) - m.valor_esperado), 0);
 
@@ -141,7 +160,22 @@ export default function ConciliacionPage() {
 
       {!movQuery.isError && (
         <>
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <label className="mt-4 block text-xs text-ink-2">
+            Año
+            <select
+              value={anio}
+              onChange={(e) => setAnio(Number(e.target.value))}
+              className={`${inputClass} mt-1 block`}
+            >
+              {anios.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="rounded-xl border border-line bg-panel p-4">
               <p className="text-xs font-medium text-ink-2 uppercase">Movimientos registrados</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">{money(registrados)}</p>
@@ -207,11 +241,15 @@ export default function ConciliacionPage() {
             </div>
           </div>
 
-          {!movQuery.isLoading && movimientos.length === 0 && (
-            <p className="mt-6 text-sm text-ink-2">Todavía no hay movimientos bancarios registrados.</p>
+          {!movQuery.isLoading && movimientosDelAnio.length === 0 && (
+            <p className="mt-6 text-sm text-ink-2">
+              {movimientos.length === 0
+                ? "Todavía no hay movimientos bancarios registrados."
+                : `Sin movimientos bancarios en ${anio}.`}
+            </p>
           )}
 
-          {!movQuery.isLoading && movimientos.length > 0 && (
+          {!movQuery.isLoading && movimientosDelAnio.length > 0 && (
             <div className="mt-6 overflow-x-auto rounded-xl border border-line bg-panel">
               <table className="w-full text-left text-sm">
                 <thead>
@@ -225,7 +263,7 @@ export default function ConciliacionPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {movimientos.map((m) => (
+                  {movimientosDelAnio.map((m) => (
                     <tr key={m.id} className="border-b border-line last:border-0">
                       <td className="px-4 py-3 tabular-nums">{m.fecha}</td>
                       <td className="px-4 py-3">
