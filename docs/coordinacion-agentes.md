@@ -12,6 +12,52 @@ correcta de Claude confirmando la lectura de AGENTS.md y este registro.
 
 ## Estado del trabajo
 
+Claude (2026-09-13): `/tienda` (apps/web) pasó de catálogo estático a
+pedido real con reserva. Alcance: `supabase/migrations/0024_codigo_tienda_reservas.sql`
+(columna `reservas.codigo_tienda` + trigger de generación + backfill de
+las 69 reservas reales), `apps/web/src/app/tienda/{page.tsx,ShopSections.tsx}`
+(reescritos, catálogo real desde `productos_tienda`), `apps/web/src/app/
+api/tienda/{validar-codigo,pedido}/route.ts` (nuevos, service-role). Sin
+pasarela de pago — el pedido queda `estado_pago: "pendiente"` y se avisa
+por correo a booking@randahome.com para cobro manual, decisión confirmada
+con el usuario vía `AskUserQuestion` antes de construir. Detalle completo
+en CLAUDE.md (`Known-incomplete` → `apps/web`). Migración ya aplicada a la
+base real; pedido de prueba creado, verificado y borrado después — no se
+tocó ninguna reserva real. `pnpm build`/`pnpm lint` pasan en apps/web.
+
+Codex (2026-09-13): actualización visual de Halloween autorizada con imagen
+generada de personajes y revisión de fotos nuevas. Alcance: halloween.html,
+imágenes derivadas nuevas en docs/emails/imagenes y este registro. Originales
+HEIC/ZIP preservados; no envío ni publicación.
+Terminado: ilustración generada e integrada como JPG en
+`imagenes/halloween-dracula-frankenstein.jpg`, con identificación de escena
+imaginaria y texto alternativo; se mantiene la foto real del patio. Tres HEIC
+(6007, 6021, 6041) dieron previsualizaciones negras al convertir con sips, por lo
+que no se incorporaron. Rutas HTML y diff comprobados. Pendiente aprobación del
+diseño y condiciones del cupón; no prueba de bandeja ni publicación de imágenes.
+
+Codex (2026-09-13): propuesta HTML de Halloween para aprobación del usuario.
+Alcance: `docs/emails/halloween.html` y este registro; conserva fotos ajenas.
+Oferta solicitada: 5%; código propuesto `HALLOWEENRANDA5%`, sin activar.
+No se inventan actividades incluidas ni disponibilidad; no se envía campaña.
+Terminado: concepto «Que el único susto sea quedarte en casa», fotos de fachada
+y patio, paleta de marca y CTA a la web. HTML y rutas locales comprobados;
+vista previa solicitada en el navegador de Codex. Pendiente aprobación creativa,
+vigencia/condiciones y creación del código propuesto; URLs públicas y baja antes
+de enviar. Sin prueba en bandeja ni cambios en producción.
+
+Codex (2026-09-13): nuevo correo para huéspedes anteriores anunciando próximas
+reservas directas. Alcance: `docs/emails/regreso-reserva-directa.html` y este
+registro. Código `COMINGBACKRANDA5%`, vigencia de uso durante octubre de 2026
+(próximo octubre según fecha actual). Se reutilizan fotos y paleta del correo
+aprobado. Solo redacción HTML; no envío ni configuración del descuento.
+Terminado: anuncio en futuro, beneficios respaldados por datos del proyecto
+(sin comisión de plataforma y trato con anfitriones), descuento y fechas
+explícitas; conserva fotos, dirección y baja. Parseo HTML, referencias de
+imágenes, código literal y diff comprobados. Pendiente al integrar: URLs públicas
+de imágenes, baja personal, configuración real del cupón y prueba en bandeja.
+No se verificó producción ni se activó/desactivó ningún código.
+
 Codex (2026-09-12): ampliación autorizada del correo con fotos existentes.
 Alcance: `docs/emails/bienvenida-registro.html`, `docs/emails/imagenes/`,
 `docs/emails/README.md` y este registro. Se preparan recursos locales para
