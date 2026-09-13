@@ -141,7 +141,7 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
           {lang === "es" ? "El catálogo no está disponible en este momento." : "The catalog isn't available right now."}
         </p>
       ) : (
-        <Reveal className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <Reveal className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" threshold={0.01}>
           {productos.map((p) => {
             const cantidad = cantidades[p.id] ?? 0;
             return (

@@ -14,13 +14,24 @@ export function Reveal({
   className = "",
   scale = false,
   delayMs = 0,
+  threshold = 0.2,
 }: {
   children: ReactNode;
   className?: string;
   scale?: boolean;
   delayMs?: number;
+  /**
+   * Fraction of the block's own height that must be on-screen at once to
+   * trigger. The default (0.2) is fine for the short blocks Reveal usually
+   * wraps, but breaks for a block that can grow arbitrarily tall (a
+   * product grid, say) — past a certain height, no scroll position ever
+   * shows 20% of it at once, so it never reveals at all. Pass a much
+   * smaller value (e.g. 0.01) for anything whose height scales with a
+   * list of unknown/growing length.
+   */
+  threshold?: number;
 }) {
-  const { ref, inView } = useInView<HTMLDivElement>(0.2);
+  const { ref, inView } = useInView<HTMLDivElement>(threshold);
 
   return (
     <div
