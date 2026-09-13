@@ -17,9 +17,6 @@ export const ROOMS: Room[] = [
 export const COMMON_ES = ["Cocina completa con lavavajillas, cafetera y tostadora", "Sala principal con ventanales al jardín", "Segunda sala de estar en el tercer piso", "Comedor para catorce y barra", "Balcón con hamaca", "Patio cerrado con área de BBQ", "Lavandería con lavadora y secadora, sin cargo", "Estacionamiento gratuito para cuatro vehículos", "Internet de 500 megas en toda la casa"];
 export const COMMON_EN = ["Full kitchen with dishwasher, coffee maker and toaster", "Main living room with windows onto the garden", "A second sitting room on the third floor", "Dining table for fourteen, plus a bar", "Balcony with a hammock", "Enclosed patio with barbecue", "Laundry with washer and dryer, no charge", "Free parking for four cars", "500 Mbps internet throughout"];
 
-export const NOT_ES = ["Piscina", "Champú de cortesía", "Trona ni cuna de viaje", "Mascotas: los pisos son de madera", "Fiestas ni eventos"];
-export const NOT_EN = ["A pool", "Complimentary shampoo", "High chair or travel cot", "Pets: the floors are hardwood", "Parties or events"];
-
 export const DIST: Distance[] = [
   { es: "Aeropuerto de Albrook", en: "Albrook airport", km: 1.3 },
   { es: "Albrook Mall y la Gran Terminal", en: "Albrook Mall and the bus terminal", km: 1.6 },

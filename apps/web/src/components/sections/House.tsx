@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { COMMON_EN, COMMON_ES, NOT_EN, NOT_ES } from "@casa-randa/data";
+import { COMMON_EN, COMMON_ES } from "@casa-randa/data";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { RoomsTable } from "@/components/sections/RoomsTable";
 import { Reveal } from "@/components/ui/Reveal";
@@ -59,8 +59,8 @@ export function House() {
         <RoomsTable />
       </Reveal>
 
-      <Reveal className="mt-12 grid gap-10 sm:grid-cols-2 sm:gap-12">
-        <div>
+      <Reveal className="mt-12">
+        <div className="max-w-md">
           <h3 className="font-[var(--font-display)] text-lg font-semibold">
             {lang === "es" ? "De su grupo y de nadie más" : "Shared by your group only"}
           </h3>
@@ -71,24 +71,6 @@ export function House() {
               </li>
             ))}
           </ul>
-        </div>
-        <div>
-          <h3 className="font-[var(--font-display)] text-lg font-semibold">
-            {lang === "es" ? "Lo que la casa no tiene" : "What the house does not have"}
-          </h3>
-          <ul className="mt-3">
-            {(lang === "es" ? NOT_ES : NOT_EN).map((item) => (
-              <li key={item} className="border-b border-[var(--ink)]/10 py-2 first:border-t">
-                <span className="mr-2 text-[var(--caoba)]">—</span>
-                {item}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-3 text-sm text-[var(--ink-2)]">
-            {lang === "es"
-              ? "Mejor saberlo antes de reservar que al llegar."
-              : "Better to know before you book than after you arrive."}
-          </p>
         </div>
       </Reveal>
 
