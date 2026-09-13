@@ -44,11 +44,11 @@ export function Extras({ productos }: { productos: Producto[] }) {
             <Link
               key={p.id}
               href="/tienda"
-              className="group flex items-center gap-3 border border-[var(--ink)]/10 bg-[var(--panel)] p-3 transition-colors hover:border-[var(--caoba)]/40"
+              className="group flex items-center gap-3 border border-[var(--ink)]/10 bg-white p-3 transition-colors hover:border-[var(--caoba)]/40"
             >
-              <div className="relative h-14 w-14 shrink-0 overflow-hidden bg-[var(--ink)]/5">
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden bg-white">
                 {p.imagen_url && (
-                  <Image src={p.imagen_url} alt={p.nombre} fill sizes="56px" className="object-cover" />
+                  <Image src={p.imagen_url} alt={p.nombre} fill sizes="56px" className="object-contain" />
                 )}
               </div>
               <div className="min-w-0">

@@ -143,10 +143,16 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
           {productos.map((p) => {
             const cantidad = cantidades[p.id] ?? 0;
             return (
-              <div key={p.id} className="border border-[var(--ink)]/10 bg-[var(--panel)]">
+              <div key={p.id} className="border border-[var(--ink)]/10 bg-white">
                 {p.imagen_url && (
-                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-[var(--ink)]/5">
-                    <Image src={p.imagen_url} alt={p.nombre} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover" />
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-white">
+                    <Image
+                      src={p.imagen_url}
+                      alt={p.nombre}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 33vw"
+                      className="object-contain"
+                    />
                   </div>
                 )}
                 <div className="p-5">
