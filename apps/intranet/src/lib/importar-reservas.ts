@@ -88,7 +88,13 @@ function normalizarFecha(v: unknown): string | null {
  */
 export async function importarReservasCSV(file: File): Promise<ResultadoImport> {
   const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: "array", cellDates: true });
+  // codepage: 65001 (UTF-8) — sin esto, un CSV UTF-8 sin BOM (a diferencia
+  // de un .xlsx real, que trae su propia codificación) llega como CP-1252
+  // por defecto y corrompe tildes/ñ ("Panamá" → "PanamÃ¡"). Mismo bug
+  // encontrado y confirmado el 2026-09-13 en importar-contactos.ts, con un
+  // CSV sintético real — no afecta los .xlsx ya usados para las 69
+  // reservas reales importadas hasta ahora, pero sí a cualquier CSV crudo.
+  const wb = XLSX.read(buf, { type: "array", cellDates: true, codepage: 65001 });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const filas: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
 

@@ -37,7 +37,13 @@ function celdaATexto(v: unknown): string {
 }
 
 export function leerArchivoContactos(buf: ArrayBuffer): ArchivoContactos {
-  const wb = XLSX.read(buf, { type: "array", cellDates: true });
+  // codepage: 65001 (UTF-8) es necesario para CSV — sin esto, SheetJS
+  // decodifica un CSV UTF-8 sin BOM como CP-1252 por defecto, y cada
+  // tilde/ñ llega corrompida ("Panamá" → "PanamÃ¡"). Confirmado con un CSV
+  // sintético real (mismo patrón exacto que apareció en los ~95 contactos
+  // reales ya importados) — no afecta archivos .xlsx, que ya traen su
+  // propia codificación en el formato.
+  const wb = XLSX.read(buf, { type: "array", cellDates: true, codepage: 65001 });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const filas: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: "" });
   if (filas.length === 0) throw new Error("El archivo está vacío.");

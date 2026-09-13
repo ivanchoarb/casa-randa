@@ -79,6 +79,52 @@ interface Contacto {
 type Filtro = "todos" | Solicitud["estado"];
 type FiltroIdioma = "todos" | "es" | "en" | "desconocido";
 
+// 2026-09-13, a pedido de Ivan: gráfico de países de origen de los
+// contactos de marketing (leads con consentimiento — no huéspedes reales,
+// eso ya existe aparte en Análisis > "Origen de huéspedes"). Cuenta sobre
+// TODA la audiencia con consentimiento, no sobre `filtrados` — así el
+// gráfico no cambia de forma cada vez que alguien escribe algo en el
+// buscador, coherente con las tres tarjetas de resumen de arriba (que
+// tampoco usan `filtrados`).
+function paisesOrdenados(contactos: Contacto[]): [string, number][] {
+  const conteo = new Map<string, number>();
+  for (const c of contactos) {
+    const clave = c.pais?.trim() || "Sin país registrado";
+    conteo.set(clave, (conteo.get(clave) ?? 0) + 1);
+  }
+  return Array.from(conteo.entries()).sort((a, b) => b[1] - a[1]);
+}
+
+function PaisesDeOrigen({ contactos }: { contactos: Contacto[] }) {
+  const porPais = useMemo(() => paisesOrdenados(contactos), [contactos]);
+  const max = Math.max(1, ...porPais.map(([, n]) => n));
+
+  return (
+    <div className="mt-6 rounded-xl border border-line bg-panel p-4">
+      <h3 className="font-semibold">De qué países nos han visitado</h3>
+      <p className="mt-1 text-xs text-ink-2">
+        País de origen de los {contactos.length} contacto{contactos.length === 1 ? "" : "s"} con
+        consentimiento de marketing (cotizaciones web e importados).
+      </p>
+      <div className="mt-3 space-y-2">
+        {porPais.map(([pais, n]) => (
+          <div key={pais} className="flex items-center gap-3">
+            <span className="w-40 shrink-0 truncate text-xs text-ink-2" title={pais}>
+              {pais}
+            </span>
+            <div className="h-2 flex-1 rounded-full bg-panel-2">
+              <div className="h-2 rounded-full bg-caoba" style={{ width: `${(n / max) * 100}%` }} />
+            </div>
+            <span className="w-20 shrink-0 text-right text-xs text-ink-2 tabular-nums">
+              {n} ({((n / contactos.length) * 100).toFixed(0)}%)
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ImportarContactos({ onImportado }: { onImportado: () => void }) {
   const { data: identity } = useGetIdentity<{ id: string }>();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -438,6 +484,8 @@ export default function MarketingPage() {
               <p className="mt-1 text-xs text-ink-2">De quienes pidieron cotización — aprobadas o convertidas</p>
             </div>
           </div>
+
+          {contactos.length > 0 && <PaisesDeOrigen contactos={contactos} />}
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <input
