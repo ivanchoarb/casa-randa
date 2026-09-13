@@ -1,12 +1,44 @@
 "use client";
 
+import { useMemo } from "react";
 import { useTable } from "@refinedev/core";
+import { usePermisos } from "@/lib/use-permisos";
 
 interface Bloqueo {
   id: string;
   inicio: string;
   fin: string;
   fuente: "airbnb" | "vrbo" | "directo";
+}
+
+interface ReservaProxima {
+  id: string;
+  entrada: string;
+  salida: string;
+  estado: string;
+  huesped_nombre: string | null;
+}
+
+function hoyISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// El mensaje no incluye cantidad de huéspedes a propósito: `huespedes` en
+// `reservas` solo trae el default del esquema (2) para toda reserva
+// importada de Airbnb/Vrbo/CSV — ninguna fuente real de datos de este
+// proyecto trae un conteo real todavía (mismo hallazgo que llevó a
+// ocultar esa columna en Reservas, ver CLAUDE.md). Mandar "2 huéspedes"
+// para cada una sería inventar un dato, no "si es posible" — confirmado
+// contra la base real: las 10 reservas confirmadas próximas de hoy
+// tienen las 10 el mismo valor por defecto.
+function construirMensajeWhatsApp(reservas: ReservaProxima[]) {
+  const lineas = ["Casa Randa — Próximas reservas confirmadas", ""];
+  for (const r of reservas) {
+    lineas.push(`*${r.huesped_nombre ?? "Huésped"}*`);
+    lineas.push(`${r.entrada} → ${r.salida} (${noches(r.entrada, r.salida)} ${noches(r.entrada, r.salida) === 1 ? "noche" : "noches"})`);
+    lineas.push("");
+  }
+  return lineas.join("\n").trim();
 }
 
 const FUENTE_STYLE: Record<Bloqueo["fuente"], string> = {
@@ -36,6 +68,8 @@ function agruparPorMes(bloqueos: Bloqueo[]) {
 }
 
 export default function CalendarioPage() {
+  const { can } = usePermisos();
+
   // Segundo módulo conectado a datos reales (después de Reservas) — ver
   // docs/arquitectura-migracion.md, Fase 3. Agrupa por mes igual que la
   // intranet de WordPress; el job que llena esta tabla desde iCal
@@ -49,13 +83,52 @@ export default function CalendarioPage() {
 
   const grupos = agruparPorMes(result.data ?? []);
 
+  // 2026-09-13, a pedido de Ivan: lista de reservas confirmadas próximas
+  // para compartir por WhatsApp. Se lee de `reservas_acceso` (no de la
+  // tabla `reservas` cruda) — esa vista es la que de verdad expone
+  // huesped_nombre/entrada/salida a quien tenga el permiso "reservas"
+  // (Host y Empleado lo tienen por defecto junto con "calendario"; la
+  // tabla cruda exige "contabilidad", que ninguno de los dos tiene). Sin
+  // ese permiso no se pide el nombre del huésped — mismo criterio que el
+  // resto de la app, nada de fila sin nombre a medias.
+  const { result: proximasResult } = useTable<ReservaProxima>({
+    resource: "reservas_acceso",
+    queryOptions: { enabled: can("reservas") },
+    filters: { permanent: [{ field: "estado", operator: "eq", value: "confirmada" }, { field: "entrada", operator: "gte", value: hoyISO() }] },
+    sorters: { initial: [{ field: "entrada", order: "asc" }] },
+    pagination: { mode: "off" },
+  });
+
+  const proximasConfirmadas = useMemo(() => proximasResult.data ?? [], [proximasResult.data]);
+  const mensajeWhatsApp = useMemo(() => construirMensajeWhatsApp(proximasConfirmadas), [proximasConfirmadas]);
+  const enlaceWhatsApp = `https://wa.me/?text=${encodeURIComponent(mensajeWhatsApp)}`;
+
   return (
     <div>
       <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Disponibilidad</p>
       <h1 className="mt-1 text-2xl font-bold">Calendario y disponibilidad</h1>
-      <p className="mt-2 text-sm text-ink-2">
-        {tableQuery.isLoading ? "Cargando…" : `${result.total ?? result.data.length} bloqueos`}
-      </p>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-ink-2">
+          {tableQuery.isLoading ? "Cargando…" : `${result.total ?? result.data.length} bloqueos`}
+        </p>
+        {can("reservas") && proximasConfirmadas.length > 0 && (
+          <a
+            href={enlaceWhatsApp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-md bg-caoba px-3 py-1.5 text-xs font-semibold text-panel"
+          >
+            Enviar reservas próximas por WhatsApp
+          </a>
+        )}
+      </div>
+      {can("reservas") && proximasConfirmadas.length > 0 && (
+        <p className="mt-1 text-xs text-ink-2">
+          {proximasConfirmadas.length} reserva{proximasConfirmadas.length === 1 ? "" : "s"} confirmada
+          {proximasConfirmadas.length === 1 ? "" : "s"} próxima{proximasConfirmadas.length === 1 ? "" : "s"} — no
+          incluye cantidad de huéspedes, no hay una fuente real de ese dato todavía.
+        </p>
+      )}
 
       {tableQuery.isError && (
         <p className="mt-6 text-sm text-caoba">
