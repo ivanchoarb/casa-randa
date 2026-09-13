@@ -1,9 +1,10 @@
 "use client";
 
+import { useRef } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { useBooking } from "@/lib/booking/BookingProvider";
 import { PaxSelect } from "@/components/ui/PaxSelect";
-import { openDatePickerOnClick, openDatePickerOnKey } from "@/lib/dom/openDatePicker";
+import { openDatePickerOnClick, openDatePickerOnKey, tryOpenPicker } from "@/lib/dom/openDatePicker";
 import { MagneticLink } from "@/components/ui/MagneticLink";
 
 const fieldLabel = "font-[var(--font-display)] text-xs tracking-wide text-[var(--on-dark-2)]";
@@ -13,6 +14,14 @@ const fieldInput =
 export function AvailabilityBar() {
   const { lang } = useLanguage();
   const { checkIn, checkOut, pax, setCheckIn, setCheckOut, setPax } = useBooking();
+  const salidaRef = useRef<HTMLInputElement>(null);
+
+  // Al elegir Entrada, Salida ya se corrió sola (ver BookingProvider) —
+  // solo falta abrir su calendario, una vez React pinte el nuevo valor.
+  function onEntradaChange(value: string) {
+    setCheckIn(value);
+    requestAnimationFrame(() => tryOpenPicker(salidaRef.current));
+  }
 
   return (
     <div className="border-t border-[var(--on-dark-2)]/25 bg-[var(--night-2)] text-[var(--on-dark)]">
@@ -25,7 +34,7 @@ export function AvailabilityBar() {
             id="in"
             type="date"
             value={checkIn}
-            onChange={(e) => setCheckIn(e.target.value)}
+            onChange={(e) => onEntradaChange(e.target.value)}
             onClick={openDatePickerOnClick}
             onKeyDown={openDatePickerOnKey}
             className={`${fieldInput} cursor-pointer`}
@@ -37,6 +46,7 @@ export function AvailabilityBar() {
           </label>
           <input
             id="out"
+            ref={salidaRef}
             type="date"
             value={checkOut}
             onChange={(e) => setCheckOut(e.target.value)}

@@ -1,13 +1,17 @@
 import type { KeyboardEvent, MouseEvent } from "react";
 
-function tryOpenPicker(input: HTMLInputElement) {
-  if (typeof input.showPicker === "function") {
-    try {
-      input.showPicker();
-    } catch {
-      // Some browsers (e.g. Safari) can refuse outside a direct user
-      // gesture — harmless, the field still works as a plain input.
-    }
+/**
+ * Exported (not just used internally) so callers can also open a picker
+ * programmatically — e.g. the "Salida" field auto-opening its calendar
+ * right after "Entrada" is picked, once React has painted its new value.
+ */
+export function tryOpenPicker(input: HTMLInputElement | null) {
+  if (!input || typeof input.showPicker !== "function") return;
+  try {
+    input.showPicker();
+  } catch {
+    // Some browsers (e.g. Safari) can refuse outside a direct user
+    // gesture — harmless, the field still works as a plain input.
   }
 }
 
