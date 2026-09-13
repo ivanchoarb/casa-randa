@@ -80,7 +80,7 @@ export function QuoteCalculator() {
       <div className="mx-auto max-w-6xl px-6 py-20">
         <Reveal className="grid gap-5 sm:grid-cols-2 sm:items-end">
           <h2 className="text-fluid-h2 font-[var(--font-display)] font-bold">
-            {lang === "es" ? "Resérvela aquí, no por una plataforma" : "Book it here, not through a platform"}
+            {lang === "es" ? "Resérvela aquí, directamente sin intermediarios" : "Book it here, not through a platform"}
           </h2>
           <p className="text-[var(--ink-2)]">
             {lang === "es"
