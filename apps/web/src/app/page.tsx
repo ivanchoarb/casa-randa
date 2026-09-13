@@ -19,7 +19,11 @@ import { Extras } from "@/components/sections/Extras";
 export const revalidate = 300;
 
 export default async function Home() {
-  const productos = await obtenerProductosDisponibles({ limite: 3, orden: "precio" });
+  // 10 en vez de 3 — un carrusel de solo 3 tarjetas no da mucho para
+  // desplazar. Sigue ordenado por precio (los más baratos primero), no
+  // por categoría, para no complicar una vitrina que solo busca invitar
+  // a ver /tienda, no representar el catálogo completo.
+  const productos = await obtenerProductosDisponibles({ limite: 10, orden: "precio" });
 
   return (
     <BookingProvider>
