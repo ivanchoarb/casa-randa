@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { Reveal } from "@/components/ui/Reveal";
@@ -8,6 +8,16 @@ import type { Producto } from "@/lib/tienda";
 
 const CLAVE_SESION = "cr_tienda_codigo_validado";
 const RETRASO_POPUP_MS = 5000;
+
+const TODOS = "__todos__";
+const OTROS = "__otros__";
+type Orden = "sugeridos" | "precio-asc" | "precio-desc" | "nombre";
+const OPCIONES_ORDEN: { valor: Orden; es: string; en: string }[] = [
+  { valor: "sugeridos", es: "Sugeridos", en: "Suggested" },
+  { valor: "precio-asc", es: "Precio: menor a mayor", en: "Price: low to high" },
+  { valor: "precio-desc", es: "Precio: mayor a menor", en: "Price: high to low" },
+  { valor: "nombre", es: "Nombre A-Z", en: "Name A-Z" },
+];
 
 function leerCodigoGuardado(): string | null {
   if (typeof window === "undefined") return null;
@@ -28,7 +38,40 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
   const { lang, money } = useLanguage();
 
   const [cantidades, setCantidades] = useState<Record<string, number>>({});
+  const [categoriaActiva, setCategoriaActiva] = useState<string>(TODOS);
+  const [orden, setOrden] = useState<Orden>("sugeridos");
   const [popupAbierto, setPopupAbierto] = useState(false);
+
+  // Categorías presentes en el catálogo real, con su conteo — nada
+  // hardcodeado, así que una categoría nueva agregada desde la intranet
+  // aparece sola la próxima vez que se cargue esta página. "Otros" agrupa
+  // los productos sin categoría asignada (los 3 originales, por ahora).
+  const categorias = useMemo(() => {
+    const conteo = new Map<string, number>();
+    for (const p of productos) {
+      const clave = p.categoria?.trim() || OTROS;
+      conteo.set(clave, (conteo.get(clave) ?? 0) + 1);
+    }
+    const reales = Array.from(conteo.entries())
+      .filter(([clave]) => clave !== OTROS)
+      .sort((a, b) => a[0].localeCompare(b[0], "es"));
+    const otros = conteo.get(OTROS);
+    return [...reales, ...(otros ? ([[OTROS, otros]] as [string, number][]) : [])];
+  }, [productos]);
+
+  const productosVisibles = useMemo(() => {
+    const filtrados =
+      categoriaActiva === TODOS
+        ? productos
+        : productos.filter((p) => (p.categoria?.trim() || OTROS) === categoriaActiva);
+    const copia = [...filtrados];
+    if (orden === "precio-asc") copia.sort((a, b) => a.precio - b.precio);
+    else if (orden === "precio-desc") copia.sort((a, b) => b.precio - a.precio);
+    else if (orden === "nombre") copia.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    // "sugeridos" conserva el orden en que llegó `productos` (created_at,
+    // ver obtenerProductosDisponibles en lib/tienda.ts) — no se reordena.
+    return copia;
+  }, [productos, categoriaActiva, orden]);
   // El código validado se recuerda por pestaña (sessionStorage, no
   // localStorage) — así no hace falta volver a escribirlo si navegan a
   // otra sección y regresan, pero tampoco queda guardado para siempre en
@@ -141,55 +184,118 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
           {lang === "es" ? "El catálogo no está disponible en este momento." : "The catalog isn't available right now."}
         </p>
       ) : (
-        <Reveal className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" threshold={0.01}>
-          {productos.map((p) => {
-            const cantidad = cantidades[p.id] ?? 0;
-            return (
-              <div key={p.id} className="border border-[var(--ink)]/10 bg-white">
-                {p.imagen_url && (
-                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-white">
-                    <Image
-                      src={p.imagen_url}
-                      alt={p.nombre}
-                      fill
-                      sizes="(max-width: 640px) 100vw, 33vw"
-                      className="object-contain"
-                    />
-                  </div>
-                )}
-                <div className="p-5">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <h3 className="font-[var(--font-display)] text-base font-semibold">{p.nombre}</h3>
-                    <span className="font-[var(--font-display)] font-semibold tabular-nums text-[var(--caoba)]">
-                      {money(p.precio)}
-                    </span>
-                  </div>
-                  {p.descripcion && <p className="mt-2 text-sm text-[var(--ink-2)]">{p.descripcion}</p>}
-                  <div className="mt-4 flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => cambiarCantidad(p.id, -1)}
-                      disabled={cantidad === 0}
-                      aria-label={lang === "es" ? "Quitar una unidad" : "Remove one"}
-                      className="h-8 w-8 border border-[var(--ink)]/25 font-[var(--font-display)] text-sm transition-colors hover:border-[var(--caoba)] disabled:opacity-30"
-                    >
-                      −
-                    </button>
-                    <span className="w-6 text-center font-[var(--font-display)] tabular-nums">{cantidad}</span>
-                    <button
-                      type="button"
-                      onClick={() => cambiarCantidad(p.id, 1)}
-                      aria-label={lang === "es" ? "Agregar una unidad" : "Add one"}
-                      className="h-8 w-8 border border-[var(--ink)]/25 font-[var(--font-display)] text-sm transition-colors hover:border-[var(--caoba)]"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </Reveal>
+        <div className="grid gap-10 lg:grid-cols-[200px_1fr]">
+          <aside>
+            <h2 className="font-[var(--font-display)] text-xs font-semibold tracking-wide text-[var(--ink-2)] uppercase">
+              {lang === "es" ? "Categorías" : "Categories"}
+            </h2>
+            <nav className="mt-3 flex flex-wrap gap-2 lg:flex-col lg:items-start lg:gap-1">
+              <button
+                type="button"
+                onClick={() => setCategoriaActiva(TODOS)}
+                className={`rounded-[1px] px-3 py-1.5 text-left text-sm transition-colors lg:w-full ${
+                  categoriaActiva === TODOS
+                    ? "bg-[var(--caoba)] text-white"
+                    : "border border-[var(--ink)]/15 text-[var(--ink)] hover:border-[var(--caoba)]/50"
+                }`}
+              >
+                {lang === "es" ? "Todos" : "All"} ({productos.length})
+              </button>
+              {categorias.map(([clave, cuenta]) => (
+                <button
+                  key={clave}
+                  type="button"
+                  onClick={() => setCategoriaActiva(clave)}
+                  className={`rounded-[1px] px-3 py-1.5 text-left text-sm capitalize transition-colors lg:w-full ${
+                    categoriaActiva === clave
+                      ? "bg-[var(--caoba)] text-white"
+                      : "border border-[var(--ink)]/15 text-[var(--ink)] hover:border-[var(--caoba)]/50"
+                  }`}
+                >
+                  {clave === OTROS ? (lang === "es" ? "Otros" : "Other") : clave} ({cuenta})
+                </button>
+              ))}
+            </nav>
+          </aside>
+
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-[var(--ink-2)]">
+                {productosVisibles.length} {lang === "es" ? "productos" : "products"}
+              </p>
+              <label className="flex items-center gap-2 text-sm text-[var(--ink-2)]">
+                {lang === "es" ? "Ordenar por" : "Sort by"}
+                <select
+                  value={orden}
+                  onChange={(e) => setOrden(e.target.value as Orden)}
+                  className="rounded-[1px] border border-[var(--ink)]/25 bg-white px-2 py-1.5 text-sm text-[var(--ink)]"
+                >
+                  {OPCIONES_ORDEN.map((o) => (
+                    <option key={o.valor} value={o.valor}>
+                      {lang === "es" ? o.es : o.en}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {productosVisibles.length === 0 ? (
+              <p className="mt-6 text-sm text-[var(--ink-2)]">
+                {lang === "es" ? "No hay productos en esta categoría." : "No products in this category."}
+              </p>
+            ) : (
+              <Reveal className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-3" threshold={0.01}>
+                {productosVisibles.map((p) => {
+                  const cantidad = cantidades[p.id] ?? 0;
+                  return (
+                    <div key={p.id} className="border border-[var(--ink)]/10 bg-white">
+                      {p.imagen_url && (
+                        <div className="relative aspect-[4/3] w-full overflow-hidden bg-white">
+                          <Image
+                            src={p.imagen_url}
+                            alt={p.nombre}
+                            fill
+                            sizes="(max-width: 640px) 100vw, 33vw"
+                            className="object-contain"
+                          />
+                        </div>
+                      )}
+                      <div className="p-5">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <h3 className="font-[var(--font-display)] text-base font-semibold">{p.nombre}</h3>
+                          <span className="font-[var(--font-display)] font-semibold tabular-nums text-[var(--caoba)]">
+                            {money(p.precio)}
+                          </span>
+                        </div>
+                        {p.descripcion && <p className="mt-2 text-sm text-[var(--ink-2)]">{p.descripcion}</p>}
+                        <div className="mt-4 flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => cambiarCantidad(p.id, -1)}
+                            disabled={cantidad === 0}
+                            aria-label={lang === "es" ? "Quitar una unidad" : "Remove one"}
+                            className="h-8 w-8 border border-[var(--ink)]/25 font-[var(--font-display)] text-sm transition-colors hover:border-[var(--caoba)] disabled:opacity-30"
+                          >
+                            −
+                          </button>
+                          <span className="w-6 text-center font-[var(--font-display)] tabular-nums">{cantidad}</span>
+                          <button
+                            type="button"
+                            onClick={() => cambiarCantidad(p.id, 1)}
+                            aria-label={lang === "es" ? "Agregar una unidad" : "Add one"}
+                            className="h-8 w-8 border border-[var(--ink)]/25 font-[var(--font-display)] text-sm transition-colors hover:border-[var(--caoba)]"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </Reveal>
+            )}
+          </div>
+        </div>
       )}
 
       <Reveal

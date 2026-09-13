@@ -19,7 +19,7 @@ import { Extras } from "@/components/sections/Extras";
 export const revalidate = 300;
 
 export default async function Home() {
-  const productos = await obtenerProductosDisponibles(3);
+  const productos = await obtenerProductosDisponibles({ limite: 3, orden: "precio" });
 
   return (
     <BookingProvider>
