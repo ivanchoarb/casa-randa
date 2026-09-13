@@ -133,6 +133,8 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
   }
 
   return (
+    <>
+    <div className="bg-white">
     <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
       {productos.length === 0 ? (
         <p className="text-sm text-[var(--ink-2)]">
@@ -262,6 +264,8 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
           </div>
         )}
       </Reveal>
+    </div>
+    </div>
 
       {popupAbierto && (
         <div
@@ -323,6 +327,6 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
