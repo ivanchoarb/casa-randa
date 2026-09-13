@@ -78,13 +78,25 @@ const MESES = [
 // resta esas comisiones dos veces en el saldo del propietario (bug real,
 // encontrado y corregido el 2026-09-11 comparando cifra por cifra contra
 // staging.randahome.com/intranet/contabilidad/).
+// 2026-09-13, a pedido de Ivan: antes esta sección solo mostraba el año
+// calendario actual, sin forma de ver el acumulado de un año con reservas
+// pero que todavía no "empieza" (2027, con reservas ya confirmadas desde
+// hoy). Mismo selector de año que ya usan Anticipos de comisiones más
+// abajo y Conciliación bancaria — mismo rango (actual-2 .. actual+1), así
+// que 2027 ya entra sin tocar el cálculo del rango. Las tarjetas de
+// "comisión del mes actual" solo tienen sentido para el año calendario
+// real de hoy — no existe un "mes actual" de 2027 mientras estamos en
+// 2026 — así que desaparecen cuando se elige otro año, en vez de mostrar
+// una cifra sin sentido.
 function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: Gasto[] }) {
-  const anio = new Date().getFullYear();
+  const anioActual = new Date().getFullYear();
+  const [anio, setAnio] = useState(anioActual);
+  const anios = Array.from({ length: 4 }, (_, i) => anioActual - 2 + i);
   const mes = new Date().getMonth();
 
   const activas = reservas.filter((r) => r.estado === "confirmada" || r.estado === "completada");
   const delAnio = activas.filter((r) => new Date(`${r.entrada}T12:00:00`).getFullYear() === anio);
-  const delMes = delAnio.filter((r) => new Date(`${r.entrada}T12:00:00`).getMonth() === mes);
+  const delMes = anio === anioActual ? delAnio.filter((r) => new Date(`${r.entrada}T12:00:00`).getMonth() === mes) : [];
 
   const recibidoAcumulado = delAnio.reduce((sum, r) => sum + r.recibido, 0);
   const comisionMesMarquelda = delMes.reduce((sum, r) => sum + r.comision_marquelda, 0);
@@ -103,12 +115,16 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
       valor: money(recibidoAcumulado),
       nota: "Después de comisiones de plataforma",
     },
-    {
-      titulo: `${MESES[mes]} · Marquelda`,
-      valor: money(comisionMesMarquelda),
-      nota: "Comisión del mes actual",
-    },
-    { titulo: `${MESES[mes]} · Iván`, valor: money(comisionMesIvan), nota: "Comisión del mes actual" },
+    ...(anio === anioActual
+      ? [
+          {
+            titulo: `${MESES[mes]} · Marquelda`,
+            valor: money(comisionMesMarquelda),
+            nota: "Comisión del mes actual",
+          },
+          { titulo: `${MESES[mes]} · Iván`, valor: money(comisionMesIvan), nota: "Comisión del mes actual" },
+        ]
+      : []),
     { titulo: `${anio} · Marquelda`, valor: money(comisionAnualMarquelda), nota: "Acumulado anual" },
     { titulo: `${anio} · Iván`, valor: money(comisionAnualIvan), nota: "Acumulado anual" },
     {
@@ -119,14 +135,30 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {tarjetas.map((t) => (
-        <div key={t.titulo} className="rounded-xl border border-line bg-panel p-4">
-          <p className="text-xs font-medium tracking-wide text-ink-2 uppercase">{t.titulo}</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums">{t.valor}</p>
-          <p className="mt-1 text-xs text-ink-2">{t.nota}</p>
-        </div>
-      ))}
+    <div>
+      <label className="mb-4 block text-xs text-ink-2">
+        Año
+        <select
+          value={anio}
+          onChange={(e) => setAnio(Number(e.target.value))}
+          className={`${inputClass} mt-1 block`}
+        >
+          {anios.map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {tarjetas.map((t) => (
+          <div key={t.titulo} className="rounded-xl border border-line bg-panel p-4">
+            <p className="text-xs font-medium tracking-wide text-ink-2 uppercase">{t.titulo}</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums">{t.valor}</p>
+            <p className="mt-1 text-xs text-ink-2">{t.nota}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
