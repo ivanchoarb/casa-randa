@@ -4,16 +4,20 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
-// Estilo propio, deliberadamente distinto al resto del sitio (verde/caoba/
-// ámbar) — Iván pidió reproducir el diseño de unas capturas de un wizard
-// tipo encuesta (tixu.ai): fondo blanco, un paso por pantalla, barra de
-// progreso, titular grande en azul marino, tarjetas/inputs de borde claro,
-// botón de acento azul. No reutiliza los tokens de globals.css a propósito.
-const AZUL_MARINO = "#132349";
-const AZUL_ACENTO = "#2f5fe0";
+// 2026-09-14: reproduce el mismo patrón de interacción de las capturas de
+// referencia (tixu.ai) — fondo blanco, un paso por pantalla, barra de
+// progreso, tarjetas/inputs de borde grande — pero con los tokens reales
+// de la marca en vez del azul original. Iván, tras verlo funcionando:
+// "¿ponemos colores más adecuados a la marca?" — sí. `--ink` es el mismo
+// tono que ya usa el resto del sitio para texto sobre fondo claro (ver el
+// comentario de tokens en globals.css); `--caoba` es el acento estándar
+// del sitio en superficies claras (Neighborhood, precios en Extras.tsx),
+// así que reemplaza al azul en la barra de progreso y el botón principal.
+const COLOR_TITULO = "var(--ink)";
+const COLOR_ACENTO = "var(--caoba)";
 
 const inputClass =
-  "w-full rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-base text-slate-800 outline-none transition-colors focus:border-[#2f5fe0]";
+  "w-full rounded-2xl border-2 border-[var(--ink)]/15 bg-white px-5 py-4 text-base text-[var(--ink)] outline-none transition-colors focus:border-[var(--caoba)]";
 
 type Paso =
   | "idioma"
@@ -124,28 +128,28 @@ export function CheckInWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-900">
+    <div className="min-h-screen bg-white font-sans text-[var(--ink)]">
       <div className="mx-auto flex min-h-screen max-w-xl flex-col px-6 py-6">
         <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={atras}
             aria-label={lang === "es" ? "Atrás" : "Back"}
-            className={`flex h-10 w-10 items-center justify-center rounded-full text-xl text-slate-500 hover:bg-slate-100 ${indice === 0 || paso === "listo" ? "invisible" : ""}`}
+            className={`flex h-10 w-10 items-center justify-center rounded-full text-xl text-[var(--ink-2)] hover:bg-[var(--ground)] ${indice === 0 || paso === "listo" ? "invisible" : ""}`}
           >
             ←
           </button>
           <button
             type="button"
             onClick={() => setLang(lang === "es" ? "en" : "es")}
-            className={`rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold tracking-wide text-slate-500 ${paso === "idioma" ? "invisible" : ""}`}
+            className={`rounded-full border border-[var(--ink)]/15 px-3 py-1 text-xs font-semibold tracking-wide text-[var(--ink-2)] ${paso === "idioma" ? "invisible" : ""}`}
           >
             {lang === "es" ? "EN" : "ES"}
           </button>
           <Link
             href="/"
             aria-label={lang === "es" ? "Cerrar" : "Close"}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-xl text-slate-500 hover:bg-slate-100"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-xl text-[var(--ink-2)] hover:bg-[var(--ground)]"
           >
             ×
           </Link>
@@ -153,13 +157,13 @@ export function CheckInWizard() {
 
         {paso !== "listo" && (
           <div className="mt-2 flex items-center gap-3">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--ground)]">
               <div
                 className="h-full rounded-full transition-all duration-300"
-                style={{ width: `${((indice + 1) / total) * 100}%`, backgroundColor: AZUL_ACENTO }}
+                style={{ width: `${((indice + 1) / total) * 100}%`, backgroundColor: COLOR_ACENTO }}
               />
             </div>
-            <span className="shrink-0 text-xs font-medium text-slate-400 tabular-nums">
+            <span className="shrink-0 text-xs font-medium text-[var(--ink-2)] tabular-nums">
               {indice + 1}/{total}
             </span>
           </div>
@@ -168,7 +172,7 @@ export function CheckInWizard() {
         <div className="flex flex-1 flex-col justify-center py-10">
           {paso === "idioma" && (
             <div className="flex flex-col gap-5">
-              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: AZUL_MARINO }}>
+              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: COLOR_TITULO }}>
                 Choose your language
                 <br />
                 Elige tu idioma
@@ -179,10 +183,10 @@ export function CheckInWizard() {
                   setLang("es");
                   irA("codigo");
                 }}
-                className="flex items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white px-5 py-5 text-left transition-colors hover:border-[#2f5fe0]"
+                className="flex items-center gap-4 rounded-2xl border-2 border-[var(--ink)]/15 bg-white px-5 py-5 text-left transition-colors hover:border-[var(--caoba)]"
               >
                 <span className="text-3xl">🇵🇦</span>
-                <span className="text-lg font-semibold text-slate-800">Español</span>
+                <span className="text-lg font-semibold text-[var(--ink)]">Español</span>
               </button>
               <button
                 type="button"
@@ -190,20 +194,20 @@ export function CheckInWizard() {
                   setLang("en");
                   irA("codigo");
                 }}
-                className="flex items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white px-5 py-5 text-left transition-colors hover:border-[#2f5fe0]"
+                className="flex items-center gap-4 rounded-2xl border-2 border-[var(--ink)]/15 bg-white px-5 py-5 text-left transition-colors hover:border-[var(--caoba)]"
               >
                 <span className="text-3xl">🇺🇸</span>
-                <span className="text-lg font-semibold text-slate-800">English</span>
+                <span className="text-lg font-semibold text-[var(--ink)]">English</span>
               </button>
             </div>
           )}
 
           {paso === "codigo" && (
             <form onSubmit={validarCodigo} className="flex flex-col gap-5">
-              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: AZUL_MARINO }}>
+              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: COLOR_TITULO }}>
                 {lang === "es" ? "¿Cuál es tu código de reserva?" : "What's your reservation code?"}
               </h1>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-[var(--ink-2)]">
                 {lang === "es"
                   ? "Si reservó directo con nosotros, el código que le enviamos al confirmar. Si reservó por Airbnb o Vrbo, el código de confirmación de esa plataforma."
                   : "If you booked directly with us, the code we sent when your booking was confirmed. If you booked through Airbnb or Vrbo, that platform's confirmation code."}
@@ -216,14 +220,14 @@ export function CheckInWizard() {
                 placeholder={lang === "es" ? "Ej. A1B2C3" : "e.g. A1B2C3"}
                 className={`${inputClass} text-center text-2xl font-semibold tracking-[0.3em] uppercase`}
               />
-              {errorCodigo && <p className="text-sm text-red-600">{errorCodigo}</p>}
+              {errorCodigo && <p className="text-sm text-[var(--caoba)]">{errorCodigo}</p>}
               <BotonContinuar disabled={validandoCodigo} texto={validandoCodigo ? (lang === "es" ? "Validando…" : "Validating…") : undefined} lang={lang} />
             </form>
           )}
 
           {paso === "nombre" && (
             <PasoForm onSubmit={() => irA("pais")} lang={lang}>
-              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: AZUL_MARINO }}>
+              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: COLOR_TITULO }}>
                 {lang === "es" ? "¿Cómo te llamas?" : "What's your name?"}
               </h1>
               <div className="mt-6 flex flex-col gap-3">
@@ -248,7 +252,7 @@ export function CheckInWizard() {
 
           {paso === "pais" && (
             <PasoForm onSubmit={() => irA("identificacion")} lang={lang}>
-              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: AZUL_MARINO }}>
+              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: COLOR_TITULO }}>
                 {lang === "es" ? "¿De dónde nos visitas?" : "Where are you visiting from?"}
               </h1>
               <input
@@ -264,10 +268,10 @@ export function CheckInWizard() {
 
           {paso === "identificacion" && (
             <PasoForm onSubmit={() => irA("documento")} lang={lang} opcional>
-              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: AZUL_MARINO }}>
+              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: COLOR_TITULO }}>
                 {lang === "es" ? "Número de identificación" : "ID number"}
               </h1>
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="mt-2 text-sm text-[var(--ink-2)]">
                 {lang === "es" ? "Pasaporte o cédula. Opcional." : "Passport or ID document. Optional."}
               </p>
               <input
@@ -282,14 +286,14 @@ export function CheckInWizard() {
 
           {paso === "documento" && (
             <PasoForm onSubmit={() => irA("email")} lang={lang} opcional>
-              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: AZUL_MARINO }}>
+              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: COLOR_TITULO }}>
                 {lang === "es" ? "Sube una foto de tu identificación" : "Upload a photo of your ID"}
               </h1>
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="mt-2 text-sm text-[var(--ink-2)]">
                 {lang === "es" ? "Pasaporte o cédula. Opcional." : "Passport or ID document. Optional."}
               </p>
               <label
-                className="mt-6 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 px-5 py-10 text-center text-sm text-slate-500 hover:border-[#2f5fe0]"
+                className="mt-6 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--ink)]/20 px-5 py-10 text-center text-sm text-[var(--ink-2)] hover:border-[var(--caoba)]"
               >
                 <span className="text-3xl">📎</span>
                 {documento ? documento.name : lang === "es" ? "Toca para elegir una foto" : "Tap to choose a photo"}
@@ -305,7 +309,7 @@ export function CheckInWizard() {
 
           {paso === "email" && (
             <PasoForm onSubmit={() => irA("telefono")} lang={lang}>
-              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: AZUL_MARINO }}>
+              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: COLOR_TITULO }}>
                 {lang === "es" ? "¿Cuál es tu correo?" : "What's your email?"}
               </h1>
               <input
@@ -322,7 +326,7 @@ export function CheckInWizard() {
 
           {paso === "telefono" && (
             <PasoForm onSubmit={() => irA("fechas")} lang={lang}>
-              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: AZUL_MARINO }}>
+              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: COLOR_TITULO }}>
                 {lang === "es" ? "¿A qué número te contactamos?" : "What number can we reach you at?"}
               </h1>
               <input
@@ -338,24 +342,24 @@ export function CheckInWizard() {
 
           {paso === "fechas" && (
             <PasoForm onSubmit={() => irA("terminos")} lang={lang}>
-              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: AZUL_MARINO }}>
+              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: COLOR_TITULO }}>
                 {lang === "es" ? "Confirma tus fechas" : "Confirm your dates"}
               </h1>
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="mt-2 text-sm text-[var(--ink-2)]">
                 {lang === "es" ? "Esto es lo que tenemos registrado en tu reserva." : "This is what we have on file for your booking."}
               </p>
               <div className="mt-6 flex flex-col gap-3">
-                <div className="rounded-2xl border-2 border-slate-200 bg-slate-50 px-5 py-4">
-                  <p className="text-xs font-semibold tracking-wide text-slate-400 uppercase">
+                <div className="rounded-2xl border-2 border-[var(--ink)]/15 bg-[var(--ground)] px-5 py-4">
+                  <p className="text-xs font-semibold tracking-wide text-[var(--ink-2)] uppercase">
                     {lang === "es" ? "Llegada" : "Arrival"}
                   </p>
-                  <p className="text-lg font-semibold text-slate-800">{fechas?.entrada}</p>
+                  <p className="text-lg font-semibold text-[var(--ink)]">{fechas?.entrada}</p>
                 </div>
-                <div className="rounded-2xl border-2 border-slate-200 bg-slate-50 px-5 py-4">
-                  <p className="text-xs font-semibold tracking-wide text-slate-400 uppercase">
+                <div className="rounded-2xl border-2 border-[var(--ink)]/15 bg-[var(--ground)] px-5 py-4">
+                  <p className="text-xs font-semibold tracking-wide text-[var(--ink-2)] uppercase">
                     {lang === "es" ? "Salida" : "Departure"}
                   </p>
-                  <p className="text-lg font-semibold text-slate-800">{fechas?.salida}</p>
+                  <p className="text-lg font-semibold text-[var(--ink)]">{fechas?.salida}</p>
                 </div>
               </div>
             </PasoForm>
@@ -363,22 +367,22 @@ export function CheckInWizard() {
 
           {paso === "terminos" && (
             <form onSubmit={enviarRegistro} className="flex flex-col gap-5">
-              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: AZUL_MARINO }}>
+              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: COLOR_TITULO }}>
                 {lang === "es" ? "Últimos detalles" : "Last thing"}
               </h1>
-              <label className="mt-2 flex items-start gap-3 rounded-2xl border-2 border-slate-200 px-5 py-4 text-sm text-slate-600">
+              <label className="mt-2 flex items-start gap-3 rounded-2xl border-2 border-[var(--ink)]/15 px-5 py-4 text-sm text-[var(--ink)]">
                 <input
                   type="checkbox"
                   required
                   checked={aceptaTerminos}
                   onChange={(e) => setAceptaTerminos(e.target.checked)}
-                  className="mt-0.5 h-5 w-5 shrink-0 accent-[#2f5fe0]"
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--caoba)]"
                 />
                 {lang === "es"
                   ? "Acepto los términos y condiciones de Casa Randa y confirmo que la información anterior es correcta."
                   : "I agree to Casa Randa's terms and conditions and confirm the information above is correct."}
               </label>
-              {errorEnvio && <p className="text-sm text-red-600">{errorEnvio}</p>}
+              {errorEnvio && <p className="text-sm text-[var(--caoba)]">{errorEnvio}</p>}
               <BotonContinuar
                 disabled={enviando || !aceptaTerminos}
                 texto={enviando ? (lang === "es" ? "Enviando…" : "Sending…") : lang === "es" ? "Enviar registro" : "Submit registration"}
@@ -390,10 +394,10 @@ export function CheckInWizard() {
           {paso === "listo" && (
             <div className="flex flex-col items-center gap-4 text-center">
               <span className="text-5xl">✅</span>
-              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: AZUL_MARINO }}>
+              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: COLOR_TITULO }}>
                 {lang === "es" ? "¡Listo! Te esperamos." : "All set! See you soon."}
               </h1>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-[var(--ink-2)]">
                 {lang === "es"
                   ? "Recibimos tu registro. Nos vemos en tu fecha de llegada."
                   : "We've received your registration. See you on your arrival date."}
@@ -401,7 +405,7 @@ export function CheckInWizard() {
               <Link
                 href="/"
                 className="mt-4 inline-flex w-full items-center justify-center rounded-2xl px-5 py-4 text-base font-semibold text-white"
-                style={{ backgroundColor: AZUL_ACENTO }}
+                style={{ backgroundColor: COLOR_ACENTO }}
               >
                 {lang === "es" ? "Volver al inicio" : "Back to home"}
               </Link>
@@ -444,7 +448,7 @@ function BotonContinuar({ lang, disabled, texto }: { lang: "es" | "en"; disabled
       type="submit"
       disabled={disabled}
       className="mt-2 inline-flex w-full items-center justify-center rounded-2xl px-5 py-4 text-base font-semibold text-white transition-opacity disabled:opacity-50"
-      style={{ backgroundColor: AZUL_ACENTO }}
+      style={{ backgroundColor: COLOR_ACENTO }}
     >
       {texto ?? (lang === "es" ? "Continuar" : "Continue")}
     </button>
