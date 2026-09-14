@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { filtroCodigoReserva, normalizarCodigoReserva } from "@/lib/codigo-reserva";
 
 export const dynamic = "force-dynamic";
 
@@ -19,14 +20,14 @@ export async function POST(req: Request) {
   } catch {
     return fail("Solicitud inválida.");
   }
-  const codigo = typeof body.codigo === "string" ? body.codigo.trim().toUpperCase() : "";
+  const codigo = normalizarCodigoReserva(body.codigo);
   if (!codigo) return fail("Escribe tu código de reserva.");
 
   const db = getSupabaseAdmin();
   const { data, error } = await db
     .from("reservas")
     .select("entrada, salida")
-    .eq("codigo_tienda", codigo)
+    .or(filtroCodigoReserva(codigo))
     .in("estado", ["confirmada", "completada"])
     .maybeSingle();
 

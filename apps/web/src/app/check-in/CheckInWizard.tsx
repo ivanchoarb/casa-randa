@@ -205,8 +205,8 @@ export function CheckInWizard() {
               </h1>
               <p className="text-sm text-slate-500">
                 {lang === "es"
-                  ? "El mismo código de 6 caracteres que usas en la tienda, te lo enviamos al confirmar tu reserva."
-                  : "The same 6-character code you use in the shop — we sent it to you when your booking was confirmed."}
+                  ? "Si reservó directo con nosotros, el código que le enviamos al confirmar. Si reservó por Airbnb o Vrbo, el código de confirmación de esa plataforma."
+                  : "If you booked directly with us, the code we sent when your booking was confirmed. If you booked through Airbnb or Vrbo, that platform's confirmation code."}
               </p>
               <input
                 autoFocus

@@ -402,8 +402,8 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
             </h2>
             <p className="mt-2 text-sm text-[var(--on-dark-2)]">
               {lang === "es"
-                ? "Escriba el código de reserva que le compartimos al confirmar su estadía para desbloquear la compra."
-                : "Enter the reservation code we shared when your stay was confirmed to unlock checkout."}
+                ? "Si reservó directo con nosotros, el código que le compartimos al confirmar su estadía. Si reservó por Airbnb o Vrbo, el código de confirmación de esa plataforma."
+                : "If you booked directly with us, the code we shared when your stay was confirmed. If you booked through Airbnb or Vrbo, that platform's confirmation code."}
             </p>
 
             <form onSubmit={validarCodigo} className="mt-5 flex flex-col gap-3">

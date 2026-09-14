@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { crearTransporte, transporteDisponible } from "@/lib/mailer";
+import { filtroCodigoReserva, normalizarCodigoReserva } from "@/lib/codigo-reserva";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
   } catch {
     return fail("Solicitud inválida.");
   }
-  const codigo = typeof body.codigo === "string" ? body.codigo.trim().toUpperCase() : "";
+  const codigo = normalizarCodigoReserva(body.codigo);
   if (!codigo) return fail("Falta el código de reserva.");
 
   const items = Array.isArray(body.items) ? body.items : [];
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
   const { data: reserva, error: errorReserva } = await db
     .from("reservas")
     .select("id, huesped_nombre")
-    .eq("codigo_tienda", codigo)
+    .or(filtroCodigoReserva(codigo))
     .in("estado", ["confirmada", "completada"])
     .maybeSingle();
   if (errorReserva) return fail("No se pudo validar el código.", 500);
