@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { VS } from "@casa-randa/data";
 import { MIN_NIGHTS, RATE, computeQuote, type CancellationPolicy, type PaymentPlan } from "@casa-randa/pricing";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -9,7 +9,6 @@ import { PaxSelect } from "@/components/ui/PaxSelect";
 import { openDatePickerOnClick, openDatePickerOnKey, tryOpenPicker } from "@/lib/dom/openDatePicker";
 import { MagneticLink } from "@/components/ui/MagneticLink";
 import { Reveal } from "@/components/ui/Reveal";
-import { supabaseClient } from "@/lib/supabase-client";
 
 const fieldLabel = "font-[var(--font-display)] text-xs tracking-wide text-[var(--ink-2)]";
 const fieldInput =
@@ -29,6 +28,35 @@ export function QuoteCalculator() {
   }
 
   const quote = computeQuote({ checkIn, checkOut, pax, cancellation, plan });
+
+  // 2026-09-14, hallazgo de auditoría manual de Iván: nada revisaba
+  // disponibilidad antes de guardar una solicitud — se pudo mandar una
+  // solicitud para fechas que ya tenían una reserva confirmada encima
+  // (probado en vivo contra la reserva real de "Sobi Sun"). Se revisa en
+  // vivo cada vez que cambian las fechas, contra /api/disponibilidad
+  // (bloqueos_calendario + reservas confirmada/completada, mismo criterio
+  // que la vista reservas_fechas_ocupadas de la intranet) — y otra vez
+  // server-side al enviar en /api/solicitudes, que es la que de verdad
+  // importa: esta solo es para avisar antes de que la persona llene el
+  // formulario completo.
+  const [conflictos, setConflictos] = useState<{ inicio: string; fin: string }[] | null>(null);
+  const hayEstadia = !!quote;
+  useEffect(() => {
+    if (!hayEstadia) return;
+    let cancelado = false;
+    fetch(`/api/disponibilidad?entrada=${checkIn}&salida=${checkOut}`)
+      .then((r) => (r.ok ? r.json() : { conflictos: [] }))
+      .then((data) => {
+        if (!cancelado) setConflictos(data.conflictos ?? []);
+      })
+      .catch(() => {
+        if (!cancelado) setConflictos(null);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [checkIn, checkOut, hayEstadia]);
+  const ocupado = hayEstadia && !!conflictos && conflictos.length > 0;
 
   // Flujo 1 (docs/logica-negocio-y-flujos.md): "Solicitar estas fechas"
   // crea una fila en `solicitudes`, no una Reserva todavía — eso pasa
@@ -54,25 +82,30 @@ export function QuoteCalculator() {
     setErrorEnvio(null);
     setEnviando(true);
     try {
-      const { error } = await supabaseClient.from("solicitudes").insert({
-        nombre,
-        apellido: apellido.trim() || null,
-        email,
-        telefono: telefono.trim() || null,
-        pais: pais.trim() || null,
-        entrada: checkIn,
-        salida: checkOut,
-        huespedes: pax,
-        plan_tarifa: cancellation,
-        plan_pago: plan,
-        consentimiento,
-        consentimiento_politica: consentimientoPolitica,
+      const res = await fetch("/api/solicitudes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre,
+          apellido,
+          email,
+          telefono,
+          pais,
+          entrada: checkIn,
+          salida: checkOut,
+          huespedes: pax,
+          plan_tarifa: cancellation,
+          plan_pago: plan,
+          consentimiento,
+          consentimiento_politica: consentimientoPolitica,
+        }),
       });
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error);
       setEnviado(true);
     } catch (err) {
       setErrorEnvio(
-        err instanceof Error
+        err instanceof Error && err.message
           ? err.message
           : lang === "es"
             ? "No se pudo enviar la solicitud. Intente de nuevo o escríbanos directamente."
@@ -260,6 +293,12 @@ export function QuoteCalculator() {
                 {lang === "es"
                   ? "Recibimos su solicitud. Le responderemos desde booking@randahome.com en las próximas horas."
                   : "We received your request. We'll reply from booking@randahome.com within a few hours."}
+              </p>
+            ) : ocupado ? (
+              <p className="mt-5 rounded-[1px] border border-[var(--caoba)]/40 bg-[var(--caoba)]/10 px-4 py-3 text-sm text-[var(--on-dark)]">
+                {lang === "es"
+                  ? "Esas fechas ya no están disponibles — parte de su estadía se cruza con una reserva existente. Elija otras fechas."
+                  : "Those dates aren't available anymore — part of the stay overlaps an existing booking. Pick different dates."}
               </p>
             ) : mostrarFormulario ? (
               <form onSubmit={enviarSolicitud} className="mt-5 flex flex-col gap-3">

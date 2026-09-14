@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTable } from "@refinedev/core";
 import { usePermisos } from "@/lib/use-permisos";
 
@@ -81,7 +81,28 @@ export default function CalendarioPage() {
     pagination: { pageSize: 200 },
   });
 
-  const grupos = agruparPorMes(result.data ?? []);
+  // 2026-09-14, hallazgo de auditoría manual de Iván: la lista mezclaba
+  // bloqueos de meses ya pasados con los vigentes/futuros sin ningún
+  // corte — nada indicaba que enero o marzo de 2026 ya habían pasado.
+  // Mismo patrón de "Historial" colapsado que ya usa esta app (Operación,
+  // Reservas → Historial de solicitudes): un bloqueo cuyo `fin` ya pasó
+  // se archiva ahí, uno que todavía cubre hoy o el futuro (fin >= hoy)
+  // se queda en la lista principal. `bloqueos_calendario` sigue trayendo
+  // los 200 más próximos por `inicio` ascendente — de ahí para atrás en
+  // el tiempo no hay bloqueos futuros que perder.
+  const hoy = hoyISO();
+  const { vigentes, historial } = useMemo(() => {
+    const vigentes: Bloqueo[] = [];
+    const historial: Bloqueo[] = [];
+    for (const b of result.data ?? []) {
+      (b.fin >= hoy ? vigentes : historial).push(b);
+    }
+    return { vigentes, historial };
+  }, [result.data, hoy]);
+  const [historialAbierto, setHistorialAbierto] = useState(false);
+
+  const grupos = agruparPorMes(vigentes);
+  const gruposHistorial = agruparPorMes(historial);
 
   // 2026-09-13, a pedido de Ivan: lista de reservas confirmadas próximas
   // para compartir por WhatsApp. Se lee de `reservas_acceso` (no de la
@@ -109,7 +130,7 @@ export default function CalendarioPage() {
       <h1 className="mt-1 text-2xl font-bold">Calendario y disponibilidad</h1>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-ink-2">
-          {tableQuery.isLoading ? "Cargando…" : `${result.total ?? result.data.length} bloqueos`}
+          {tableQuery.isLoading ? "Cargando…" : `${vigentes.length} bloqueos vigentes`}
         </p>
         {can("reservas") && proximasConfirmadas.length > 0 && (
           <a
@@ -139,8 +160,14 @@ export default function CalendarioPage() {
 
       {!tableQuery.isLoading && !tableQuery.isError && result.data.length === 0 && (
         <p className="mt-6 text-sm text-ink-2">
-          Sin bloqueos todavía. Los trae la sincronización de iCal (Fase 2, no implementada) o se
+          Sin bloqueos todavía. Los trae la sincronización de iCal (apps/intranet/src/app/api/sync/ical) o se
           cargan a mano mientras tanto.
+        </p>
+      )}
+
+      {!tableQuery.isLoading && !tableQuery.isError && result.data.length > 0 && vigentes.length === 0 && (
+        <p className="mt-6 text-sm text-ink-2">
+          No hay bloqueos vigentes — todos los que hay quedaron en el Historial, más abajo.
         </p>
       )}
 
@@ -150,29 +177,59 @@ export default function CalendarioPage() {
             <h2 className="text-sm font-semibold text-ink-2 capitalize">{mes}</h2>
             <div className="mt-3 space-y-2">
               {items.map((b) => (
-                <div
-                  key={b.id}
-                  className="flex items-center justify-between rounded-lg border border-line bg-panel px-4 py-3"
-                >
-                  <div className="flex items-baseline gap-3 text-sm">
-                    <span className="font-semibold tabular-nums">{b.inicio}</span>
-                    <span className="text-ink-2">→</span>
-                    <span className="font-semibold tabular-nums">{b.fin}</span>
-                    <span className="text-ink-2">
-                      {noches(b.inicio, b.fin)} {noches(b.inicio, b.fin) === 1 ? "noche" : "noches"}
-                    </span>
-                  </div>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${FUENTE_STYLE[b.fuente]}`}
-                  >
-                    {b.fuente}
-                  </span>
-                </div>
+                <FilaBloqueo key={b.id} b={b} />
               ))}
             </div>
           </div>
         ))}
       </div>
+
+      {historial.length > 0 && (
+        <div className="mt-8">
+          <button
+            type="button"
+            onClick={() => setHistorialAbierto((v) => !v)}
+            className="flex w-full items-center justify-between rounded-xl border border-line bg-panel px-4 py-3 text-left"
+          >
+            <span className="font-semibold">
+              Historial <span className="font-normal text-ink-2">({historial.length})</span>
+            </span>
+            <span className={`text-ink-2 transition-transform ${historialAbierto ? "rotate-180" : ""}`}>▾</span>
+          </button>
+          {historialAbierto && (
+            <div className="mt-4 space-y-8">
+              {Array.from(gruposHistorial.entries()).map(([mes, items]) => (
+                <div key={mes}>
+                  <h2 className="text-sm font-semibold text-ink-2 capitalize">{mes}</h2>
+                  <div className="mt-3 space-y-2">
+                    {items.map((b) => (
+                      <FilaBloqueo key={b.id} b={b} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FilaBloqueo({ b }: { b: Bloqueo }) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-line bg-panel px-4 py-3">
+      <div className="flex items-baseline gap-3 text-sm">
+        <span className="font-semibold tabular-nums">{b.inicio}</span>
+        <span className="text-ink-2">→</span>
+        <span className="font-semibold tabular-nums">{b.fin}</span>
+        <span className="text-ink-2">
+          {noches(b.inicio, b.fin)} {noches(b.inicio, b.fin) === 1 ? "noche" : "noches"}
+        </span>
+      </div>
+      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${FUENTE_STYLE[b.fuente]}`}>
+        {b.fuente}
+      </span>
     </div>
   );
 }

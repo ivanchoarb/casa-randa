@@ -4,14 +4,18 @@ import { usePermisos } from "@/lib/use-permisos";
 import { supabaseClient } from "@/lib/supabase-client";
 import * as XLSX from "xlsx";
 import { useMemo, useState } from "react";
-import { useTable, useUpdate } from "@refinedev/core";
+import { useDelete, useTable, useUpdate } from "@refinedev/core";
 import { computeQuote, type CancellationPolicy, type PaymentPlan } from "@casa-randa/pricing";
+
+const inputClass = "rounded-md border border-line bg-ground px-2 py-1.5 text-sm";
 
 interface Solicitud {
   id: string;
   nombre: string;
+  apellido: string | null;
   email: string;
   telefono: string | null;
+  pais: string | null;
   entrada: string;
   salida: string;
   huespedes: number;
@@ -44,9 +48,32 @@ function fechaHora(iso: string) {
   return d.toLocaleString("es-PA", { dateStyle: "medium", timeStyle: "short" });
 }
 
+// 2026-09-14, a pedido de Iván (auditoría manual): antes solo se podía
+// aprobar/rechazar una solicitud, nunca corregir sus datos ni borrarla —
+// mismo patrón de edición en línea que PlanCompraItem en Análisis
+// (plan_compras). Editar/eliminar aquí es sobre la solicitud en sí (la
+// fila en `solicitudes` que crea "Solicitar estas fechas" en la web
+// pública) — todavía no existe una Reserva real generada desde la web
+// (eso sigue siendo Flujo 1 sin terminar, ver el comentario de
+// cambiarEstado más abajo), así que "reserva hecha por la página web" hoy
+// significa esto.
 function SolicitudCard({ s }: { s: Solicitud }) {
   const { mutate: actualizar, mutation } = useUpdate<Solicitud>();
+  const { mutate: eliminar, mutation: eliminando } = useDelete<Solicitud>();
+  const [editando, setEditando] = useState(false);
   const quote = computeQuote({ checkIn: s.entrada, checkOut: s.salida, pax: s.huespedes, cancellation: s.plan_tarifa, plan: s.plan_pago });
+
+  const [nombre, setNombre] = useState(s.nombre);
+  const [apellido, setApellido] = useState(s.apellido ?? "");
+  const [email, setEmail] = useState(s.email);
+  const [telefono, setTelefono] = useState(s.telefono ?? "");
+  const [pais, setPais] = useState(s.pais ?? "");
+  const [entrada, setEntrada] = useState(s.entrada);
+  const [salida, setSalida] = useState(s.salida);
+  const [huespedes, setHuespedes] = useState(s.huespedes.toString());
+  const [planTarifa, setPlanTarifa] = useState(s.plan_tarifa);
+  const [planPago, setPlanPago] = useState(s.plan_pago);
+  const [notas, setNotas] = useState(s.notas ?? "");
 
   // Solo cambia el estado — todavía no genera el link de pago
   // (PagueloFacil/Yappy) ni convierte la solicitud en Reserva, esa parte
@@ -57,14 +84,45 @@ function SolicitudCard({ s }: { s: Solicitud }) {
     actualizar({ resource: "solicitudes", id: s.id, values: { estado } });
   }
 
+  function guardar() {
+    actualizar(
+      {
+        resource: "solicitudes",
+        id: s.id,
+        values: {
+          nombre,
+          apellido: apellido.trim() || null,
+          email,
+          telefono: telefono.trim() || null,
+          pais: pais.trim() || null,
+          entrada,
+          salida,
+          huespedes: Number(huespedes),
+          plan_tarifa: planTarifa,
+          plan_pago: planPago,
+          notas: notas.trim() || null,
+        },
+      },
+      { onSuccess: () => setEditando(false) },
+    );
+  }
+
+  function eliminarSolicitud() {
+    if (!window.confirm(`¿Eliminar la solicitud de ${s.nombre} (${s.entrada} → ${s.salida})?`)) return;
+    eliminar({ resource: "solicitudes", id: s.id });
+  }
+
   return (
     <div className="rounded-lg border border-line bg-panel p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold">{s.nombre}</p>
+          <p className="text-sm font-semibold">
+            {s.nombre} {s.apellido}
+          </p>
           <p className="text-xs text-ink-2">
             {s.email}
             {s.telefono ? ` · ${s.telefono}` : ""}
+            {s.pais ? ` · ${s.pais}` : ""}
           </p>
         </div>
         <span
@@ -109,28 +167,120 @@ function SolicitudCard({ s }: { s: Solicitud }) {
           </span>{" "}
           · recibida {fechaHora(s.created_at)}
         </p>
-        {s.estado === "pendiente" && (
-          <div className="flex gap-2">
+        <div className="flex gap-2">
+          {s.estado === "pendiente" && (
+            <>
+              <button
+                type="button"
+                disabled={mutation.isPending}
+                onClick={() => cambiarEstado("rechazada")}
+                className="rounded-md border border-line px-3 py-1 text-sm disabled:opacity-60"
+              >
+                Rechazar
+              </button>
+              <button
+                type="button"
+                disabled={mutation.isPending}
+                onClick={() => cambiarEstado("aprobada")}
+                className="rounded-md bg-caoba px-3 py-1 text-sm font-semibold text-panel disabled:opacity-60"
+              >
+                Aprobar
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => setEditando(!editando)}
+            className="rounded-md border border-line px-3 py-1 text-sm"
+          >
+            {editando ? "Cancelar" : "Editar"}
+          </button>
+          <button
+            type="button"
+            disabled={eliminando.isPending}
+            onClick={eliminarSolicitud}
+            className="rounded-md border border-line px-3 py-1 text-sm text-caoba disabled:opacity-60"
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
+      {s.notas && !editando && <p className="mt-2 text-xs text-ink-2">Notas: {s.notas}</p>}
+
+      {editando && (
+        <div className="mt-4 grid grid-cols-1 gap-3 border-t border-line pt-4 sm:grid-cols-2">
+          <label className="text-xs text-ink-2">
+            Nombre
+            <input value={nombre} onChange={(e) => setNombre(e.target.value)} className={`${inputClass} mt-1 block w-full`} />
+          </label>
+          <label className="text-xs text-ink-2">
+            Apellido
+            <input value={apellido} onChange={(e) => setApellido(e.target.value)} className={`${inputClass} mt-1 block w-full`} />
+          </label>
+          <label className="text-xs text-ink-2">
+            Email
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputClass} mt-1 block w-full`} />
+          </label>
+          <label className="text-xs text-ink-2">
+            Teléfono
+            <input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={`${inputClass} mt-1 block w-full`} />
+          </label>
+          <label className="text-xs text-ink-2">
+            País
+            <input value={pais} onChange={(e) => setPais(e.target.value)} className={`${inputClass} mt-1 block w-full`} />
+          </label>
+          <label className="text-xs text-ink-2">
+            Huéspedes
+            <input
+              type="number"
+              min={1}
+              value={huespedes}
+              onChange={(e) => setHuespedes(e.target.value)}
+              className={`${inputClass} mt-1 block w-full`}
+            />
+          </label>
+          <label className="text-xs text-ink-2">
+            Entrada
+            <input type="date" value={entrada} onChange={(e) => setEntrada(e.target.value)} className={`${inputClass} mt-1 block w-full`} />
+          </label>
+          <label className="text-xs text-ink-2">
+            Salida
+            <input type="date" value={salida} onChange={(e) => setSalida(e.target.value)} className={`${inputClass} mt-1 block w-full`} />
+          </label>
+          <label className="text-xs text-ink-2">
+            Cancelación
+            <select
+              value={planTarifa}
+              onChange={(e) => setPlanTarifa(e.target.value as CancellationPolicy)}
+              className={`${inputClass} mt-1 block w-full`}
+            >
+              <option value="flex">Flexible (+3%)</option>
+              <option value="nr">No reembolsable (−5%)</option>
+            </select>
+          </label>
+          <label className="text-xs text-ink-2">
+            Pago
+            <select value={planPago} onChange={(e) => setPlanPago(e.target.value as PaymentPlan)} className={`${inputClass} mt-1 block w-full`}>
+              <option value="30">30% ahora, saldo antes de llegar</option>
+              <option value="100">100% ahora</option>
+            </select>
+          </label>
+          <label className="text-xs text-ink-2 sm:col-span-2">
+            Notas
+            <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} className={`${inputClass} mt-1 block w-full`} />
+          </label>
+          <div className="sm:col-span-2">
             <button
               type="button"
               disabled={mutation.isPending}
-              onClick={() => cambiarEstado("rechazada")}
-              className="rounded-md border border-line px-3 py-1 text-sm disabled:opacity-60"
+              onClick={guardar}
+              className="rounded-md bg-caoba px-4 py-1.5 text-sm font-semibold text-panel disabled:opacity-60"
             >
-              Rechazar
-            </button>
-            <button
-              type="button"
-              disabled={mutation.isPending}
-              onClick={() => cambiarEstado("aprobada")}
-              className="rounded-md bg-caoba px-3 py-1 text-sm font-semibold text-panel disabled:opacity-60"
-            >
-              Aprobar
+              {mutation.isPending ? "Guardando…" : "Guardar cambios"}
             </button>
           </div>
-        )}
-      </div>
-      {s.notas && <p className="mt-2 text-xs text-ink-2">Notas: {s.notas}</p>}
+        </div>
+      )}
     </div>
   );
 }
