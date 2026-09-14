@@ -10,7 +10,7 @@ export const CLEANING = 60;
 export const TAX = 0.1;
 export const EXTRA_GUEST = 40;
 export const FREE_PAX = 14;
-export const MIN_NIGHTS = 2;
+export const MIN_NIGHTS = 1;
 export const MAX_PAX = 16;
 
 export type CancellationPolicy = "flex" | "nr";
