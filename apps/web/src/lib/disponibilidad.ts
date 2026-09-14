@@ -17,13 +17,23 @@ export interface ConflictoDisponibilidad {
  * propio bloqueo (defecto D2, ver ese mismo comentario en la vista). Rangos
  * semiabiertos ([entrada, salida)) — el día de salida no cuenta como
  * ocupado, mismo criterio que toda fecha en este proyecto.
+ *
+ * 2026-09-14, hallazgo de auditoría (Codex, docs/auditoria-2026-09-14.md,
+ * punto 1): antes esta función descartaba `error` y trataba `data: null`
+ * (una consulta fallida, no una tabla vacía) igual que "sin conflictos" —
+ * un timeout o error SQL real, exactamente el tipo de falla contra la que
+ * este chequeo debería protegerse, se leía como "fechas libres". Ahora
+ * lanza si cualquiera de las dos consultas falla, para que los que llaman
+ * (`/api/disponibilidad`, `/api/solicitudes`) puedan negarse a confirmar
+ * disponibilidad que no pudieron verificar de verdad, en vez de dejar
+ * pasar una solicitud que se cruza con una reserva real.
  */
 export async function buscarConflictos(
   db: SupabaseClient,
   entrada: string,
   salida: string,
 ): Promise<ConflictoDisponibilidad[]> {
-  const [{ data: bloqueos }, { data: reservas }] = await Promise.all([
+  const [{ data: bloqueos, error: errorBloqueos }, { data: reservas, error: errorReservas }] = await Promise.all([
     db.from("bloqueos_calendario").select("inicio, fin, fuente").lt("inicio", salida).gt("fin", entrada),
     db
       .from("reservas")
@@ -32,6 +42,9 @@ export async function buscarConflictos(
       .lt("entrada", salida)
       .gt("salida", entrada),
   ]);
+  if (errorBloqueos || errorReservas) {
+    throw new Error("No se pudo verificar la disponibilidad.");
+  }
 
   const conflictos: ConflictoDisponibilidad[] = [];
   for (const b of bloqueos ?? []) conflictos.push({ inicio: b.inicio, fin: b.fin, fuente: b.fuente });

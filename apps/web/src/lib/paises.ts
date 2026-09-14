@@ -187,7 +187,6 @@ export const PAISES: Pais[] = [
   { es: "Siria", en: "Syria", iso: "SY", telefono: "+963" },
   { es: "Somalia", en: "Somalia", iso: "SO", telefono: "+252" },
   { es: "Sri Lanka", en: "Sri Lanka", iso: "LK", telefono: "+94" },
-  { es: "Suazilandia", en: "Swaziland", iso: "SZ", telefono: "+268" },
   { es: "Sudáfrica", en: "South Africa", iso: "ZA", telefono: "+27" },
   { es: "Sudán", en: "Sudan", iso: "SD", telefono: "+249" },
   { es: "Sudán del Sur", en: "South Sudan", iso: "SS", telefono: "+211" },

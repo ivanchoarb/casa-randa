@@ -69,7 +69,14 @@ export async function POST(req: Request) {
 
   const db = getSupabaseAdmin();
 
-  const conflictos = await buscarConflictos(db, entrada, salida);
+  let conflictos;
+  try {
+    conflictos = await buscarConflictos(db, entrada, salida);
+  } catch {
+    // No insertar una solicitud sin poder verificar de verdad que las
+    // fechas están libres (docs/auditoria-2026-09-14.md, punto 1).
+    return fail("No se pudo verificar la disponibilidad. Intenta de nuevo en unos minutos.", 503);
+  }
   if (conflictos.length > 0) return fail("Esas fechas ya no están disponibles.", 409);
 
   const { data: solicitud, error } = await db

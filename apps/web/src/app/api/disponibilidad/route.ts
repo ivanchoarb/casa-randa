@@ -19,6 +19,12 @@ export async function GET(req: Request) {
     return Response.json({ error: "Fechas inválidas." }, { status: 400 });
   }
 
-  const conflictos = await buscarConflictos(getSupabaseAdmin(), entrada, salida);
-  return Response.json({ conflictos });
+  try {
+    const conflictos = await buscarConflictos(getSupabaseAdmin(), entrada, salida);
+    return Response.json({ conflictos });
+  } catch {
+    // No confirmar disponibilidad que no se pudo verificar de verdad —
+    // ver el comentario en buscarConflictos (docs/auditoria-2026-09-14.md).
+    return Response.json({ error: "No se pudo verificar la disponibilidad. Intenta de nuevo." }, { status: 503 });
+  }
 }

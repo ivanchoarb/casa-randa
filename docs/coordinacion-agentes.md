@@ -319,3 +319,9 @@ incluida en Claude Desktop. No instala dependencias ni contiene credenciales.
 La instalación de Desktop puede cambiar de estructura; si deja de encontrarse,
 usar la instalación oficial del CLI. Las sesiones de ambos agentes son
 independientes: los archivos compartidos no sincronizan conversaciones anteriores.
+
+## 2026-09-14 — Codex: auditoría solicitada (en curso)
+
+Alcance: revisión de permisos, endpoints públicos de tienda/check-in, sincronización y comprobaciones locales de ambas aplicaciones. Solo documentación; no se modificará código funcional ni datos reales. Archivos previstos: `docs/auditoria-2026-09-14.md` y este registro.
+
+Cierre de auditoría: informe en `docs/auditoria-2026-09-14.md`, seis hallazgos (dos P1, cuatro P2). TypeScript y ESLint limpios en ambas apps; 11/11 pruebas de intranet aprobadas. Reproducidos aisladamente el fallo abierto de disponibilidad y el pedido sin detalle ante error de inserción. Sin cambios funcionales, envíos ni escrituras en servicios reales; no se verificó despliegue ni build de producción. Siguiente paso: corregir disponibilidad/iCal y añadir regresiones, luego los cuatro P2. Archivos modificados: solo este registro y el informe.
