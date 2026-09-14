@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { paisesOrdenados } from "@/lib/paises";
 
 // 2026-09-14: reproduce el mismo patrón de interacción de las capturas de
 // referencia (tixu.ai) — fondo blanco, un paso por pantalla, barra de
@@ -255,14 +256,22 @@ export function CheckInWizard() {
               <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: COLOR_TITULO }}>
                 {lang === "es" ? "¿De dónde nos visitas?" : "Where are you visiting from?"}
               </h1>
-              <input
+              <select
                 autoFocus
                 required
                 value={paisOrigen}
                 onChange={(e) => setPaisOrigen(e.target.value)}
-                placeholder={lang === "es" ? "País" : "Country"}
                 className={`${inputClass} mt-6`}
-              />
+              >
+                <option value="" disabled>
+                  {lang === "es" ? "Selecciona un país" : "Select a country"}
+                </option>
+                {paisesOrdenados(lang).map((p) => (
+                  <option key={p.es} value={p.es}>
+                    {p[lang]}
+                  </option>
+                ))}
+              </select>
             </PasoForm>
           )}
 
