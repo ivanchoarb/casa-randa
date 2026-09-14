@@ -15,6 +15,7 @@ const NAV = [
   { href: "#resenas", es: "Reseñas", en: "Reviews" },
   { href: "/que-hacer-en-panama", es: "Qué hacer en Panamá", en: "What to do in Panama" },
   { href: "/tienda", es: "Tienda", en: "Shop" },
+  { href: "/check-in", es: "Check-in", en: "Check-in" },
 ];
 
 export function SiteHeader() {
