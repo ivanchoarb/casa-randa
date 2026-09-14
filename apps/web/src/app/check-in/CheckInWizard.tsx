@@ -52,6 +52,7 @@ export function CheckInWizard() {
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [aceptaRemarketing, setAceptaRemarketing] = useState(false);
 
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
@@ -96,7 +97,7 @@ export function CheckInWizard() {
 
   async function enviarRegistro(e: FormEvent) {
     e.preventDefault();
-    if (!aceptaTerminos) return;
+    if (!aceptaTerminos || !aceptaRemarketing) return;
     setErrorEnvio(null);
     setEnviando(true);
     try {
@@ -109,6 +110,7 @@ export function CheckInWizard() {
       form.set("email", email);
       form.set("telefono", telefono);
       form.set("acepta_terminos", "true");
+      form.set("acepta_remarketing", "true");
       if (documento) form.set("documento", documento);
 
       const res = await fetch("/api/checkin", { method: "POST", body: form });
@@ -391,9 +393,21 @@ export function CheckInWizard() {
                   ? "Acepto los términos y condiciones de Casa Randa y confirmo que la información anterior es correcta."
                   : "I agree to Casa Randa's terms and conditions and confirm the information above is correct."}
               </label>
+              <label className="flex items-start gap-3 rounded-2xl border-2 border-[var(--ink)]/15 px-5 py-4 text-sm text-[var(--ink)]">
+                <input
+                  type="checkbox"
+                  required
+                  checked={aceptaRemarketing}
+                  onChange={(e) => setAceptaRemarketing(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--caoba)]"
+                />
+                {lang === "es"
+                  ? "Autorizo a Casa Randa a usar mis datos de contacto para remarketing (ofertas y promociones futuras)."
+                  : "I authorize Casa Randa to use my contact details for remarketing (future offers and promotions)."}
+              </label>
               {errorEnvio && <p className="text-sm text-[var(--caoba)]">{errorEnvio}</p>}
               <BotonContinuar
-                disabled={enviando || !aceptaTerminos}
+                disabled={enviando || !aceptaTerminos || !aceptaRemarketing}
                 texto={enviando ? (lang === "es" ? "Enviando…" : "Sending…") : lang === "es" ? "Enviar registro" : "Submit registration"}
                 lang={lang}
               />

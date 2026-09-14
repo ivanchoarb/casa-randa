@@ -21,6 +21,7 @@ interface CheckinHuesped {
   documento_ruta: string | null;
   email: string;
   telefono: string;
+  acepta_remarketing: boolean;
   created_at: string;
   reservas: ReservaEmbebida | null;
 }
@@ -86,6 +87,10 @@ function CheckinCard({ c }: { c: CheckinHuesped }) {
           <div className="min-w-0">
             <p className="text-xs text-ink-2 uppercase">Teléfono</p>
             <p className="break-words">{c.telefono}</p>
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs text-ink-2 uppercase">Remarketing</p>
+            <p className={c.acepta_remarketing ? "text-good" : "text-ink-2"}>{c.acepta_remarketing ? "Autorizado" : "No autorizado"}</p>
           </div>
 
           <div className="col-span-2 sm:col-span-3">

@@ -33,11 +33,13 @@ export async function POST(req: Request) {
   const email = texto("email");
   const telefono = texto("telefono");
   const aceptaTerminos = form.get("acepta_terminos") === "true";
+  const aceptaRemarketing = form.get("acepta_remarketing") === "true";
   const documento = form.get("documento");
 
   if (!codigo) return fail("Falta el código de reserva.");
   if (!nombre || !apellido || !paisOrigen || !email || !telefono) return fail("Faltan datos obligatorios.");
   if (!aceptaTerminos) return fail("Debes aceptar los términos y condiciones.");
+  if (!aceptaRemarketing) return fail("Debes autorizar el uso de tus datos para remarketing.");
 
   const db = getSupabaseAdmin();
 
@@ -70,6 +72,7 @@ export async function POST(req: Request) {
     email,
     telefono,
     acepta_terminos: true,
+    acepta_remarketing: true,
   });
   if (errorInsert) return fail("No se pudo guardar el registro.", 500);
 
