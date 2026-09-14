@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { paisesOrdenados } from "@/lib/paises";
+import { bandera, paisesOrdenados, paisesTelefono, PAISES } from "@/lib/paises";
 
 // 2026-09-14: reproduce el mismo patrón de interacción de las capturas de
 // referencia (tixu.ai) — fondo blanco, un paso por pantalla, barra de
@@ -17,8 +17,9 @@ import { paisesOrdenados } from "@/lib/paises";
 const COLOR_TITULO = "var(--ink)";
 const COLOR_ACENTO = "var(--caoba)";
 
-const inputClass =
-  "w-full rounded-2xl border-2 border-[var(--ink)]/15 bg-white px-5 py-4 text-base text-[var(--ink)] outline-none transition-colors focus:border-[var(--caoba)]";
+const inputClassBase =
+  "rounded-2xl border-2 border-[var(--ink)]/15 bg-white px-5 py-4 text-base text-[var(--ink)] outline-none transition-colors focus:border-[var(--caoba)]";
+const inputClass = `w-full ${inputClassBase}`;
 
 type Paso =
   | "idioma"
@@ -50,7 +51,8 @@ export function CheckInWizard() {
   const [numeroId, setNumeroId] = useState("");
   const [documento, setDocumento] = useState<File | null>(null);
   const [email, setEmail] = useState("");
-  const [telefono, setTelefono] = useState("");
+  const [telefonoIso, setTelefonoIso] = useState("PA");
+  const [telefonoNumero, setTelefonoNumero] = useState("");
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [aceptaRemarketing, setAceptaRemarketing] = useState(false);
 
@@ -108,7 +110,8 @@ export function CheckInWizard() {
       form.set("pais_origen", paisOrigen);
       form.set("numero_id", numeroId);
       form.set("email", email);
-      form.set("telefono", telefono);
+      const codigoTelefono = PAISES.find((p) => p.iso === telefonoIso)?.telefono ?? "";
+      form.set("telefono", `${codigoTelefono} ${telefonoNumero}`.trim());
       form.set("acepta_terminos", "true");
       form.set("acepta_remarketing", "true");
       if (documento) form.set("documento", documento);
@@ -340,14 +343,29 @@ export function CheckInWizard() {
               <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: COLOR_TITULO }}>
                 {lang === "es" ? "¿A qué número te contactamos?" : "What number can we reach you at?"}
               </h1>
-              <input
-                autoFocus
-                required
-                value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
-                placeholder={lang === "es" ? "Teléfono" : "Phone number"}
-                className={`${inputClass} mt-6`}
-              />
+              <div className="mt-6 flex gap-3">
+                <select
+                  value={telefonoIso}
+                  onChange={(e) => setTelefonoIso(e.target.value)}
+                  aria-label={lang === "es" ? "Código de país" : "Country code"}
+                  className={`${inputClassBase} w-32 shrink-0 px-3`}
+                >
+                  {paisesTelefono(lang).map((p) => (
+                    <option key={p.iso} value={p.iso}>
+                      {bandera(p.iso)} {p.telefono}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  autoFocus
+                  required
+                  type="tel"
+                  value={telefonoNumero}
+                  onChange={(e) => setTelefonoNumero(e.target.value)}
+                  placeholder={lang === "es" ? "Teléfono" : "Phone number"}
+                  className={`${inputClassBase} min-w-0 flex-1`}
+                />
+              </div>
             </PasoForm>
           )}
 
