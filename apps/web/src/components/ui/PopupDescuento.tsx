@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 const CLAVE_LOCALSTORAGE = "cr_popup_descuento_visto";
@@ -14,6 +15,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function PopupDescuento() {
   const { lang } = useLanguage();
+  const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
@@ -26,6 +28,10 @@ export function PopupDescuento() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // El wizard de check-in (/check-in) es un flujo de un huésped que ya
+    // tiene reserva confirmada — ofrecerle un cupón de bienvenida a mitad
+    // de ese flujo no tiene sentido y solo distrae.
+    if (pathname?.startsWith("/check-in")) return;
     let visto = false;
     try {
       visto = localStorage.getItem(CLAVE_LOCALSTORAGE) === "1";
@@ -35,7 +41,7 @@ export function PopupDescuento() {
     if (visto) return;
     const t = setTimeout(() => setVisible(true), RETRASO_MS);
     return () => clearTimeout(t);
-  }, []);
+  }, [pathname]);
 
   function recordarYCerrar() {
     setVisible(false);
