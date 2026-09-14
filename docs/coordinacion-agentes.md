@@ -1,6 +1,24 @@
 # Coordinación de Codex y Claude
 
-Actualizado: 2026-09-12.
+Actualizado: 2026-09-14.
+
+Codex (2026-09-14): elaboración de dos cartas de recomendación en formato Word
+para Ana Sofía Arbeláez (C.C. 1.105.372.165), destinadas a acompañar una
+solicitud de tarjeta de crédito amparada BBVA. Firmantes: Iván Arbeláez
+(C.C. 6.646.564) y Diana Parrado (C.C. 29.363.988). Alcance: nuevos archivos
+`docs/cartas-recomendacion/carta_recomendacion_ivan_arbelaez.docx` y
+`docs/cartas-recomendacion/carta_recomendacion_diana_parrado.docx`; no se
+modifica código ni configuración. Se dejarán campos de contacto y firma para
+completar datos que el usuario no proporcionó. Fuente consultada: página
+oficial de Tarjeta de Crédito Amparada BBVA Colombia; esa página describe el
+producto y su solicitud, pero no presenta la carta como requisito estándar.
+Completado: ambos DOCX fueron renderizados a PNG y revisados visualmente en una
+página cada uno; se corrigió el borde azul heredado del estilo Title y se
+verificó la concordancia de género en la carta de Diana. La auditoría de
+accesibilidad no encontró hallazgos. Limitación: no se proporcionaron ciudad,
+relación con la persona titular, teléfono o correo, por lo que no se inventaron
+esos datos; BBVA indica que la solicitud debe incluir nombre, identificación y
+relación del amparado con el titular principal.
 
 ## Objetivo actual
 
