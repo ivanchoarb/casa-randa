@@ -16,6 +16,7 @@ const inputClass =
   "w-full rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-base text-slate-800 outline-none transition-colors focus:border-[#2f5fe0]";
 
 type Paso =
+  | "idioma"
   | "codigo"
   | "nombre"
   | "pais"
@@ -27,11 +28,11 @@ type Paso =
   | "terminos"
   | "listo";
 
-const ORDEN: Paso[] = ["codigo", "nombre", "pais", "identificacion", "documento", "email", "telefono", "fechas", "terminos"];
+const ORDEN: Paso[] = ["idioma", "codigo", "nombre", "pais", "identificacion", "documento", "email", "telefono", "fechas", "terminos"];
 
 export function CheckInWizard() {
   const { lang, setLang } = useLanguage();
-  const [paso, setPaso] = useState<Paso>("codigo");
+  const [paso, setPaso] = useState<Paso>("idioma");
 
   const [codigo, setCodigo] = useState("");
   const [validandoCodigo, setValidandoCodigo] = useState(false);
@@ -137,7 +138,7 @@ export function CheckInWizard() {
           <button
             type="button"
             onClick={() => setLang(lang === "es" ? "en" : "es")}
-            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold tracking-wide text-slate-500"
+            className={`rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold tracking-wide text-slate-500 ${paso === "idioma" ? "invisible" : ""}`}
           >
             {lang === "es" ? "EN" : "ES"}
           </button>
@@ -165,6 +166,38 @@ export function CheckInWizard() {
         )}
 
         <div className="flex flex-1 flex-col justify-center py-10">
+          {paso === "idioma" && (
+            <div className="flex flex-col gap-5">
+              <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: AZUL_MARINO }}>
+                Choose your language
+                <br />
+                Elige tu idioma
+              </h1>
+              <button
+                type="button"
+                onClick={() => {
+                  setLang("es");
+                  irA("codigo");
+                }}
+                className="flex items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white px-5 py-5 text-left transition-colors hover:border-[#2f5fe0]"
+              >
+                <span className="text-3xl">🇵🇦</span>
+                <span className="text-lg font-semibold text-slate-800">Español</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLang("en");
+                  irA("codigo");
+                }}
+                className="flex items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white px-5 py-5 text-left transition-colors hover:border-[#2f5fe0]"
+              >
+                <span className="text-3xl">🇺🇸</span>
+                <span className="text-lg font-semibold text-slate-800">English</span>
+              </button>
+            </div>
+          )}
+
           {paso === "codigo" && (
             <form onSubmit={validarCodigo} className="flex flex-col gap-5">
               <h1 className="font-sans text-3xl leading-tight font-bold" style={{ color: AZUL_MARINO }}>
