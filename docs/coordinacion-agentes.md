@@ -2,6 +2,14 @@
 
 Actualizado: 2026-09-14.
 
+Codex (2026-09-14): instalación de la skill personal `image-enhancer` de
+Codex. Alcance: crear `~/.codex/skills/image-enhancer/SKILL.md` y sus metadatos
+de interfaz; no se modifican las aplicaciones ni archivos de producción del
+repositorio. Completado: skill creada y revisada; frontmatter, metadatos y
+archivos requeridos válidos. La validación oficial no pudo ejecutarse porque el
+entorno carece de `PyYAML`; se hizo comprobación equivalente con Ruby YAML y
+`git diff --check`.
+
 Codex (2026-09-14): elaboración de dos cartas de recomendación en formato Word
 para Ana Sofía Arbeláez (C.C. 1.105.372.165), destinadas a acompañar una
 solicitud de tarjeta de crédito amparada BBVA. Firmantes: Iván Arbeláez

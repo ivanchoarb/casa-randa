@@ -39,22 +39,20 @@ function toISODate(d: Date): string {
  * defecto D2 (the WordPress engine's sync used to blow away direct-booking
  * blocks because it rewrote the whole list from the OTA feeds alone; see
  * docs/logica-negocio-y-flujos.md).
+ *
+ * 2026-09-14, hallazgo de auditoría (Codex, docs/auditoria-2026-09-14.md,
+ * punto 2): esto solía ser un DELETE y un INSERT como dos llamadas REST
+ * separadas — si el INSERT fallaba después de que el DELETE ya se aplicó,
+ * los bloqueos del canal quedaban borrados de verdad, sin restaurarse.
+ * `reemplazar_bloqueos_canal` (0029_reemplazar_bloqueos_transaccional.sql)
+ * hace las dos cosas dentro de una sola transacción de Postgres — si el
+ * INSERT falla, el DELETE se revierte con él, y el canal queda exactamente
+ * como estaba antes de llamarla.
  */
 async function reemplazarBloqueos(fuente: Fuente, bloqueos: { inicio: string; fin: string }[]) {
   const supabase = getSupabaseAdmin();
-
-  const { error: deleteError } = await supabase
-    .from("bloqueos_calendario")
-    .delete()
-    .eq("fuente", fuente);
-  if (deleteError) throw deleteError;
-
-  if (bloqueos.length === 0) return;
-
-  const { error: insertError } = await supabase
-    .from("bloqueos_calendario")
-    .insert(bloqueos.map((b) => ({ ...b, fuente })));
-  if (insertError) throw insertError;
+  const { error } = await supabase.rpc("reemplazar_bloqueos_canal", { p_fuente: fuente, p_bloqueos: bloqueos });
+  if (error) throw error;
 }
 
 export async function GET(req: NextRequest) {
