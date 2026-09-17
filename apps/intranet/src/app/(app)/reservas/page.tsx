@@ -439,11 +439,20 @@ export default function ReservasPage() {
   const solicitudesResueltas = solicitudesResult.data.filter((s) => s.estado !== "pendiente");
   const [historialSolicitudesAbierto, setHistorialSolicitudesAbierto] = useState(false);
 
+  // 2026-09-18, a pedido de Ivan: las confirmadas siempre de la fecha de
+  // llegada más próxima a la más lejana, sin importar cómo esté ordenada
+  // la tabla completa (hoy `entrada desc`, pensado para completada/
+  // cancelada — la más reciente primero tiene más sentido ahí). Se ordena
+  // aquí, por grupo, en vez de cambiar el sorter global de useTable, para
+  // no voltear también el orden de esos otros estados sin que lo pidiera.
   const grupos = useMemo(() => {
-    return ORDEN_ESTADOS.map((estado) => ({
-      estado,
-      filas: result.data.filter((r) => r.estado === estado),
-    })).filter((g) => g.filas.length > 0);
+    return ORDEN_ESTADOS.map((estado) => {
+      const filas = result.data.filter((r) => r.estado === estado);
+      if (estado === "confirmada") {
+        filas.sort((a, b) => a.entrada.localeCompare(b.entrada));
+      }
+      return { estado, filas };
+    }).filter((g) => g.filas.length > 0);
   }, [result.data]);
 
   const [abiertos, setAbiertos] = useState<Set<Reserva["estado"]>>(new Set());
