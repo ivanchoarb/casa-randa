@@ -333,3 +333,32 @@ independientes: los archivos compartidos no sincronizan conversaciones anteriore
 Alcance: revisión de permisos, endpoints públicos de tienda/check-in, sincronización y comprobaciones locales de ambas aplicaciones. Solo documentación; no se modificará código funcional ni datos reales. Archivos previstos: `docs/auditoria-2026-09-14.md` y este registro.
 
 Cierre de auditoría: informe en `docs/auditoria-2026-09-14.md`, seis hallazgos (dos P1, cuatro P2). TypeScript y ESLint limpios en ambas apps; 11/11 pruebas de intranet aprobadas. Reproducidos aisladamente el fallo abierto de disponibilidad y el pedido sin detalle ante error de inserción. Sin cambios funcionales, envíos ni escrituras en servicios reales; no se verificó despliegue ni build de producción. Siguiente paso: corregir disponibilidad/iCal y añadir regresiones, luego los cuatro P2. Archivos modificados: solo este registro y el informe.
+
+## 2026-09-16 — Claude: rediseño visual de la intranet + microanimaciones (en curso)
+
+Alcance: mejorar el diseño de `apps/intranet` (a pedido de Ivan, skill de diseño de
+frontend) y agregar microanimaciones deliberadas. Archivos previstos:
+`apps/intranet/src/app/globals.css`, `apps/intranet/src/components/layout/AppShell.tsx`,
+`apps/intranet/src/app/(app)/page.tsx` (Inicio). No se tocan datos, RLS, ni lógica de
+negocio — solo presentación/CSS/markup. No se toca `apps/web`.
+
+Cierre (Claude, 2026-09-16): rediseño aplicado a `apps/intranet/src/app/globals.css`
+(sistema tipográfico con el eje variable de Archivo — `.disp`/`.eyebrow`/`.num` — y
+microanimaciones con su bloque `prefers-reduced-motion`), `AppShell.tsx` (marca,
+set de iconos de línea propio por sección, indicador de pestaña activa que se
+desliza — corregido en el proceso: la primera versión animaba `top`, que la regla
+CSS no incluye en `transition`, así que no se movía; se cambió a `transform:
+translateY()`, que sí anima — y entrada escalonada de la barra lateral al cargar)
+y `(app)/page.tsx` (Inicio: se quitó la grilla de tarjetas idénticas por una
+jerarquía real — próxima reserva como hecho principal sin caja, cifras
+secundarias en fila tipo libro de cuentas). `pnpm build`/`pnpm lint` limpios.
+Verificado en vivo contra el servidor real (puerto 3002, sesión ya autenticada):
+capturas de Inicio y Contabilidad, navegación real entre secciones confirmando
+que el indicador interpola su posición (no salta), sin errores de consola.
+Alcance: solo el shell compartido (se ve en las 12 páginas) y el dashboard de
+Inicio como ejemplo — las otras 7 secciones (Reservas, Calendario, Operación,
+Contabilidad, Conciliación, Análisis, Usuarios, más Cotizaciones/Marketing/
+Tienda/Check-in) siguen con sus tarjetas `rounded-xl border-line` originales;
+heredan los tokens/clases nuevas pero no se rediseñaron página por página.
+Siguiente paso si se quiere continuar: aplicar el mismo lenguaje (`.eyebrow`/
+`.num`/`.btn-press`, filas en vez de tarjetas idénticas donde aplique) al resto.

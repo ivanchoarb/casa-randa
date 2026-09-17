@@ -65,10 +65,10 @@ function ActividadMensual({ reservas, anioActual }: { reservas: Reserva[]; anioA
   const indiceMin = hayDatos ? porMes.indexOf(Math.min(...porMes)) : -1;
 
   return (
-    <div className="mt-6 rounded-xl border border-line bg-panel p-5">
+    <div className="mt-10 border-t border-line pt-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-medium tracking-wide text-ink-2 uppercase">Meses más activos</p>
+          <p className="eyebrow">Meses más activos</p>
           <p className="mt-1 text-xs text-ink-2">Reservas por mes de entrada — temporada alta y baja</p>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -77,8 +77,8 @@ function ActividadMensual({ reservas, anioActual }: { reservas: Reserva[]; anioA
               key={a}
               type="button"
               onClick={() => setAnioElegido(a)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                a === anioActivo ? "bg-caoba text-panel" : "border border-line text-ink-2"
+              className={`btn-press num rounded-full px-3 py-1 text-xs font-semibold ${
+                a === anioActivo ? "bg-caoba text-panel" : "border border-line text-ink-2 hover:border-caoba"
               }`}
             >
               {a}
@@ -91,38 +91,34 @@ function ActividadMensual({ reservas, anioActual }: { reservas: Reserva[]; anioA
         <p className="mt-4 text-sm text-ink-2">Sin reservas confirmadas en {anioActivo}.</p>
       ) : (
         <>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded-lg bg-panel-2 px-3 py-2">
-              <p className="text-xs text-ink-2">Mes más activo</p>
-              <p className="text-sm font-semibold">
-                {capitalizar(MESES[indiceMax])} · {porMes[indiceMax]}{" "}
-                {porMes[indiceMax] === 1 ? "reserva" : "reservas"}
-              </p>
-            </div>
-            <div className="rounded-lg bg-panel-2 px-3 py-2">
-              <p className="text-xs text-ink-2">Mes más flojo</p>
-              <p className="text-sm font-semibold">
-                {capitalizar(MESES[indiceMin])} · {porMes[indiceMin]}{" "}
-                {porMes[indiceMin] === 1 ? "reserva" : "reservas"}
-              </p>
-            </div>
+          <div className="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-sm">
+            <p>
+              <span className="text-ink-2">Mes más activo — </span>
+              <span className="font-semibold text-caoba">
+                {capitalizar(MESES[indiceMax])} · {porMes[indiceMax]} {porMes[indiceMax] === 1 ? "reserva" : "reservas"}
+              </span>
+            </p>
+            <p>
+              <span className="text-ink-2">Mes más flojo — </span>
+              <span className="font-semibold text-lamp">
+                {capitalizar(MESES[indiceMin])} · {porMes[indiceMin]} {porMes[indiceMin] === 1 ? "reserva" : "reservas"}
+              </span>
+            </p>
           </div>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-5 space-y-2">
             {MESES.map((m, i) => (
               <div key={m} className="flex items-center gap-3">
                 <span className="w-8 text-xs text-ink-2">{capitalizar(m.slice(0, 3))}</span>
-                <div className="h-2 flex-1 rounded-full bg-panel-2">
+                <div className="h-1.5 flex-1 bg-panel-2">
                   <div
-                    className={`h-2 rounded-full ${
+                    className={`h-1.5 transition-[width] duration-500 ${
                       i === indiceMax ? "bg-caoba" : i === indiceMin ? "bg-lamp" : "bg-good"
                     }`}
                     style={{ width: `${(porMes[i] / maxMes) * 100}%` }}
                   />
                 </div>
-                <span className="w-16 text-right text-xs text-ink-2 tabular-nums">
-                  {porMes[i]} res.
-                </span>
+                <span className="num w-16 text-right text-xs text-ink-2">{porMes[i]} res.</span>
               </div>
             ))}
           </div>
@@ -196,9 +192,9 @@ export default function InicioPage() {
 
   return (
     <div>
-      <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Resumen ejecutivo</p>
-      <h1 className="mt-1 text-2xl font-bold">Hoy en Casa Randa</h1>
-      <p className="mt-2 text-sm text-ink-2">
+      <p className="eyebrow">Resumen ejecutivo</p>
+      <h1 className="disp mt-1 text-3xl">Hoy en Casa Randa</h1>
+      <p className="num mt-2 text-sm text-ink-2">
         {hoy} <span className="ml-1 rounded-full bg-panel-2 px-2 py-0.5 text-xs font-semibold">HOY</span>
       </p>
 
@@ -210,48 +206,61 @@ export default function InicioPage() {
       )}
 
       {!tableQuery.isError && (
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {can("proxima_reserva") && <div className="rounded-xl border border-line bg-panel p-5">
-            <p className="text-xs font-medium tracking-wide text-ink-2 uppercase">Próxima reserva</p>
-            {proximaReserva ? (
-              <>
-                <p className="mt-2 text-xl font-bold">{proximaReserva.huesped_nombre}</p>
-                <p className="mt-1 text-xs text-ink-2">
-                  {capitalizar(proximaReserva.canal)}
-                  {proximaReserva.codigo_externo ? ` · ${proximaReserva.codigo_externo}` : ""}
-                </p>
-                <p className="mt-1 text-xs text-ink-2">
-                  {proximaReserva.entrada} → {proximaReserva.salida} · {proximaReserva.noches} noches
-                </p>
-                {can("reservas") && <Link href="/reservas" className="mt-2 inline-block text-xs font-semibold text-caoba hover:underline">
-                  Ver reserva →
-                </Link>}
-              </>
-            ) : (
-              <p className="mt-2 text-xl font-bold">{tableQuery.isLoading ? "…" : "Ninguna"}</p>
-            )}
-          </div>}
-
-          {tarjetas.filter(t => can(t.permiso)).map((t) => (
-            <div key={t.titulo} className="rounded-xl border border-line bg-panel p-5">
-              <p className="text-xs font-medium tracking-wide text-ink-2 uppercase">{t.titulo}</p>
-              <p className="mt-2 text-2xl font-bold tabular-nums">{t.valor}</p>
-              <p className="mt-1 text-xs text-ink-2">{t.nota}</p>
+        <div className="mt-8 space-y-6">
+          {/* La próxima reserva es el hecho que de verdad importa hoy —
+              se declara directo, sin caja, como el titular de la página;
+              las cifras de dinero van después, en su propia fila. */}
+          {can("proxima_reserva") && (
+            <div>
+              <p className="eyebrow">Próxima reserva</p>
+              {proximaReserva ? (
+                <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <p className="disp text-2xl">{proximaReserva.huesped_nombre}</p>
+                  <p className="num text-sm text-ink-2">
+                    {capitalizar(proximaReserva.canal)}
+                    {proximaReserva.codigo_externo ? ` · ${proximaReserva.codigo_externo}` : ""} ·{" "}
+                    {proximaReserva.entrada} → {proximaReserva.salida} · {proximaReserva.noches} noches
+                  </p>
+                  {can("reservas") && (
+                    <Link href="/reservas" className="text-sm font-semibold text-caoba hover:underline">
+                      Ver reserva →
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <p className="disp mt-1.5 text-2xl">{tableQuery.isLoading ? "…" : "Ninguna"}</p>
+              )}
             </div>
-          ))}
+          )}
 
-          {can("liquidacion_host") && <div className="rounded-xl border border-line bg-panel p-5">
-            <p className="text-xs font-medium tracking-wide text-ink-2 uppercase">Liquidación Marquelda</p>
-            <p className="mt-2 text-xl font-bold">{capitalizar(MESES[mes])}</p>
-            <button
-              type="button"
-              onClick={() => descargarLiquidacionMarquelda(delMes, anio, mes)}
-              disabled={tableQuery.isLoading}
-              className="mt-3 rounded-md bg-caoba px-3 py-1.5 text-xs font-semibold text-panel disabled:opacity-60"
-            >
-              Descargar liquidación
-            </button>
-          </div>}
+          {(tarjetas.some((t) => can(t.permiso)) || can("liquidacion_host")) && (
+            <div className="flex flex-wrap gap-x-10 gap-y-5 border-t border-line pt-5">
+              {tarjetas
+                .filter((t) => can(t.permiso))
+                .map((t) => (
+                  <div key={t.titulo}>
+                    <p className="eyebrow">{t.titulo}</p>
+                    <p className="num mt-1 text-2xl">{t.valor}</p>
+                    <p className="mt-0.5 text-xs text-ink-2">{t.nota}</p>
+                  </div>
+                ))}
+
+              {can("liquidacion_host") && (
+                <div>
+                  <p className="eyebrow">Liquidación Marquelda</p>
+                  <p className="disp mt-1 text-xl">{capitalizar(MESES[mes])}</p>
+                  <button
+                    type="button"
+                    onClick={() => descargarLiquidacionMarquelda(delMes, anio, mes)}
+                    disabled={tableQuery.isLoading}
+                    className="btn-press mt-2 rounded-md bg-caoba px-3 py-1.5 text-xs font-semibold text-panel disabled:opacity-60"
+                  >
+                    Descargar liquidación
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

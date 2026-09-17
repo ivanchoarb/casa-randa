@@ -58,3 +58,88 @@ body {
   color: var(--ink);
   font-family: var(--font-display), system-ui, sans-serif;
 }
+
+/*
+ * ---------- Sistema tipográfico: el eje variable de Archivo ----------
+ * Un mismo tipo de letra, dos tratamientos deliberados: los titulares se
+ * abren (wdth ancho, como el rótulo tallado de la casa); las cifras se
+ * cierran (wdth angosto + tabular-nums), para que una columna de montos
+ * se lea como una libreta de cuentas, no como una tarjeta de SaaS.
+ */
+h1,
+.disp {
+  font-variation-settings: "wdth" 112, "wght" 700;
+  letter-spacing: -0.01em;
+}
+.eyebrow {
+  font-variation-settings: "wdth" 118, "wght" 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+}
+.num {
+  font-variation-settings: "wdth" 88, "wght" 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * ---------- Microanimaciones ----------
+ * Un solo momento orquestado al cargar (la barra lateral aparece en
+ * cascada, una vez), más retroalimentación puntual a una acción real
+ * (foco, presión de botón, el indicador de pestaña activa deslizándose).
+ * Nada se anima solo por pasar el mouse sobre algo que no responde.
+ * Todo respeta prefers-reduced-motion — ver el bloque final.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .nav-entrance {
+    animation: nav-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .nav-indicator {
+    transition:
+      transform 0.32s cubic-bezier(0.65, 0, 0.35, 1),
+      height 0.32s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+}
+
+@keyframes nav-rise {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.btn-press {
+  transition:
+    transform 0.12s ease-out,
+    background-color 0.15s ease-out,
+    border-color 0.15s ease-out,
+    opacity 0.15s ease-out;
+}
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+.row-hover {
+  transition: background-color 0.15s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-entrance {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .nav-indicator {
+    transition: none !important;
+  }
+  .btn-press {
+    transition: none !important;
+  }
+  .btn-press:active {
+    transform: none !important;
+  }
+}
