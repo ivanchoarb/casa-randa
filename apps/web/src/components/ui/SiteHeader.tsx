@@ -20,7 +20,10 @@ const NAV = [
 
 export function SiteHeader() {
   const { lang } = useLanguage();
-  const isHome = usePathname() === "/";
+  const pathname = usePathname();
+  // "/" and "/en" are the same homepage sections in two languages (see
+  // app/en/page.tsx) — both stay bare-anchor "home" pages.
+  const isHome = pathname === "/" || pathname === "/en";
   // The nav is a set of in-page anchors on the homepage's sections. From
   // any other page, prefix with "/" so it navigates home first, then jumps
   // to the anchor — otherwise the link silently does nothing there.

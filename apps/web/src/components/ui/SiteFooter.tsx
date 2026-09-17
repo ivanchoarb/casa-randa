@@ -46,7 +46,15 @@ export function SiteFooter() {
               </a>
             </p>
             <p className="mt-1 max-w-[30ch] text-sm text-[var(--on-dark-2)]">
-              {lang === "es" ? "WhatsApp, de 7 a. m. a 10 p. m. hora de Panamá" : "WhatsApp, 7 a.m. to 10 p.m. Panama time"}
+              <a
+                href="https://wa.me/573157621593"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[var(--on-dark)] transition-colors duration-200 hover:text-[var(--lamp-fill)]"
+              >
+                WhatsApp
+              </a>
+              {lang === "es" ? ", de 7 a. m. a 10 p. m. hora de Panamá" : ", 7 a.m. to 10 p.m. Panama time"}
             </p>
           </div>
           <div>

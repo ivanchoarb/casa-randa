@@ -3,6 +3,7 @@ import { Archivo, Source_Serif_4 } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { SmoothScrollProvider } from "@/lib/scroll/SmoothScrollProvider";
 import { PopupDescuento } from "@/components/ui/PopupDescuento";
+import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <LanguageProvider>
             {children}
             <PopupDescuento />
+            <WhatsAppButton />
           </LanguageProvider>
         </SmoothScrollProvider>
       </body>

@@ -11,6 +11,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
+      url: "https://randahome.com/en",
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 1,
+    },
+    {
       url: "https://randahome.com/que-hacer-en-panama",
       lastModified,
       changeFrequency: "monthly",
