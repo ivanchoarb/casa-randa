@@ -378,18 +378,25 @@ function GrupoEstado({
   );
 }
 
+// 2026-09-18, a pedido de Ivan: descargas separadas por estado, no un solo
+// archivo con las 69+ reservas mezcladas — cada botón trae solo esa tabla.
+// Pendiente queda fuera (nunca ha tenido filas reales, ver ORDEN_ESTADOS
+// arriba) porque no lo pidió; se agrega el día que haga falta.
+const ESTADOS_EXPORTABLES: Reserva["estado"][] = ["confirmada", "completada", "cancelada"];
+
 export default function ReservasPage() {
   const { can } = usePermisos();
-  const [exportando, setExportando] = useState(false);
+  const [exportando, setExportando] = useState<Reserva["estado"] | null>(null);
   const [errorExportar, setErrorExportar] = useState("");
-  async function descargarReservas() {
-    setExportando(true); setErrorExportar("");
+  async function descargarReservas(estado: Reserva["estado"]) {
+    setExportando(estado); setErrorExportar("");
     try {
       const filas = [];
       // Explicit ranges avoid the REST API default row limit.
       for (let offset = 0; ; offset += 500) {
         const { data, error } = await supabaseClient.from("reservas_acceso")
           .select("id,huesped_nombre,canal,codigo_externo,entrada,salida,noches,estado")
+          .eq("estado", estado)
           .order("entrada", { ascending: false }).order("id").range(offset, offset + 499);
         if (error) throw error;
         filas.push(...(data ?? []));
@@ -399,10 +406,10 @@ export default function ReservasPage() {
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filas.map(r => ({
         Huésped: r.huesped_nombre, Canal: r.canal, Código: r.codigo_externo,
         Entrada: r.entrada, Salida: r.salida, Noches: r.noches, Estado: r.estado,
-      }))), "Reservas");
-      XLSX.writeFile(wb, "casa-randa-reservas.xlsx");
+      }))), ESTADO_LABEL[estado]);
+      XLSX.writeFile(wb, `casa-randa-reservas-${estado}.xlsx`);
     } catch { setErrorExportar("No se pudieron descargar las reservas. Intenta de nuevo."); }
-    finally { setExportando(false); }
+    finally { setExportando(null); }
   }
   // Primer módulo conectado de verdad a Refine (useTable → @refinedev/supabase
   // → tabla `reservas`) — el resto de páginas de la intranet todavía son
@@ -470,7 +477,21 @@ export default function ReservasPage() {
       <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Reservas</p>
       <h1 className="mt-1 text-2xl font-bold">Solicitudes y reservas</h1>
 
-      {can("reservas_exportar") && <button onClick={() => void descargarReservas()} disabled={exportando} className="mt-4 rounded-md border border-line px-4 py-2 text-sm disabled:opacity-50">{exportando ? "Descargando…" : "Descargar reservas"}</button>}
+      {can("reservas_exportar") && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {ESTADOS_EXPORTABLES.map((estado) => (
+            <button
+              key={estado}
+              type="button"
+              onClick={() => void descargarReservas(estado)}
+              disabled={exportando !== null}
+              className="rounded-md border border-line px-4 py-2 text-sm disabled:opacity-50"
+            >
+              {exportando === estado ? "Descargando…" : `Descargar ${ESTADO_LABEL[estado].toLowerCase()}s`}
+            </button>
+          ))}
+        </div>
+      )}
       {errorExportar && <p role="alert" className="mt-2 text-caoba">{errorExportar}</p>}
       {can("solicitudes") && <section className="mt-6">
         <h2 className="text-lg font-semibold">
