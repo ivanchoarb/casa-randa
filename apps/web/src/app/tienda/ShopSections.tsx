@@ -353,7 +353,7 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
               type="button"
               onClick={() => void enviarPedido()}
               disabled={items.length === 0 || enviando}
-              className="mt-5 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[#f0ce86] disabled:opacity-50"
+              className="mt-5 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] disabled:opacity-50"
             >
               {enviando
                 ? lang === "es"
@@ -394,10 +394,7 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
               ×
             </button>
 
-            <p className="font-[var(--font-display)] text-xs tracking-wide text-[var(--lamp-fill)] uppercase">
-              {lang === "es" ? "Para huéspedes con reserva" : "For guests with a reservation"}
-            </p>
-            <h2 className="mt-2 font-[var(--font-display)] text-2xl font-bold text-[var(--on-dark)]">
+            <h2 className="font-[var(--font-display)] text-2xl font-bold text-[var(--on-dark)]">
               {lang === "es" ? "¿Ya tiene su reserva?" : "Already have a reservation?"}
             </h2>
             <p className="mt-2 text-sm text-[var(--on-dark-2)]">
@@ -418,7 +415,7 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
               <button
                 type="submit"
                 disabled={validando}
-                className="inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[#f0ce86] disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] disabled:opacity-60"
               >
                 {validando ? (lang === "es" ? "Validando…" : "Validating…") : lang === "es" ? "Desbloquear compra" : "Unlock checkout"}
               </button>

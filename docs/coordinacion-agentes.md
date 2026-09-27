@@ -362,3 +362,24 @@ Tienda/Check-in) siguen con sus tarjetas `rounded-xl border-line` originales;
 heredan los tokens/clases nuevas pero no se rediseñaron página por página.
 Siguiente paso si se quiere continuar: aplicar el mismo lenguaje (`.eyebrow`/
 `.num`/`.btn-press`, filas en vez de tarjetas idénticas donde aplique) al resto.
+
+## 2026-09-24 — Codex: skill `casa-randa-copy` para Claude (completada)
+
+Alcance: crear una skill local para Claude que redacte, revise y prepare cambios
+de copy para la web de Casa Randa, Airbnb y Vrbo en español e inglés. Debe
+adaptar el mensaje por canal, verificar datos contra el proyecto, revisar fotos
+cuando corresponda, mostrar preview y análisis antes de publicar, pedir aprobación
+antes de cualquier publicación externa, detenerse ante contradicciones o errores,
+y registrar los cambios en este archivo. Archivos previstos: `.claude/skills/
+casa-randa-copy/SKILL.md` y este registro. No se modifican todavía las apps,
+listados externos, precios, disponibilidad ni políticas reales.
+
+Cierre (Codex, 2026-09-24): skill creada en `.claude/skills/casa-randa-copy/
+SKILL.md`. Incluye voz bilingüe, adaptación separada por canal, revisión de
+fotos y fuentes, marcadores para datos pendientes, aprobación obligatoria antes
+de publicar, manejo de errores, preview web, propuestas de cancelación y
+registro detallado de cambios. Validación oficial bloqueada por ausencia de
+`PyYAML`; validación equivalente de frontmatter, secciones requeridas y
+`git diff --check` completada correctamente. No se editaron apps, listings ni
+servicios externos. Siguiente paso: usar la skill en una solicitud real y
+ajustar reglas si aparece una necesidad concreta.

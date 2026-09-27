@@ -20,8 +20,8 @@ export function Reviews() {
           </h2>
           <p className="text-[var(--on-dark-2)]">
             {lang === "es"
-              ? "Calificaciones de Airbnb, donde Diana lleva tres años como Superanfitriona y el anuncio tiene el distintivo Favorito entre huéspedes. Marquelda recibe en la puerta; la cerradura inteligente es el respaldo para llegadas tardías."
-              : "Ratings from Airbnb, where Diana has hosted for three years as a Superhost and the listing carries the Guest Favourite badge. Marquelda meets guests at the door; the smart lock is the backup for late arrivals."}
+              ? "Calificaciones de Airbnb, donde Diana es Superanfitriona hace tres años. Marquelda recibe en la puerta."
+              : "Ratings from Airbnb, where Diana has been a Superhost for three years. Marquelda meets guests at the door."}
           </p>
         </Reveal>
 

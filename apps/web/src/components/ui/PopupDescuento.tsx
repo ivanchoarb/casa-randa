@@ -130,17 +130,14 @@ export function PopupDescuento() {
             <button
               type="button"
               onClick={recordarYCerrar}
-              className="mt-6 w-full rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[#f0ce86]"
+              className="mt-6 w-full rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)]"
             >
               {lang === "es" ? "Cerrar" : "Close"}
             </button>
           </div>
         ) : (
           <>
-            <p className="font-[var(--font-display)] text-xs tracking-wide text-[var(--lamp-fill)] uppercase">
-              {lang === "es" ? "Regalo de bienvenida" : "Welcome gift"}
-            </p>
-            <h2 className="mt-2 font-[var(--font-display)] text-2xl font-bold text-[var(--on-dark)]">
+            <h2 className="font-[var(--font-display)] text-2xl font-bold text-[var(--on-dark)]">
               {lang === "es" ? (
                 <>
                   5% de descuento en <br /> tu próxima estadía
@@ -240,7 +237,7 @@ export function PopupDescuento() {
               <button
                 type="submit"
                 disabled={enviando}
-                className="mt-1 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[#f0ce86] disabled:opacity-60"
+                className="mt-1 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] disabled:opacity-60"
               >
                 {enviando
                   ? lang === "es"

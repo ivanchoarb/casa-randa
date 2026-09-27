@@ -8,19 +8,6 @@ import { Reveal } from "@/components/ui/Reveal";
 import { CATEGORIES, PLACES, type CategoryKey } from "./places";
 import { PlacePlaceholder } from "./PlacePlaceholder";
 
-function RatingDots({ rating }: { rating: number }) {
-  return (
-    <span className="inline-flex gap-1" aria-label={`${rating}/5`}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <span
-          key={i}
-          className={`h-1.5 w-1.5 rounded-full ${i < rating ? "bg-[var(--caoba)]" : "bg-[var(--ink)]/15"}`}
-        />
-      ))}
-    </span>
-  );
-}
-
 export function GuideList() {
   const { lang, t } = useLanguage();
   const [active, setActive] = useState<CategoryKey | "all">("all");
@@ -94,9 +81,6 @@ export function GuideList() {
                   </span>
                 </div>
                 <h3 className="mt-2 font-[var(--font-display)] text-lg font-semibold">{place.name}</h3>
-                <div className="mt-1">
-                  <RatingDots rating={place.rating} />
-                </div>
                 <p className="mt-3 text-sm text-[var(--ink-2)]">{t(place.teaser)}</p>
                 <span className="nav-link mt-4 inline-block font-[var(--font-display)] text-sm font-semibold text-[var(--caoba)]">
                   {lang === "es" ? "Ver guía completa →" : "View full guide →"}
