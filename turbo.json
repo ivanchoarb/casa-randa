@@ -3,7 +3,27 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "SMTP_HOST",
+        "SMTP_PORT",
+        "SMTP_USER",
+        "SMTP_PASS",
+        "SYNC_SECRET",
+        "ICAL_EXPORT_KEY",
+        "AIRBNB_ICAL_URL",
+        "VRBO_ICAL_URL",
+        "PRICELABS_API_KEY",
+        "PRICELABS_LISTING_ID",
+        "PRICELABS_PMS",
+        "DATABASE_URL",
+        "NEXT_PUBLIC_INTRANET_URL",
+        "WHATSAPP_ACCESS_TOKEN",
+        "WHATSAPP_PHONE_NUMBER_ID"
+      ]
     },
     "dev": {
       "cache": false,
