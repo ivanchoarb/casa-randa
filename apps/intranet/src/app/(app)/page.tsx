@@ -273,7 +273,7 @@ export default function InicioPage() {
                   <p className="disp mt-1 text-xl">{capitalizar(MESES[mes])}</p>
                   <button
                     type="button"
-                    onClick={() => descargarLiquidacionMarquelda(delMes, anio, mes)}
+                    onClick={() => void descargarLiquidacionMarquelda(delMes, anio, mes)}
                     disabled={tableQuery.isLoading}
                     className="btn-press mt-2 rounded-md bg-caoba px-3 py-1.5 text-xs font-semibold text-panel disabled:opacity-60"
                   >
