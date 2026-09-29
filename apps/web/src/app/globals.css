@@ -125,14 +125,34 @@ html.lenis.lenis-stopped {
  * Design tokens, taken from the house itself (see legacy-static/LEEME.md):
  * the green siding, white trim, mahogany floors and fence, and the amber
  * patio light at night. Light values first, dark overrides below.
+ *
+ * 2026-09-27, "Herencia Tropical" palette pass, at Ivan's request ("colores
+ * que generen más dopamina... sitio tropical") — presented 3 directions
+ * (kept the real sage/mahogany base vs. two that replaced it with a warm
+ * sand base or a full-saturation resort palette); Ivan picked the most
+ * conservative one. --ink/--night are untouched — still the real house's
+ * dark green. The two accents got more saturated: --caoba (a muted
+ * mahogany, #74302a) → a vivid terracota, and --lamp-fill (a soft amber
+ * lamp glow, #e7be6a) → a Canal-water turquoise, so the site has a warm
+ * AND a cool accent instead of two warm ones.
+ *
+ * Same day, follow-up: Ivan noticed the page background still read as a
+ * pale sage green, not tropical ("¿ese color es como arena?"). Warmed
+ * --ground/--panel from that sage (#e3e8da/#eff2e8) to a sand/cream tone —
+ * a neutral warm base makes both the new terracota and turquoise pop
+ * evenly, where sage's own green undertone was quietly competing with the
+ * turquoise. Dark-mode --ground/--panel (still dark green) were left as
+ * they were, since that wasn't what was flagged and re-deciding it needs
+ * its own look, not a silent side effect of this fix.
  */
 :root {
-  --ground: #e3e8da;
-  --panel: #eff2e8;
+  --ground: #f3e9d7;
+  --panel: #f8f2e6;
   --ink: #18291d;
   --ink-2: #4a5a4f;
-  --caoba: #74302a;
-  --lamp-fill: #e7be6a;
+  --caoba: #d1502a;
+  --lamp-fill: #2fb6a3;
+  --lamp-fill-hover: #58c9b6;
   --night: #14211a;
   --night-2: #1e3226;
 
@@ -152,6 +172,7 @@ html.lenis.lenis-stopped {
   --color-ink: var(--ink);
   --color-caoba: var(--caoba);
   --color-lamp-fill: var(--lamp-fill);
+  --color-lamp-fill-hover: var(--lamp-fill-hover);
   --color-night: var(--night);
   --color-night-2: var(--night-2);
   --color-on-dark: var(--on-dark);
@@ -166,7 +187,7 @@ html.lenis.lenis-stopped {
     --panel: #1b2c21;
     --ink: #e3e8da;
     --ink-2: #9fb0a4;
-    --caoba: #d5806b;
+    --caoba: #e8875f;
   }
 }
 
@@ -200,24 +221,6 @@ body {
 
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: scroll()) {
-    /* Hero heading/sub/facts drift up and fade as the page scrolls past —
-       a scroll-linked parallax read on the text block as a whole. */
-    .hero-parallax-text {
-      animation: hero-text-rise linear both;
-      animation-timeline: scroll(nearest block);
-      animation-range: 0 60vh;
-    }
-
-    /* Hero background: scale + vertical drift at a different rate than the
-       text above — the two layers moving at different speeds is what
-       reads as parallax depth, not the zoom alone. Always kept scaled up
-       enough that the drift never exposes an edge. */
-    .hero-bg-parallax {
-      animation: hero-bg-drift linear both;
-      animation-timeline: scroll(nearest block);
-      animation-range: 0 80vh;
-    }
-
     /* Simple scroll-driven zoom for single accompanying photos
        (the Diablo Heights facade shot). */
     .scroll-scale-img {
@@ -228,81 +231,12 @@ body {
   }
 }
 
-@keyframes hero-text-rise {
-  from {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateY(-56px);
-    opacity: 0.35;
-  }
-}
-
-@keyframes hero-bg-drift {
-  from {
-    transform: scale(1.15) translateY(0);
-  }
-  to {
-    transform: scale(1.05) translateY(6%);
-  }
-}
-
 @keyframes scroll-zoom {
   from {
     transform: scale(1.12);
   }
   to {
     transform: scale(1);
-  }
-}
-
-/* Hero text entrance: heading lines, subtitle and stats materialize in a
-   short stagger on load — a "fluid" reveal (opacity + rise + a hint of
-   blur resolving into focus) distinct from the scroll parallax above,
-   which takes over once the entrance finishes. */
-@media (prefers-reduced-motion: no-preference) {
-  .hero-fluid-line,
-  .hero-sub-fade,
-  .hero-fact-item {
-    animation: hero-fluid-rise 0.9s cubic-bezier(0.22, 0.7, 0.25, 1) both;
-  }
-  .hero-fluid-line:nth-child(1) {
-    animation-delay: 0.05s;
-  }
-  .hero-fluid-line:nth-child(2) {
-    animation-delay: 0.16s;
-  }
-  .hero-fluid-line:nth-child(3) {
-    animation-delay: 0.27s;
-  }
-  .hero-sub-fade {
-    animation-delay: 0.4s;
-  }
-  .hero-fact-item:nth-child(1) {
-    animation-delay: 0.52s;
-  }
-  .hero-fact-item:nth-child(2) {
-    animation-delay: 0.6s;
-  }
-  .hero-fact-item:nth-child(3) {
-    animation-delay: 0.68s;
-  }
-  .hero-fact-item:nth-child(4) {
-    animation-delay: 0.76s;
-  }
-}
-
-@keyframes hero-fluid-rise {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-    filter: blur(2px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
   }
 }
 
@@ -337,12 +271,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scroll-scale-img,
-  .hero-bg-parallax,
-  .hero-parallax-text,
-  .hero-fluid-line,
-  .hero-sub-fade,
-  .hero-fact-item {
+  .scroll-scale-img {
     animation: none !important;
     transform: none !important;
     opacity: 1 !important;

@@ -132,7 +132,11 @@ export function QuoteCalculator() {
 
         <div className="mt-9 grid gap-10 lg:grid-cols-[1fr_26rem] lg:items-start lg:gap-14">
           <Reveal delayMs={100}>
-            <div className="grid grid-cols-2 gap-4">
+            {/* Solo lo que hace falta para cotizar, como en Airbnb/Booking:
+                fechas + huéspedes. Cancelación y plan de pago se mudaron al
+                lado de "Su cotización" — son ajustes al precio, no criterios
+                de búsqueda, y así se ven junto al total que cambian. */}
+            <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-1">
                 <label htmlFor="q-in" className={fieldLabel}>
                   {lang === "es" ? "Entrada" : "Check-in"}
@@ -168,69 +172,52 @@ export function QuoteCalculator() {
                 </label>
                 <PaxSelect id="q-pax" value={pax} onChange={setPax} className={fieldInput} />
               </div>
-              <div className="flex flex-col gap-1">
-                <label htmlFor="q-cancel" className={fieldLabel}>
-                  {lang === "es" ? "Cancelación" : "Cancellation"}
-                </label>
-                <select
-                  id="q-cancel"
-                  value={cancellation}
-                  onChange={(e) => setCancellation(e.target.value as CancellationPolicy)}
-                  className={fieldInput}
-                >
-                  <option value="flex">{lang === "es" ? "Flexible, +3 %" : "Flexible, +3%"}</option>
-                  <option value="nr">{lang === "es" ? "No reembolsable, −5 %" : "Non-refundable, −5%"}</option>
-                </select>
-              </div>
-              <div className="col-span-2 flex flex-col gap-1">
-                <label htmlFor="q-plan" className={fieldLabel}>
-                  {lang === "es" ? "Pago" : "Payment"}
-                </label>
-                <select
-                  id="q-plan"
-                  value={plan}
-                  onChange={(e) => setPlan(e.target.value as PaymentPlan)}
-                  className={fieldInput}
-                >
-                  <option value="30">
-                    {lang === "es"
-                      ? "Anticipo del 30 % ahora, saldo 7 días antes de llegar"
-                      : "30% deposit now, balance 7 days before arrival"}
-                  </option>
-                  <option value="100">{lang === "es" ? "Pagar el 100 % ahora" : "Pay 100% now"}</option>
-                </select>
-              </div>
             </div>
 
-            <table className="mt-11 w-full border-collapse text-left">
-              <thead>
-                <tr className="border-b border-[var(--ink)]/60 text-sm">
-                  <th scope="col" className="py-2 font-normal" />
-                  <th scope="col" className="py-2 font-[var(--font-display)] font-medium">
-                    {lang === "es" ? "Directo" : "Direct"}
-                  </th>
-                  <th scope="col" className="py-2 font-[var(--font-display)] font-medium">
-                    Airbnb / Vrbo
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {VS.map((row) => (
-                  <tr
-                    key={row.es}
-                    className="border-b border-[var(--ink)]/10 transition-colors duration-200 hover:bg-[var(--caoba)]/5"
-                  >
-                    <td className="py-3 pr-4">{t(row)}</td>
-                    <td className="py-3 pr-4 font-[var(--font-display)] font-semibold text-[var(--caoba)]">
-                      {lang === "es" ? "Sí" : "Yes"}
-                    </td>
-                    <td className="py-3 text-[var(--ink-2)]">
-                      {row.d === "both" ? (lang === "es" ? "Sí" : "Yes") : lang === "es" ? "No" : "No"}
-                    </td>
+            {/* La comparación con Airbnb/Vrbo es contenido de venta, no
+                parte del flujo de reserva — antes competía visualmente con
+                el formulario. Ahora es un detalle plegado, cerrado por
+                defecto, con el propio <details> nativo del navegador. */}
+            <details className="mt-9 border-t border-[var(--ink)]/10 pt-5 text-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="cursor-pointer font-[var(--font-display)] font-semibold text-[var(--caoba)] select-none">
+                {lang === "es" ? "¿Por qué reservar directo? →" : "Why book direct? →"}
+              </summary>
+              <table className="mt-5 w-full table-fixed border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-[var(--ink)]/60">
+                    <th scope="col" className="py-2 font-normal" />
+                    <th
+                      scope="col"
+                      className="w-20 py-2 font-[var(--font-display)] font-medium whitespace-nowrap sm:w-24"
+                    >
+                      {lang === "es" ? "Directo" : "Direct"}
+                    </th>
+                    <th
+                      scope="col"
+                      className="w-20 py-2 font-[var(--font-display)] font-medium whitespace-nowrap sm:w-24"
+                    >
+                      Airbnb / Vrbo
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {VS.map((row) => (
+                    <tr
+                      key={row.es}
+                      className="border-b border-[var(--ink)]/10 transition-colors duration-200 hover:bg-[var(--caoba)]/5"
+                    >
+                      <td className="py-3 pr-4">{t(row)}</td>
+                      <td className="py-3 pr-4 font-[var(--font-display)] font-semibold text-[var(--caoba)]">
+                        {lang === "es" ? "Sí" : "Yes"}
+                      </td>
+                      <td className="py-3 text-[var(--ink-2)]">
+                        {row.d === "both" ? (lang === "es" ? "Sí" : "Yes") : lang === "es" ? "No" : "No"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </details>
           </Reveal>
 
           <Reveal
@@ -256,6 +243,41 @@ export function QuoteCalculator() {
                     ? `${quote.nights} ${quote.nights === 1 ? "noche" : "noches"}, ${pax} huéspedes, a ${money(RATE)} la noche.`
                     : `${quote.nights} ${quote.nights === 1 ? "night" : "nights"}, ${pax} guests, at ${money(RATE)} a night.`}
                 </p>
+
+                {/* Cancelación y pago viven aquí, no arriba con las fechas
+                    — son ajustes al precio, así que se ven junto al total
+                    que mueven, en vez de ser dos campos más en el
+                    formulario inicial. */}
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="q-cancel" className="font-[var(--font-display)] text-xs text-[var(--on-dark-2)]">
+                      {lang === "es" ? "Cancelación" : "Cancellation"}
+                    </label>
+                    <select
+                      id="q-cancel"
+                      value={cancellation}
+                      onChange={(e) => setCancellation(e.target.value as CancellationPolicy)}
+                      className={`${fieldInput} text-xs`}
+                    >
+                      <option value="flex">{lang === "es" ? "Flexible, +3 %" : "Flexible, +3%"}</option>
+                      <option value="nr">{lang === "es" ? "No reembolsable, −5 %" : "Non-refundable, −5%"}</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="q-plan" className="font-[var(--font-display)] text-xs text-[var(--on-dark-2)]">
+                      {lang === "es" ? "Pago" : "Payment"}
+                    </label>
+                    <select
+                      id="q-plan"
+                      value={plan}
+                      onChange={(e) => setPlan(e.target.value as PaymentPlan)}
+                      className={`${fieldInput} text-xs`}
+                    >
+                      <option value="30">{lang === "es" ? "30 % ahora" : "30% now"}</option>
+                      <option value="100">{lang === "es" ? "100 % ahora" : "100% now"}</option>
+                    </select>
+                  </div>
+                </div>
 
                 <dl className="mt-4 grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 text-sm">
                   {quote.lines.map((line, i) => (
@@ -397,7 +419,7 @@ export function QuoteCalculator() {
                 <button
                   type="submit"
                   disabled={enviando}
-                  className="mt-1 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[#f0ce86] disabled:opacity-60"
+                  className="mt-1 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] disabled:opacity-60"
                 >
                   {enviando
                     ? lang === "es"
@@ -416,7 +438,7 @@ export function QuoteCalculator() {
                   setMostrarFormulario(true);
                 }}
                 aria-disabled={!quote}
-                className={`mt-5 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[#f0ce86] ${!quote ? "pointer-events-none opacity-50" : ""}`}
+                className={`mt-5 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] ${!quote ? "pointer-events-none opacity-50" : ""}`}
               >
                 {lang === "es" ? "Solicitar estas fechas" : "Request these dates"}
               </MagneticLink>

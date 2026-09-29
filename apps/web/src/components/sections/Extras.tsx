@@ -27,8 +27,8 @@ export function Extras({ productos }: { productos: Producto[] }) {
             </h2>
             <p className="mt-3 text-[var(--ink-2)]">
               {lang === "es"
-                ? "Elija el vino, el café y el desayuno antes de viajar y estarán en la cocina al llegar. La guía de Panamá que escribimos nosotros, con qué hacer, dónde comer y cómo llegar, va incluida con la reserva."
-                : "Pick the wine, the coffee and the breakfast before you travel and it will be waiting in the kitchen. Our Panama guide — what to do, where to eat, how to get there — comes with the booking."}
+                ? "Elija el vino, el café y el desayuno antes de viajar — estarán en la cocina al llegar. La guía de Panamá va incluida con la reserva."
+                : "Pick the wine, coffee and breakfast before you travel — they'll be waiting in the kitchen. Our Panama guide comes with the booking."}
             </p>
           </Reveal>
           <Reveal delayMs={120} className="flex flex-wrap gap-3">
@@ -65,8 +65,10 @@ export function Extras({ productos }: { productos: Producto[] }) {
                     )}
                   </div>
                   <div className="p-3">
-                    <p className="truncate font-[var(--font-display)] text-sm font-semibold">{p.nombre}</p>
-                    <p className="text-sm text-[var(--caoba)]">{money(p.precio)}</p>
+                    <p className="line-clamp-2 min-h-[2.5rem] font-[var(--font-display)] text-sm font-semibold">
+                      {p.nombre}
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--caoba)]">{money(p.precio)}</p>
                   </div>
                 </Link>
               ))}

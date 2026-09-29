@@ -9,10 +9,6 @@ export interface Room {
   n: number;
   beds: [BedType, number][];
   sleeps: number;
-  es: string;
-  en: string;
-  tagsEs: string[];
-  tagsEn: string[];
 }
 
 export interface Distance extends Bilingual {

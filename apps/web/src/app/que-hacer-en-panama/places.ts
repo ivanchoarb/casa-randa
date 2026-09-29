@@ -23,7 +23,6 @@ export interface Place {
   slug: string;
   category: CategoryKey;
   name: string;
-  rating: number; // out of 5
   priceLevel: 1 | 2 | 3;
   /** Paths under /public, e.g. "/images/guia-panama/isla-taboga/1.jpg". Empty
    *  until real, licensed photos exist — the card and detail page both fall
@@ -45,7 +44,6 @@ export const PLACES: Place[] = [
     slug: "centro-de-visitantes-de-miraflores",
     category: "canal",
     name: "Centro de Visitantes de Miraflores",
-    rating: 5,
     priceLevel: 2,
     images: [],
     teaser: {
@@ -80,7 +78,6 @@ export const PLACES: Place[] = [
     slug: "multiplaza-panama",
     category: "ciudad",
     name: "Multiplaza Panamá",
-    rating: 4,
     priceLevel: 2,
     images: [],
     teaser: {
@@ -115,7 +112,6 @@ export const PLACES: Place[] = [
     slug: "albrook-mall-panama",
     category: "ciudad",
     name: "Albrook Mall",
-    rating: 4,
     priceLevel: 1,
     images: [],
     teaser: {
@@ -149,7 +145,6 @@ export const PLACES: Place[] = [
     slug: "isla-taboga-panama",
     category: "playas",
     name: "Isla Taboga",
-    rating: 4,
     priceLevel: 2,
     images: [],
     teaser: {
@@ -184,7 +179,6 @@ export const PLACES: Place[] = [
     slug: "maagoos-fish-tacos-panama",
     category: "gastronomia",
     name: "MaaGoo's Fish Tacos & More",
-    rating: 4,
     priceLevel: 2,
     images: [],
     teaser: {

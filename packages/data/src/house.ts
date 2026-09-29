@@ -6,12 +6,12 @@ import type { Comparison, Distance, Room, Score } from "./types";
  * prototype's js/casa-randa.js (see legacy-static/).
  */
 export const ROOMS: Room[] = [
-  { n: 1, beds: [["king", 1]], sleeps: 2, es: "Una cama king, baño privado con ducha y escritorio junto a la ventana.", en: "One king bed, private bathroom with shower, desk by the window.", tagsEs: ["Cama king", "Baño privado"], tagsEn: ["King bed", "Private bath"] },
-  { n: 2, beds: [["twin", 2]], sleeps: 2, es: "Dos camas individuales, baño privado, minibar y ventilador de techo.", en: "Two single beds, private bathroom, minibar and ceiling fan.", tagsEs: ["2 individuales", "Baño privado"], tagsEn: ["2 singles", "Private bath"] },
-  { n: 3, beds: [["twin", 2]], sleeps: 2, es: "Dos camas individuales, baño privado y vista a los árboles del patio.", en: "Two single beds, private bathroom, looking onto the trees.", tagsEs: ["2 individuales", "Baño privado"], tagsEn: ["2 singles", "Private bath"] },
-  { n: 4, beds: [["twin", 3]], sleeps: 3, es: "Tres camas individuales, baño privado. La habitación del grupo grande.", en: "Three single beds, private bathroom. The room for the big group.", tagsEs: ["3 individuales", "Baño privado"], tagsEn: ["3 singles", "Private bath"] },
-  { n: 5, beds: [["twin", 2]], sleeps: 2, es: "Dos camas individuales, baño privado, aire acondicionado y TV.", en: "Two single beds, private bathroom, air conditioning and TV.", tagsEs: ["2 individuales", "Baño privado"], tagsEn: ["2 singles", "Private bath"] },
-  { n: 6, beds: [["twin", 2]], sleeps: 2, es: "Dos camas individuales, baño privado con segunda puerta al pasillo.", en: "Two single beds, private bathroom with a second door to the hallway.", tagsEs: ["2 individuales", "Baño de paso"], tagsEn: ["2 singles", "Hallway access"] },
+  { n: 1, beds: [["king", 1]], sleeps: 2 },
+  { n: 2, beds: [["twin", 2]], sleeps: 2 },
+  { n: 3, beds: [["twin", 2]], sleeps: 2 },
+  { n: 4, beds: [["twin", 3]], sleeps: 3 },
+  { n: 5, beds: [["twin", 2]], sleeps: 2 },
+  { n: 6, beds: [["twin", 2]], sleeps: 2 },
 ];
 
 export const COMMON_ES = ["Cocina completa con lavavajillas, cafetera y tostadora", "Sala principal con ventanales al jardín", "Segunda sala de estar en el tercer piso", "Comedor para catorce y barra", "Balcón con hamaca", "Patio cerrado con área de BBQ", "Lavandería con lavadora y secadora, sin cargo", "Estacionamiento gratuito para cuatro vehículos", "Internet de 500 megas en toda la casa"];

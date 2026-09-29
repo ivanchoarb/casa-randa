@@ -57,7 +57,7 @@ export function SiteHeader() {
 
         <MagneticLink
           href={homeHref("#reservar")}
-          className="inline-flex items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-4 py-2 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[#f0ce86]"
+          className="inline-flex items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-4 py-2 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)]"
         >
           {lang === "es" ? "Ver fechas" : "Check dates"}
         </MagneticLink>

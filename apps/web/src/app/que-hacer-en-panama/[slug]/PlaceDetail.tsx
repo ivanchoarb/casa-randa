@@ -33,13 +33,9 @@ export function PlaceDetail({ place }: { place: Place }) {
         </p>
         <h1 className="text-fluid-h2 mt-2 font-[var(--font-display)] font-bold">{place.name}</h1>
         <p className="mt-4 max-w-2xl text-[var(--ink-2)]">{t(place.teaser)}</p>
-        <div className="mt-3 flex items-center gap-3 text-sm text-[var(--ink-2)]">
-          <span className="font-[var(--font-display)] font-semibold text-[var(--caoba)]">
-            {place.rating}/5 {lang === "es" ? "Randa Points" : "Randa Points"}
-          </span>
-          <span aria-hidden>·</span>
-          <span className="font-[var(--font-display)] font-semibold">{"$".repeat(place.priceLevel)}</span>
-        </div>
+        <p className="mt-3 text-sm font-[var(--font-display)] font-semibold text-[var(--ink-2)]">
+          {"$".repeat(place.priceLevel)}
+        </p>
       </Reveal>
 
       <Reveal delayMs={120} className="mt-10 border-t border-[var(--ink)]/10 pt-8">
@@ -85,7 +81,7 @@ export function PlaceDetail({ place }: { place: Place }) {
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
           <MagneticLink
             href={requestHref}
-            className="inline-flex items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[#f0ce86]"
+            className="inline-flex items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)]"
           >
             {lang === "es" ? "Solicitar experiencia" : "Request experience"}
           </MagneticLink>

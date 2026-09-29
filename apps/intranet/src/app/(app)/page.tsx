@@ -43,19 +43,16 @@ const money = (n: number) =>
 // permiso "reservas" (Empleado y Host lo tienen por defecto) — a diferencia
 // de las cifras financieras de las tarjetas de arriba, este gráfico no
 // necesita "finanzas_propietario" para funcionar.
-function ActividadMensual({ reservas, anioActual }: { reservas: Reserva[]; anioActual: number }) {
+//
+// 2026-09-22, a pedido de Ivan: el año ahora se elige arriba (ver
+// `SelectorAnio` en InicioPage) y maneja tanto este gráfico como las
+// tarjetas de ingresos — antes el selector vivía solo aquí abajo, con su
+// propio estado, y cambiarlo no afectaba nada de lo de arriba.
+function ActividadMensual({ reservas, anioActivo }: { reservas: Reserva[]; anioActivo: number }) {
   const activas = useMemo(
     () => reservas.filter((r) => r.estado === "confirmada" || r.estado === "completada"),
     [reservas],
   );
-  const anios = useMemo(() => {
-    const set = new Set(activas.map((r) => Number(r.entrada.slice(0, 4))));
-    set.add(anioActual);
-    return Array.from(set).sort((a, b) => b - a);
-  }, [activas, anioActual]);
-
-  const [anioElegido, setAnioElegido] = useState(anioActual);
-  const anioActivo = anios.includes(anioElegido) ? anioElegido : anios[0];
 
   const delAnio = activas.filter((r) => Number(r.entrada.slice(0, 4)) === anioActivo);
   const porMes = MESES.map((_, i) => delAnio.filter((r) => Number(r.entrada.slice(5, 7)) - 1 === i).length);
@@ -66,26 +63,8 @@ function ActividadMensual({ reservas, anioActual }: { reservas: Reserva[]; anioA
 
   return (
     <div className="mt-10 border-t border-line pt-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="eyebrow">Meses más activos</p>
-          <p className="mt-1 text-xs text-ink-2">Reservas por mes de entrada — temporada alta y baja</p>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {anios.map((a) => (
-            <button
-              key={a}
-              type="button"
-              onClick={() => setAnioElegido(a)}
-              className={`btn-press num rounded-full px-3 py-1 text-xs font-semibold ${
-                a === anioActivo ? "bg-caoba text-panel" : "border border-line text-ink-2 hover:border-caoba"
-              }`}
-            >
-              {a}
-            </button>
-          ))}
-        </div>
-      </div>
+      <p className="eyebrow">Meses más activos</p>
+      <p className="mt-1 text-xs text-ink-2">Reservas por mes de entrada — temporada alta y baja</p>
 
       {!hayDatos ? (
         <p className="mt-4 text-sm text-ink-2">Sin reservas confirmadas en {anioActivo}.</p>
@@ -153,11 +132,26 @@ export default function InicioPage() {
   const mes = new Date().getMonth();
 
   const activas = reservas.filter((r) => r.estado === "confirmada" || r.estado === "completada");
-  const delAnio = activas.filter((r) => new Date(`${r.entrada}T12:00:00`).getFullYear() === anio);
-  const delMes = delAnio.filter((r) => new Date(`${r.entrada}T12:00:00`).getMonth() === mes);
+
+  // 2026-09-22, a pedido de Ivan: un año elegido arriba, en vez del año
+  // actual fijo, y todo lo de abajo (ingresos, saldo, el gráfico) recalcula
+  // sobre ese año. Mismo patrón de pastillas ya usado en Contabilidad/
+  // Análisis para esto mismo.
+  const anios = useMemo(() => {
+    const set = new Set(activas.map((r) => Number(r.entrada.slice(0, 4))));
+    set.add(anio);
+    return Array.from(set).sort((a, b) => b - a);
+  }, [activas, anio]);
+  const [anioElegido, setAnioElegido] = useState(anio);
+  const anioActivo = anios.includes(anioElegido) ? anioElegido : anios[0];
+  const esAnioActual = anioActivo === anio;
+
+  const delAnio = activas.filter((r) => new Date(`${r.entrada}T12:00:00`).getFullYear() === anioActivo);
+  const delMes = esAnioActual ? delAnio.filter((r) => new Date(`${r.entrada}T12:00:00`).getMonth() === mes) : [];
 
   // "Próxima reserva": la próxima llegada activa desde hoy — staging
-  // muestra esto, no "la que está en curso ahora mismo".
+  // muestra esto, no "la que está en curso ahora mismo". No depende del
+  // año elegido, siempre mira hacia adelante desde hoy.
   const proximaReserva = activas
     .filter((r) => r.entrada >= hoy)
     .sort((a, b) => a.entrada.localeCompare(b.entrada))[0];
@@ -170,33 +164,61 @@ export default function InicioPage() {
   const ingresosAcumulados = delAnio.reduce((sum, r) => sum + r.recibido, 0);
   const comisionMesMarquelda = delMes.reduce((sum, r) => sum + r.comision_marquelda, 0);
   const gastosDelAnio = gastos
-    .filter((g) => new Date(`${g.fecha}T12:00:00`).getFullYear() === anio)
+    .filter((g) => new Date(`${g.fecha}T12:00:00`).getFullYear() === anioActivo)
     .reduce((sum, g) => sum + g.valor, 0);
-  const comisionesDelAnio = delAnio.reduce(
-    (sum, r) => sum + r.comision_marquelda + r.comision_ivan,
-    0,
-  );
-  const saldoNetoPropietario = ingresosAcumulados - comisionesDelAnio - gastosDelAnio;
+  const comisionAnualMarquelda = delAnio.reduce((sum, r) => sum + r.comision_marquelda, 0);
+  const comisionAnualIvan = delAnio.reduce((sum, r) => sum + r.comision_ivan, 0);
+  const saldoNetoPropietario = ingresosAcumulados - (comisionAnualMarquelda + comisionAnualIvan) - gastosDelAnio;
 
+  // "Ingresos del mes"/"Comisión Host" son del mes calendario actual — no
+  // significan nada para un año distinto al de hoy, así que se ocultan en
+  // vez de mostrar un mes que no existe todavía o ya pasó hace rato (mismo
+  // criterio que Contabilidad ya aplica a sus tarjetas del "mes actual").
   const tarjetas = [
-    { permiso: "ingresos_mes" as const, titulo: `Ingresos de ${capitalizar(MESES[mes])}`, valor: money(ingresosDelMes), nota: "Después de comisión de plataforma" },
-    { permiso: "comision_host" as const, titulo: "Comisión Host (Marquelda)", valor: money(comisionMesMarquelda), nota: `${capitalizar(MESES[mes])} ${anio}` },
-    { permiso: "finanzas_propietario" as const, titulo: "Ingresos acumulados", valor: money(ingresosAcumulados), nota: `Acumulado ${anio}` },
+    ...(esAnioActual
+      ? [
+          { permiso: "ingresos_mes" as const, titulo: `Ingresos de ${capitalizar(MESES[mes])}`, valor: money(ingresosDelMes), nota: "Después de comisión de plataforma" },
+          { permiso: "comision_host" as const, titulo: "Comisión Host (Marquelda)", valor: money(comisionMesMarquelda), nota: `${capitalizar(MESES[mes])} ${anio}` },
+        ]
+      : []),
+    { permiso: "finanzas_propietario" as const, titulo: "Ingresos acumulados", valor: money(ingresosAcumulados), nota: `Acumulado ${anioActivo}` },
+    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Marquelda`, valor: money(comisionAnualMarquelda), nota: "Comisión acumulada del año" },
+    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Iván`, valor: money(comisionAnualIvan), nota: "Comisión acumulada del año" },
     {
       permiso: "finanzas_propietario" as const,
       titulo: "Saldo neto propietario",
       valor: money(saldoNetoPropietario),
-      nota: "Después de comisiones y gastos del año",
+      nota: `Después de comisiones y gastos de ${anioActivo}`,
     },
   ];
 
   return (
     <div>
-      <p className="eyebrow">Resumen ejecutivo</p>
-      <h1 className="disp mt-1 text-3xl">Hoy en Casa Randa</h1>
-      <p className="num mt-2 text-sm text-ink-2">
-        {hoy} <span className="ml-1 rounded-full bg-panel-2 px-2 py-0.5 text-xs font-semibold">HOY</span>
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="eyebrow">Resumen ejecutivo</p>
+          <h1 className="disp mt-1 text-3xl">Hoy en Casa Randa</h1>
+          <p className="num mt-2 text-sm text-ink-2">
+            {hoy} <span className="ml-1 rounded-full bg-panel-2 px-2 py-0.5 text-xs font-semibold">HOY</span>
+          </p>
+        </div>
+        {anios.length > 1 && (
+          <div className="flex flex-wrap gap-1.5">
+            {anios.map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => setAnioElegido(a)}
+                className={`btn-press num rounded-full px-3 py-1 text-xs font-semibold ${
+                  a === anioActivo ? "bg-caoba text-panel" : "border border-line text-ink-2 hover:border-caoba"
+                }`}
+              >
+                {a}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {tableQuery.isError && (
         <p className="mt-4 text-sm text-caoba">
@@ -245,7 +267,7 @@ export default function InicioPage() {
                   </div>
                 ))}
 
-              {can("liquidacion_host") && (
+              {can("liquidacion_host") && esAnioActual && (
                 <div>
                   <p className="eyebrow">Liquidación Marquelda</p>
                   <p className="disp mt-1 text-xl">{capitalizar(MESES[mes])}</p>
@@ -264,7 +286,7 @@ export default function InicioPage() {
         </div>
       )}
 
-      {!tableQuery.isError && can("reservas") && <ActividadMensual reservas={reservas} anioActual={anio} />}
+      {!tableQuery.isError && can("reservas") && <ActividadMensual reservas={reservas} anioActivo={anioActivo} />}
     </div>
   );
 }
