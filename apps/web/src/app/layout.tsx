@@ -1,19 +1,26 @@
 import type { Metadata } from "next";
-import { Archivo, Source_Serif_4 } from "next/font/google";
+import { Fraunces, Inter } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { SmoothScrollProvider } from "@/lib/scroll/SmoothScrollProvider";
 import { PopupDescuento } from "@/components/ui/PopupDescuento";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import "./globals.css";
 
-const archivo = Archivo({
-  variable: "--font-archivo",
+// 2026-09-29, at Ivan's request ("no me gusta la tipografía"): swapped the
+// display/body pair from Archivo+Source Serif to Fraunces+Inter — flips
+// which font carries the loud voice (a serif display now, per the
+// "Hotel NuVe Heritage" reference audit) instead of the sans doing all the
+// heavy lifting. Every component reads the semantic --font-display/
+// --font-body tokens (see globals.css), never these two directly, so this
+// is the only file besides globals.css that needed to change.
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
-  axes: ["wdth"],
+  axes: ["opsz"],
 });
 
-const sourceSerif = Source_Serif_4({
-  variable: "--font-source-serif",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -55,7 +62,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${archivo.variable} ${sourceSerif.variable} h-full antialiased`}>
+    <html lang="es" className={`${fraunces.variable} ${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <SmoothScrollProvider>
           <LanguageProvider>

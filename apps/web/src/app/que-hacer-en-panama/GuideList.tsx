@@ -73,16 +73,16 @@ export function GuideList() {
               </div>
               <div className="p-5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-[var(--font-display)] text-xs font-semibold tracking-wide text-[var(--caoba)] uppercase">
+                  <span className="font-[family-name:var(--font-display)] text-xs font-semibold tracking-wide text-[var(--caoba)] uppercase">
                     {lang === "es" ? category.es : category.en}
                   </span>
-                  <span className="font-[var(--font-display)] text-sm font-semibold text-[var(--ink-2)]">
+                  <span className="font-[family-name:var(--font-display)] text-sm font-semibold text-[var(--ink-2)]">
                     {"$".repeat(place.priceLevel)}
                   </span>
                 </div>
-                <h3 className="mt-2 font-[var(--font-display)] text-lg font-semibold">{place.name}</h3>
+                <h3 className="mt-2 font-[family-name:var(--font-display)] text-lg font-semibold">{place.name}</h3>
                 <p className="mt-3 text-sm text-[var(--ink-2)]">{t(place.teaser)}</p>
-                <span className="nav-link mt-4 inline-block font-[var(--font-display)] text-sm font-semibold text-[var(--caoba)]">
+                <span className="nav-link mt-4 inline-block font-[family-name:var(--font-display)] text-sm font-semibold text-[var(--caoba)]">
                   {lang === "es" ? "Ver guía completa →" : "View full guide →"}
                 </span>
               </div>

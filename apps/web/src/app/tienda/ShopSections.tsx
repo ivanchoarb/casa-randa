@@ -186,7 +186,7 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
       ) : (
         <div className="grid gap-10 lg:grid-cols-[200px_1fr]">
           <aside>
-            <h2 className="font-[var(--font-display)] text-xs font-semibold tracking-wide text-[var(--ink-2)] uppercase">
+            <h2 className="font-[family-name:var(--font-display)] text-xs font-semibold tracking-wide text-[var(--ink-2)] uppercase">
               {lang === "es" ? "Categorías" : "Categories"}
             </h2>
             <nav className="mt-3 flex flex-wrap gap-2 lg:flex-col lg:items-start lg:gap-1">
@@ -262,8 +262,8 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
                       )}
                       <div className="p-5">
                         <div className="flex items-baseline justify-between gap-3">
-                          <h3 className="font-[var(--font-display)] text-base font-semibold">{p.nombre}</h3>
-                          <span className="font-[var(--font-display)] font-semibold tabular-nums text-[var(--caoba)]">
+                          <h3 className="font-[family-name:var(--font-display)] text-base font-semibold">{p.nombre}</h3>
+                          <span className="font-[family-name:var(--font-display)] font-semibold tabular-nums text-[var(--caoba)]">
                             {money(p.precio)}
                           </span>
                         </div>
@@ -274,16 +274,16 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
                             onClick={() => cambiarCantidad(p.id, -1)}
                             disabled={cantidad === 0}
                             aria-label={lang === "es" ? "Quitar una unidad" : "Remove one"}
-                            className="h-8 w-8 border border-[var(--ink)]/25 font-[var(--font-display)] text-sm transition-colors hover:border-[var(--caoba)] disabled:opacity-30"
+                            className="h-8 w-8 border border-[var(--ink)]/25 font-[family-name:var(--font-display)] text-sm transition-colors hover:border-[var(--caoba)] disabled:opacity-30"
                           >
                             −
                           </button>
-                          <span className="w-6 text-center font-[var(--font-display)] tabular-nums">{cantidad}</span>
+                          <span className="w-6 text-center font-[family-name:var(--font-display)] tabular-nums">{cantidad}</span>
                           <button
                             type="button"
                             onClick={() => cambiarCantidad(p.id, 1)}
                             aria-label={lang === "es" ? "Agregar una unidad" : "Add one"}
-                            className="h-8 w-8 border border-[var(--ink)]/25 font-[var(--font-display)] text-sm transition-colors hover:border-[var(--caoba)]"
+                            className="h-8 w-8 border border-[var(--ink)]/25 font-[family-name:var(--font-display)] text-sm transition-colors hover:border-[var(--caoba)]"
                           >
                             +
                           </button>
@@ -304,7 +304,7 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
       >
         {enviado ? (
           <div className="text-center">
-            <h2 className="font-[var(--font-display)] text-xl font-bold">{lang === "es" ? "¡Pedido recibido!" : "Order received!"}</h2>
+            <h2 className="font-[family-name:var(--font-display)] text-xl font-bold">{lang === "es" ? "¡Pedido recibido!" : "Order received!"}</h2>
             <p className="mx-auto mt-3 max-w-xl text-[var(--on-dark-2)]">
               {lang === "es"
                 ? "Le contactaremos para coordinar el pago antes de su llegada."
@@ -313,7 +313,7 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
           </div>
         ) : (
           <div className="mx-auto max-w-xl text-center">
-            <h2 className="font-[var(--font-display)] text-xl font-bold">{lang === "es" ? "Su pedido" : "Your order"}</h2>
+            <h2 className="font-[family-name:var(--font-display)] text-xl font-bold">{lang === "es" ? "Su pedido" : "Your order"}</h2>
             {items.length === 0 ? (
               <p className="mx-auto mt-3 max-w-xl text-[var(--on-dark-2)]">
                 {lang === "es"
@@ -328,13 +328,13 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
                       <dt className="text-[var(--on-dark-2)]">
                         {it.cantidad} × {it.producto.nombre}
                       </dt>
-                      <dd className="m-0 font-[var(--font-display)] tabular-nums">{money(it.producto.precio * it.cantidad)}</dd>
+                      <dd className="m-0 font-[family-name:var(--font-display)] tabular-nums">{money(it.producto.precio * it.cantidad)}</dd>
                     </div>
                   ))}
                 </dl>
                 <div className="mt-3 flex items-center justify-between border-t border-[var(--on-dark-2)]/30 pt-3">
-                  <span className="font-[var(--font-display)] font-bold">{lang === "es" ? "Total" : "Total"}</span>
-                  <span className="font-[var(--font-display)] text-lg font-bold text-[var(--lamp-fill)] tabular-nums">
+                  <span className="font-[family-name:var(--font-display)] font-bold">{lang === "es" ? "Total" : "Total"}</span>
+                  <span className="font-[family-name:var(--font-display)] text-lg font-bold text-[var(--lamp-fill)] tabular-nums">
                     {money(total)}
                   </span>
                 </div>
@@ -353,7 +353,7 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
               type="button"
               onClick={() => void enviarPedido()}
               disabled={items.length === 0 || enviando}
-              className="mt-5 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] disabled:opacity-50"
+              className="mt-5 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] disabled:opacity-50"
             >
               {enviando
                 ? lang === "es"
@@ -389,12 +389,12 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
               type="button"
               onClick={() => setPopupAbierto(false)}
               aria-label={lang === "es" ? "Cerrar" : "Close"}
-              className="absolute top-3 right-3 font-[var(--font-display)] text-xl leading-none text-[var(--on-dark-2)] hover:text-[var(--on-dark)]"
+              className="absolute top-3 right-3 font-[family-name:var(--font-display)] text-xl leading-none text-[var(--on-dark-2)] hover:text-[var(--on-dark)]"
             >
               ×
             </button>
 
-            <h2 className="font-[var(--font-display)] text-2xl font-bold text-[var(--on-dark)]">
+            <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--on-dark)]">
               {lang === "es" ? "¿Ya tiene su reserva?" : "Already have a reservation?"}
             </h2>
             <p className="mt-2 text-sm text-[var(--on-dark-2)]">
@@ -409,13 +409,13 @@ export function ShopSections({ productos }: { productos: Producto[] }) {
                 onChange={(e) => setCodigo(e.target.value)}
                 placeholder={lang === "es" ? "Código de reserva" : "Reservation code"}
                 required
-                className="rounded-[1px] border border-[var(--on-dark-2)]/30 bg-[var(--ground)] px-3 py-2 font-[var(--font-display)] text-sm tracking-widest text-[var(--ink)] uppercase transition-[border-color,box-shadow] duration-200 outline-none focus:border-[var(--lamp-fill)] focus:ring-2 focus:ring-[var(--lamp-fill)]/30"
+                className="rounded-[1px] border border-[var(--on-dark-2)]/30 bg-[var(--ground)] px-3 py-2 font-[family-name:var(--font-display)] text-sm tracking-widest text-[var(--ink)] uppercase transition-[border-color,box-shadow] duration-200 outline-none focus:border-[var(--lamp-fill)] focus:ring-2 focus:ring-[var(--lamp-fill)]/30"
               />
               {errorCodigo && <p className="text-xs text-[var(--caoba)]">{errorCodigo}</p>}
               <button
                 type="submit"
                 disabled={validando}
-                className="inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] disabled:opacity-60"
               >
                 {validando ? (lang === "es" ? "Validando…" : "Validating…") : lang === "es" ? "Desbloquear compra" : "Unlock checkout"}
               </button>

@@ -137,7 +137,7 @@ export function Hero() {
         <div className="absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-[var(--night)]/70 to-transparent" />
 
         <div className="absolute inset-x-0 bottom-0 mx-auto max-w-6xl px-6 pb-10 sm:pb-14">
-          <h1 className="text-fluid-hero font-[var(--font-display)] leading-none tracking-tight font-semibold text-[var(--on-dark)]">
+          <h1 className="text-fluid-hero font-[family-name:var(--font-display)] leading-none tracking-tight font-semibold text-[var(--on-dark)]">
             {heading.map((line) => (
               <span key={line} className="block">
                 {line}
@@ -145,7 +145,7 @@ export function Hero() {
             ))}
           </h1>
           <p className="mt-4 text-lg text-[var(--on-dark)] sm:text-xl">{sub}</p>
-          <p className="mt-2 font-[var(--font-display)] text-sm font-semibold tracking-wide text-[var(--lamp-fill)]">
+          <p className="mt-2 font-[family-name:var(--font-display)] text-sm font-semibold tracking-wide text-[var(--lamp-fill)]">
             {proof}
           </p>
         </div>

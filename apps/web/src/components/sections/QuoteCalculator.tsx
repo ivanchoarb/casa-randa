@@ -9,10 +9,12 @@ import { PaxSelect } from "@/components/ui/PaxSelect";
 import { openDatePickerOnClick, openDatePickerOnKey, tryOpenPicker } from "@/lib/dom/openDatePicker";
 import { MagneticLink } from "@/components/ui/MagneticLink";
 import { Reveal } from "@/components/ui/Reveal";
+import { supabaseClient } from "@/lib/supabase-client";
+import { tarifaDirecta } from "@/lib/tarifaDirecta";
 
-const fieldLabel = "font-[var(--font-display)] text-xs tracking-wide text-[var(--ink-2)]";
+const fieldLabel = "font-[family-name:var(--font-display)] text-xs tracking-wide text-[var(--ink-2)]";
 const fieldInput =
-  "rounded-[1px] border border-[var(--ink)]/25 bg-[var(--ground)] px-3 py-2 font-[var(--font-display)] text-sm text-[var(--ink)] transition-[border-color,box-shadow] duration-200 outline-none focus:border-[var(--caoba)] focus:ring-2 focus:ring-[var(--caoba)]/20";
+  "rounded-[1px] border border-[var(--ink)]/25 bg-[var(--ground)] px-3 py-2 font-[family-name:var(--font-display)] text-sm text-[var(--ink)] transition-[border-color,box-shadow] duration-200 outline-none focus:border-[var(--caoba)] focus:ring-2 focus:ring-[var(--caoba)]/20";
 
 export function QuoteCalculator() {
   const { lang, t, money } = useLanguage();
@@ -27,7 +29,21 @@ export function QuoteCalculator() {
     requestAnimationFrame(() => tryOpenPicker(salidaRef.current));
   }
 
-  const quote = computeQuote({ checkIn, checkOut, pax, cancellation, plan });
+  // Tarifa real (PriceLabs, -5%) para las fechas elegidas — igual que la
+  // cotización manual del intranet, con RATE como respaldo si no hay datos
+  // sincronizados para esas fechas. Ver tarifaDirecta.ts.
+  const [tarifaNoche, setTarifaNoche] = useState(RATE);
+  useEffect(() => {
+    let cancelado = false;
+    void tarifaDirecta(supabaseClient, checkIn, checkOut).then((tarifa) => {
+      if (!cancelado) setTarifaNoche(tarifa);
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, [checkIn, checkOut]);
+
+  const quote = computeQuote({ checkIn, checkOut, pax, cancellation, plan, rate: tarifaNoche });
 
   // 2026-09-14, hallazgo de auditoría manual de Iván: nada revisaba
   // disponibilidad antes de guardar una solicitud — se pudo mandar una
@@ -120,7 +136,7 @@ export function QuoteCalculator() {
     <div className="border-y border-[var(--ink)]/10 bg-[var(--panel)]">
       <div className="mx-auto max-w-6xl px-6 py-20">
         <Reveal className="grid gap-5 sm:grid-cols-2 sm:items-end">
-          <h2 className="text-fluid-h2 font-[var(--font-display)] font-bold">
+          <h2 className="text-fluid-h2 font-[family-name:var(--font-display)] font-bold">
             {lang === "es" ? "Resérvela aquí, directamente sin intermediarios" : "Book it here, not through a platform"}
           </h2>
           <p className="text-[var(--ink-2)]">
@@ -179,7 +195,7 @@ export function QuoteCalculator() {
                 el formulario. Ahora es un detalle plegado, cerrado por
                 defecto, con el propio <details> nativo del navegador. */}
             <details className="mt-9 border-t border-[var(--ink)]/10 pt-5 text-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="cursor-pointer font-[var(--font-display)] font-semibold text-[var(--caoba)] select-none">
+              <summary className="cursor-pointer font-[family-name:var(--font-display)] font-semibold text-[var(--caoba)] select-none">
                 {lang === "es" ? "¿Por qué reservar directo? →" : "Why book direct? →"}
               </summary>
               <table className="mt-5 w-full table-fixed border-collapse text-left">
@@ -188,13 +204,13 @@ export function QuoteCalculator() {
                     <th scope="col" className="py-2 font-normal" />
                     <th
                       scope="col"
-                      className="w-20 py-2 font-[var(--font-display)] font-medium whitespace-nowrap sm:w-24"
+                      className="w-20 py-2 font-[family-name:var(--font-display)] font-medium whitespace-nowrap sm:w-24"
                     >
                       {lang === "es" ? "Directo" : "Direct"}
                     </th>
                     <th
                       scope="col"
-                      className="w-20 py-2 font-[var(--font-display)] font-medium whitespace-nowrap sm:w-24"
+                      className="w-20 py-2 font-[family-name:var(--font-display)] font-medium whitespace-nowrap sm:w-24"
                     >
                       Airbnb / Vrbo
                     </th>
@@ -207,7 +223,7 @@ export function QuoteCalculator() {
                       className="border-b border-[var(--ink)]/10 transition-colors duration-200 hover:bg-[var(--caoba)]/5"
                     >
                       <td className="py-3 pr-4">{t(row)}</td>
-                      <td className="py-3 pr-4 font-[var(--font-display)] font-semibold text-[var(--caoba)]">
+                      <td className="py-3 pr-4 font-[family-name:var(--font-display)] font-semibold text-[var(--caoba)]">
                         {lang === "es" ? "Sí" : "Yes"}
                       </td>
                       <td className="py-3 text-[var(--ink-2)]">
@@ -226,7 +242,7 @@ export function QuoteCalculator() {
             className="border-t-4 border-[var(--lamp-fill)] bg-[var(--night)] px-6 py-6 text-[var(--on-dark)] shadow-[0_18px_40px_-28px_rgba(20,33,26,0.55)]"
           >
           <aside>
-            <h3 className="font-[var(--font-display)] text-lg font-semibold text-[var(--on-dark)]">
+            <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--on-dark)]">
               {lang === "es" ? "Su cotización" : "Your quote"}
             </h3>
 
@@ -240,8 +256,8 @@ export function QuoteCalculator() {
               <>
                 <p className="mt-4 text-sm text-[var(--on-dark-2)]">
                   {lang === "es"
-                    ? `${quote.nights} ${quote.nights === 1 ? "noche" : "noches"}, ${pax} huéspedes, a ${money(RATE)} la noche.`
-                    : `${quote.nights} ${quote.nights === 1 ? "night" : "nights"}, ${pax} guests, at ${money(RATE)} a night.`}
+                    ? `${quote.nights} ${quote.nights === 1 ? "noche" : "noches"}, ${pax} huéspedes, a ${money(tarifaNoche)} la noche.`
+                    : `${quote.nights} ${quote.nights === 1 ? "night" : "nights"}, ${pax} guests, at ${money(tarifaNoche)} a night.`}
                 </p>
 
                 {/* Cancelación y pago viven aquí, no arriba con las fechas
@@ -250,7 +266,7 @@ export function QuoteCalculator() {
                     formulario inicial. */}
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label htmlFor="q-cancel" className="font-[var(--font-display)] text-xs text-[var(--on-dark-2)]">
+                    <label htmlFor="q-cancel" className="font-[family-name:var(--font-display)] text-xs text-[var(--on-dark-2)]">
                       {lang === "es" ? "Cancelación" : "Cancellation"}
                     </label>
                     <select
@@ -264,7 +280,7 @@ export function QuoteCalculator() {
                     </select>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label htmlFor="q-plan" className="font-[var(--font-display)] text-xs text-[var(--on-dark-2)]">
+                    <label htmlFor="q-plan" className="font-[family-name:var(--font-display)] text-xs text-[var(--on-dark-2)]">
                       {lang === "es" ? "Pago" : "Payment"}
                     </label>
                     <select
@@ -283,23 +299,23 @@ export function QuoteCalculator() {
                   {quote.lines.map((line, i) => (
                     <div key={i} className="contents">
                       <dt className="text-[var(--on-dark-2)]">{t(line.label)}</dt>
-                      <dd className="m-0 text-right font-[var(--font-display)] tabular-nums">
+                      <dd className="m-0 text-right font-[family-name:var(--font-display)] tabular-nums">
                         {line.amountUsd < 0 ? "−" : ""}
                         {money(Math.abs(line.amountUsd))}
                       </dd>
                     </div>
                   ))}
                   <div className="col-span-2 my-1 h-px bg-[var(--on-dark-2)]/30" />
-                  <dt className="font-[var(--font-display)] text-xl font-bold text-[var(--lamp-fill)]">
+                  <dt className="font-[family-name:var(--font-display)] text-xl font-bold text-[var(--lamp-fill)]">
                     {lang === "es" ? "Total" : "Total"}
                   </dt>
-                  <dd className="m-0 text-right font-[var(--font-display)] text-xl font-bold tabular-nums text-[var(--lamp-fill)]">
+                  <dd className="m-0 text-right font-[family-name:var(--font-display)] text-xl font-bold tabular-nums text-[var(--lamp-fill)]">
                     {money(quote.totalUsd)}
                   </dd>
                   <dt className="text-[var(--on-dark-2)]">
                     {plan === "30" ? (lang === "es" ? "Paga hoy, 30 %" : "Pay today, 30%") : lang === "es" ? "Paga hoy" : "Pay today"}
                   </dt>
-                  <dd className="m-0 text-right font-[var(--font-display)] tabular-nums">{money(quote.dueTodayUsd)}</dd>
+                  <dd className="m-0 text-right font-[family-name:var(--font-display)] tabular-nums">{money(quote.dueTodayUsd)}</dd>
                 </dl>
 
                 <p className="mt-4 text-sm leading-relaxed text-[var(--on-dark-2)]">
@@ -419,7 +435,7 @@ export function QuoteCalculator() {
                 <button
                   type="submit"
                   disabled={enviando}
-                  className="mt-1 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] disabled:opacity-60"
+                  className="mt-1 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] disabled:opacity-60"
                 >
                   {enviando
                     ? lang === "es"
@@ -438,7 +454,7 @@ export function QuoteCalculator() {
                   setMostrarFormulario(true);
                 }}
                 aria-disabled={!quote}
-                className={`mt-5 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] ${!quote ? "pointer-events-none opacity-50" : ""}`}
+                className={`mt-5 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] ${!quote ? "pointer-events-none opacity-50" : ""}`}
               >
                 {lang === "es" ? "Solicitar estas fechas" : "Request these dates"}
               </MagneticLink>

@@ -57,7 +57,7 @@ export function Neighborhood() {
     <div className="mx-auto max-w-6xl px-6 py-20">
       <div className="grid items-center gap-11 lg:grid-cols-2 lg:gap-14">
         <Reveal>
-          <h2 className="text-fluid-h2 font-[var(--font-display)] font-bold">
+          <h2 className="text-fluid-h2 font-[family-name:var(--font-display)] font-bold">
             {lang === "es" ? "Diablo Heights, la antigua Zona del Canal" : "Diablo Heights, the old Canal Zone"}
           </h2>
           <p className="mt-4 text-[var(--ink-2)]">
@@ -70,7 +70,7 @@ export function Neighborhood() {
             {DIST.map((d) => (
               <li key={d.es} className="flex items-baseline gap-3 border-b border-[var(--ink)]/10 py-2.5">
                 <span className="flex-1">{t(d)}</span>
-                <span className="font-[var(--font-display)] font-semibold tabular-nums text-[var(--caoba)]">
+                <span className="font-[family-name:var(--font-display)] font-semibold tabular-nums text-[var(--caoba)]">
                   {d.km.toString().replace(".", lang === "es" ? "," : ".")} km
                 </span>
               </li>
@@ -96,7 +96,7 @@ export function Neighborhood() {
 
       <div className="mt-16 border-t border-[var(--ink)]/10 pt-12">
         <Reveal>
-          <h3 className="font-[var(--font-display)] text-xl font-bold sm:text-2xl">
+          <h3 className="font-[family-name:var(--font-display)] text-xl font-bold sm:text-2xl">
             {lang === "es" ? "De la Zona del Canal a un barrio de la ciudad" : "From the Canal Zone to a city neighborhood"}
           </h3>
         </Reveal>
@@ -104,7 +104,7 @@ export function Neighborhood() {
         <div className="mt-9 grid grid-cols-2 gap-x-6 gap-y-9 sm:grid-cols-3 lg:grid-cols-6">
           {HISTORY.map((h) => (
             <div key={h.yearEn} className="border-t-[3px] border-[var(--caoba)] pt-3">
-              <b className="block font-[var(--font-display)] text-xl font-bold tabular-nums text-[var(--caoba)] sm:text-2xl">
+              <b className="block font-[family-name:var(--font-display)] text-xl font-bold tabular-nums text-[var(--caoba)] sm:text-2xl">
                 {lang === "es" ? h.yearEs : h.yearEn}
               </b>
               <p className="mt-2 text-sm leading-relaxed text-[var(--ink-2)]">{lang === "es" ? h.es : h.en}</p>

@@ -162,8 +162,10 @@ html.lenis.lenis-stopped {
   --on-dark: #e3e8da;
   --on-dark-2: #a9bca4;
 
-  --font-display: var(--font-archivo);
-  --font-body: var(--font-source-serif);
+  /* 2026-09-29: Fraunces (serif, display) + Inter (sans, body/UI) —
+     replaces Archivo + Source Serif 4. See layout.tsx for why. */
+  --font-display: var(--font-fraunces);
+  --font-body: var(--font-inter);
 }
 
 @theme inline {
@@ -177,8 +179,13 @@ html.lenis.lenis-stopped {
   --color-night-2: var(--night-2);
   --color-on-dark: var(--on-dark);
   --color-on-dark-2: var(--on-dark-2);
-  --font-sans: var(--font-display);
-  --font-serif: var(--font-body);
+  /* 2026-09-29: kept pointing at what they actually are now, not at the
+     old display/body roles — --font-display is a serif today (Fraunces),
+     so Tailwind's font-sans utility has to resolve to the real sans
+     (Inter/--font-body) or any component using font-sans would silently
+     render serif text. */
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -194,7 +201,7 @@ html.lenis.lenis-stopped {
 body {
   background: var(--ground);
   color: var(--ink);
-  font-family: var(--font-body), serif;
+  font-family: var(--font-body), sans-serif;
 }
 
 /*

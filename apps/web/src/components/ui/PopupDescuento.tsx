@@ -7,9 +7,9 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 const CLAVE_LOCALSTORAGE = "cr_popup_descuento_visto";
 const RETRASO_MS = 6000;
 
-const fieldLabel = "font-[var(--font-display)] text-xs tracking-wide text-[var(--on-dark-2)]";
+const fieldLabel = "font-[family-name:var(--font-display)] text-xs tracking-wide text-[var(--on-dark-2)]";
 const fieldInput =
-  "rounded-[1px] border border-[var(--on-dark-2)]/30 bg-[var(--ground)] px-3 py-2 font-[var(--font-display)] text-sm text-[var(--ink)] transition-[border-color,box-shadow] duration-200 outline-none focus:border-[var(--lamp-fill)] focus:ring-2 focus:ring-[var(--lamp-fill)]/30";
+  "rounded-[1px] border border-[var(--on-dark-2)]/30 bg-[var(--ground)] px-3 py-2 font-[family-name:var(--font-display)] text-sm text-[var(--ink)] transition-[border-color,box-shadow] duration-200 outline-none focus:border-[var(--lamp-fill)] focus:ring-2 focus:ring-[var(--lamp-fill)]/30";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -112,14 +112,14 @@ export function PopupDescuento() {
           type="button"
           onClick={recordarYCerrar}
           aria-label={lang === "es" ? "Cerrar" : "Close"}
-          className="absolute top-3 right-3 font-[var(--font-display)] text-xl leading-none text-[var(--on-dark-2)] hover:text-[var(--on-dark)]"
+          className="absolute top-3 right-3 font-[family-name:var(--font-display)] text-xl leading-none text-[var(--on-dark-2)] hover:text-[var(--on-dark)]"
         >
           ×
         </button>
 
         {enviado ? (
           <div>
-            <h2 className="font-[var(--font-display)] text-2xl font-bold text-[var(--on-dark)]">
+            <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--on-dark)]">
               {lang === "es" ? "¡Listo!" : "All set!"}
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-[var(--on-dark-2)]">
@@ -130,14 +130,14 @@ export function PopupDescuento() {
             <button
               type="button"
               onClick={recordarYCerrar}
-              className="mt-6 w-full rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)]"
+              className="mt-6 w-full rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)]"
             >
               {lang === "es" ? "Cerrar" : "Close"}
             </button>
           </div>
         ) : (
           <>
-            <h2 className="font-[var(--font-display)] text-2xl font-bold text-[var(--on-dark)]">
+            <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--on-dark)]">
               {lang === "es" ? (
                 <>
                   5% de descuento en <br /> tu próxima estadía
@@ -237,7 +237,7 @@ export function PopupDescuento() {
               <button
                 type="submit"
                 disabled={enviando}
-                className="mt-1 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] disabled:opacity-60"
+                className="mt-1 inline-flex w-full items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)] disabled:opacity-60"
               >
                 {enviando
                   ? lang === "es"

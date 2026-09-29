@@ -7,7 +7,7 @@ import { MagneticLink } from "@/components/ui/MagneticLink";
 import { CATEGORIES, type Place } from "../places";
 import { ImageCarousel } from "../ImageCarousel";
 
-const fieldLabel = "font-[var(--font-display)] text-xs font-semibold tracking-[0.1em] text-[var(--caoba)] uppercase";
+const fieldLabel = "font-[family-name:var(--font-display)] text-xs font-semibold tracking-[0.1em] text-[var(--caoba)] uppercase";
 
 export function PlaceDetail({ place }: { place: Place }) {
   const { lang, t } = useLanguage();
@@ -19,7 +19,7 @@ export function PlaceDetail({ place }: { place: Place }) {
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-16 sm:py-20">
-      <Link href="/que-hacer-en-panama" className="nav-link font-[var(--font-display)] text-sm">
+      <Link href="/que-hacer-en-panama" className="nav-link font-[family-name:var(--font-display)] text-sm">
         {lang === "es" ? "← Volver a la guía" : "← Back to the guide"}
       </Link>
 
@@ -28,18 +28,18 @@ export function PlaceDetail({ place }: { place: Place }) {
       </Reveal>
 
       <Reveal delayMs={60}>
-        <p className="mt-6 font-[var(--font-display)] text-xs font-semibold tracking-[0.14em] text-[var(--caoba)] uppercase">
+        <p className="mt-6 font-[family-name:var(--font-display)] text-xs font-semibold tracking-[0.14em] text-[var(--caoba)] uppercase">
           {lang === "es" ? category.es : category.en}
         </p>
-        <h1 className="text-fluid-h2 mt-2 font-[var(--font-display)] font-bold">{place.name}</h1>
+        <h1 className="text-fluid-h2 mt-2 font-[family-name:var(--font-display)] font-bold">{place.name}</h1>
         <p className="mt-4 max-w-2xl text-[var(--ink-2)]">{t(place.teaser)}</p>
-        <p className="mt-3 text-sm font-[var(--font-display)] font-semibold text-[var(--ink-2)]">
+        <p className="mt-3 text-sm font-[family-name:var(--font-display)] font-semibold text-[var(--ink-2)]">
           {"$".repeat(place.priceLevel)}
         </p>
       </Reveal>
 
       <Reveal delayMs={120} className="mt-10 border-t border-[var(--ink)]/10 pt-8">
-        <h2 className="font-[var(--font-display)] text-lg font-bold">
+        <h2 className="font-[family-name:var(--font-display)] text-lg font-bold">
           {lang === "es" ? "Por qué lo recomendamos" : "Why we recommend it"}
         </h2>
         <p className="mt-3 leading-relaxed text-[var(--ink-2)]">{t(place.why)}</p>
@@ -69,7 +69,7 @@ export function PlaceDetail({ place }: { place: Place }) {
         scale
         className="mt-10 border-t-4 border-[var(--lamp-fill)] bg-[var(--night)] px-6 py-8 text-center text-[var(--on-dark)] sm:px-10"
       >
-        <h2 className="font-[var(--font-display)] text-xl font-bold">
+        <h2 className="font-[family-name:var(--font-display)] text-xl font-bold">
           {lang === "es" ? "¿Quiere vivir esta experiencia?" : "Want to experience this?"}
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-[var(--on-dark-2)]">
@@ -81,7 +81,7 @@ export function PlaceDetail({ place }: { place: Place }) {
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
           <MagneticLink
             href={requestHref}
-            className="inline-flex items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)]"
+            className="inline-flex items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)]"
           >
             {lang === "es" ? "Solicitar experiencia" : "Request experience"}
           </MagneticLink>

@@ -19,7 +19,7 @@
   --good: #3f7a4c;
   --good-bg: #dce9dd;
 
-  --font-display: var(--font-archivo);
+  --font-display: var(--font-inter);
 }
 
 @theme inline {
@@ -60,25 +60,28 @@ body {
 }
 
 /*
- * ---------- Sistema tipográfico: el eje variable de Archivo ----------
- * Un mismo tipo de letra, dos tratamientos deliberados: los titulares se
- * abren (wdth ancho, como el rótulo tallado de la casa); las cifras se
- * cierran (wdth angosto + tabular-nums), para que una columna de montos
- * se lea como una libreta de cuentas, no como una tarjeta de SaaS.
+ * ---------- Sistema tipográfico ----------
+ * 2026-09-29: Archivo → Inter (a pedido de Ivan). Inter es variable en
+ * peso pero no tiene eje de ancho ("wdth"), así que el tratamiento
+ * original de estas tres clases (titulares más anchos, cifras más
+ * angostas, como el rótulo tallado de la casa) ya no aplica — el
+ * navegador ignora un eje que la fuente no soporta, no rompe nada, solo
+ * deja de estrecharse/ensancharse. Lo que sí sigue funcionando: el peso
+ * y los números tabulares.
  */
 h1,
 .disp {
-  font-variation-settings: "wdth" 112, "wght" 700;
+  font-weight: 700;
   letter-spacing: -0.01em;
 }
 .eyebrow {
-  font-variation-settings: "wdth" 118, "wght" 600;
+  font-weight: 600;
   font-size: 0.7rem;
   letter-spacing: 0.08em;
   color: var(--ink-2);
 }
 .num {
-  font-variation-settings: "wdth" 88, "wght" 600;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 

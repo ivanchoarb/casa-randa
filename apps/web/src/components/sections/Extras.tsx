@@ -22,7 +22,7 @@ export function Extras({ productos }: { productos: Producto[] }) {
       <div className="mx-auto max-w-6xl px-6 py-20">
         <div className="grid items-center gap-6 sm:grid-cols-[1fr_auto] sm:gap-10">
           <Reveal>
-            <h2 className="text-fluid-h2-sm font-[var(--font-display)] font-bold">
+            <h2 className="text-fluid-h2-sm font-[family-name:var(--font-display)] font-bold">
               {lang === "es" ? "Llegue a una casa ya surtida" : "Arrive to a house already stocked"}
             </h2>
             <p className="mt-3 text-[var(--ink-2)]">
@@ -34,13 +34,13 @@ export function Extras({ productos }: { productos: Producto[] }) {
           <Reveal delayMs={120} className="flex flex-wrap gap-3">
             <Link
               href="/tienda"
-              className="btn-sweep inline-flex items-center justify-center rounded-[1px] border border-[var(--ink)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold"
+              className="btn-sweep inline-flex items-center justify-center rounded-[1px] border border-[var(--ink)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold"
             >
               {lang === "es" ? "Ver la tienda" : "Open the shop"}
             </Link>
             <Link
               href="/que-hacer-en-panama"
-              className="btn-sweep inline-flex items-center justify-center rounded-[1px] border border-[var(--ink)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold"
+              className="btn-sweep inline-flex items-center justify-center rounded-[1px] border border-[var(--ink)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold"
             >
               {lang === "es" ? "Ver la guía de Panamá" : "Open the Panama guide"}
             </Link>
@@ -65,7 +65,7 @@ export function Extras({ productos }: { productos: Producto[] }) {
                     )}
                   </div>
                   <div className="p-3">
-                    <p className="line-clamp-2 min-h-[2.5rem] font-[var(--font-display)] text-sm font-semibold">
+                    <p className="line-clamp-2 min-h-[2.5rem] font-[family-name:var(--font-display)] text-sm font-semibold">
                       {p.nombre}
                     </p>
                     <p className="mt-1 text-sm text-[var(--caoba)]">{money(p.precio)}</p>
@@ -80,7 +80,7 @@ export function Extras({ productos }: { productos: Producto[] }) {
                   type="button"
                   onClick={() => desplazar(-1)}
                   aria-label={lang === "es" ? "Ver anteriores" : "See previous"}
-                  className="flex h-9 w-9 items-center justify-center border border-[var(--ink)]/25 font-[var(--font-display)] transition-colors hover:border-[var(--caoba)]"
+                  className="flex h-9 w-9 items-center justify-center border border-[var(--ink)]/25 font-[family-name:var(--font-display)] transition-colors hover:border-[var(--caoba)]"
                 >
                   ‹
                 </button>
@@ -88,7 +88,7 @@ export function Extras({ productos }: { productos: Producto[] }) {
                   type="button"
                   onClick={() => desplazar(1)}
                   aria-label={lang === "es" ? "Ver siguientes" : "See next"}
-                  className="flex h-9 w-9 items-center justify-center border border-[var(--ink)]/25 font-[var(--font-display)] transition-colors hover:border-[var(--caoba)]"
+                  className="flex h-9 w-9 items-center justify-center border border-[var(--ink)]/25 font-[family-name:var(--font-display)] transition-colors hover:border-[var(--caoba)]"
                 >
                   ›
                 </button>

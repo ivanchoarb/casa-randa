@@ -32,7 +32,7 @@ function Confirmacion() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--ground)] px-6">
       <div className="w-full max-w-sm rounded-[1px] border border-[var(--ink)]/10 bg-[var(--panel)] p-8 text-center shadow-sm">
-        <p className="font-[var(--font-display)] text-xs font-semibold tracking-wide text-[var(--caoba)] uppercase">
+        <p className="font-[family-name:var(--font-display)] text-xs font-semibold tracking-wide text-[var(--caoba)] uppercase">
           Casa Randa
         </p>
         {estado === "procesando" && (
@@ -40,7 +40,7 @@ function Confirmacion() {
         )}
         {estado === "listo" && (
           <>
-            <h1 className="mt-1 font-[var(--font-display)] text-xl font-bold">{lang === "es" ? "Listo" : "Done"}</h1>
+            <h1 className="mt-1 font-[family-name:var(--font-display)] text-xl font-bold">{lang === "es" ? "Listo" : "Done"}</h1>
             <p className="mt-3 text-sm text-[var(--ink-2)]">
               {lang === "es"
                 ? "Ya no recibirás más correos de Casa Randa."
@@ -50,7 +50,7 @@ function Confirmacion() {
         )}
         {estado === "error" && (
           <>
-            <h1 className="mt-1 font-[var(--font-display)] text-xl font-bold">
+            <h1 className="mt-1 font-[family-name:var(--font-display)] text-xl font-bold">
               {lang === "es" ? "No se pudo procesar" : "Couldn't process this"}
             </h1>
             <p className="mt-3 text-sm text-[var(--ink-2)]">

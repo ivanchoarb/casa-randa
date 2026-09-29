@@ -7,9 +7,9 @@ import { PaxSelect } from "@/components/ui/PaxSelect";
 import { openDatePickerOnClick, openDatePickerOnKey, tryOpenPicker } from "@/lib/dom/openDatePicker";
 import { MagneticLink } from "@/components/ui/MagneticLink";
 
-const fieldLabel = "font-[var(--font-display)] text-xs tracking-wide text-[var(--on-dark-2)]";
+const fieldLabel = "font-[family-name:var(--font-display)] text-xs tracking-wide text-[var(--on-dark-2)]";
 const fieldInput =
-  "rounded-[1px] border border-[var(--on-dark-2)]/40 bg-[var(--on-dark)]/[0.06] px-3 py-2 font-[var(--font-display)] text-sm text-[var(--on-dark)] [color-scheme:dark] transition-[border-color,box-shadow] duration-200 outline-none focus:border-[var(--lamp-fill)] focus:ring-2 focus:ring-[var(--lamp-fill)]/25";
+  "rounded-[1px] border border-[var(--on-dark-2)]/40 bg-[var(--on-dark)]/[0.06] px-3 py-2 font-[family-name:var(--font-display)] text-sm text-[var(--on-dark)] [color-scheme:dark] transition-[border-color,box-shadow] duration-200 outline-none focus:border-[var(--lamp-fill)] focus:ring-2 focus:ring-[var(--lamp-fill)]/25";
 
 export function AvailabilityBar() {
   const { lang } = useLanguage();
@@ -63,7 +63,7 @@ export function AvailabilityBar() {
         </div>
         <MagneticLink
           href="#reservar"
-          className="inline-flex items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)]"
+          className="inline-flex items-center justify-center rounded-[1px] bg-[var(--lamp-fill)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold text-[#20140a] transition-colors hover:bg-[var(--lamp-fill-hover)]"
         >
           {lang === "es" ? "Ver cuánto cuesta" : "See what it costs"}
         </MagneticLink>

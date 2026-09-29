@@ -12,7 +12,7 @@ export function PageHero({ title, intro }: { title: Bilingual; intro: Bilingual 
     <div className="bg-[var(--night)] text-[var(--on-dark)]">
       <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
         <Reveal>
-          <h1 className="text-fluid-h2 font-[var(--font-display)] font-bold">{t(title)}</h1>
+          <h1 className="text-fluid-h2 font-[family-name:var(--font-display)] font-bold">{t(title)}</h1>
           <p className="mt-4 max-w-2xl text-[var(--on-dark-2)]">{t(intro)}</p>
         </Reveal>
       </div>

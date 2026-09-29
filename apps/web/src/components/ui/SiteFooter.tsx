@@ -22,7 +22,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-6">
         <Reveal className="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-8 sm:gap-11">
           <div>
-            <h4 className="font-[var(--font-display)] text-xs font-semibold tracking-wide text-[var(--on-dark-2)]">
+            <h4 className="font-[family-name:var(--font-display)] text-xs font-semibold tracking-wide text-[var(--on-dark-2)]">
               {lang === "es" ? "La casa" : "The house"}
             </h4>
             <p className="mt-3 max-w-[30ch] text-sm text-[var(--on-dark-2)]">
@@ -34,7 +34,7 @@ export function SiteFooter() {
             </p>
           </div>
           <div>
-            <h4 className="font-[var(--font-display)] text-xs font-semibold tracking-wide text-[var(--on-dark-2)]">
+            <h4 className="font-[family-name:var(--font-display)] text-xs font-semibold tracking-wide text-[var(--on-dark-2)]">
               {lang === "es" ? "Reservas" : "Bookings"}
             </h4>
             <p className="mt-3 max-w-[30ch] text-sm text-[var(--on-dark-2)]">
@@ -58,7 +58,7 @@ export function SiteFooter() {
             </p>
           </div>
           <div>
-            <h4 className="font-[var(--font-display)] text-xs font-semibold tracking-wide text-[var(--on-dark-2)]">
+            <h4 className="font-[family-name:var(--font-display)] text-xs font-semibold tracking-wide text-[var(--on-dark-2)]">
               {lang === "es" ? "Registro" : "Registration"}
             </h4>
             <p className="mt-3 max-w-[30ch] text-sm tabular-nums text-[var(--on-dark-2)]">HAES 4182283</p>
@@ -67,7 +67,7 @@ export function SiteFooter() {
             </p>
           </div>
           <div>
-            <h4 className="font-[var(--font-display)] text-xs font-semibold tracking-wide text-[var(--on-dark-2)]">
+            <h4 className="font-[family-name:var(--font-display)] text-xs font-semibold tracking-wide text-[var(--on-dark-2)]">
               {lang === "es" ? "Síganos" : "Follow"}
             </h4>
             <p className="mt-3 max-w-[30ch] text-sm text-[var(--on-dark-2)]">

@@ -13,8 +13,8 @@ export function PlacePlaceholder({ className = "" }: { className?: string }) {
 
   return (
     <div className={`flex flex-col items-center justify-center gap-2 bg-[var(--night)] ${className}`}>
-      <span className="font-[var(--font-display)] text-2xl font-bold tracking-wide text-[var(--lamp-fill)]">CR</span>
-      <span className="font-[var(--font-display)] text-xs tracking-wide text-[var(--on-dark-2)] uppercase">
+      <span className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-wide text-[var(--lamp-fill)]">CR</span>
+      <span className="font-[family-name:var(--font-display)] text-xs tracking-wide text-[var(--on-dark-2)] uppercase">
         {lang === "es" ? "Foto próximamente" : "Photo coming soon"}
       </span>
     </div>

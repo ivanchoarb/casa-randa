@@ -15,7 +15,7 @@ export function Reviews() {
     <div className="bg-[var(--night)] text-[var(--on-dark)]">
       <div className="mx-auto max-w-6xl px-6 py-20">
         <Reveal className="grid gap-5 sm:grid-cols-2 sm:items-end">
-          <h2 className="text-fluid-h2 font-[var(--font-display)] font-bold">
+          <h2 className="text-fluid-h2 font-[family-name:var(--font-display)] font-bold">
             {lang === "es" ? "Lo que dijeron dieciséis grupos" : "What sixteen groups said"}
           </h2>
           <p className="text-[var(--on-dark-2)]">
@@ -26,9 +26,9 @@ export function Reviews() {
         </Reveal>
 
         <div className="mt-10 flex flex-wrap items-end gap-10 sm:gap-13">
-          <div className="font-[var(--font-display)] text-7xl leading-none font-bold tabular-nums text-[var(--lamp-fill)] sm:text-8xl">
+          <div className="font-[family-name:var(--font-display)] text-7xl leading-none font-bold tabular-nums text-[var(--lamp-fill)] sm:text-8xl">
             {score.toFixed(2).replace(".", lang === "es" ? "," : ".")}
-            <small className="mt-3 block font-[var(--font-display)] text-sm font-medium tracking-wide text-[var(--on-dark-2)]">
+            <small className="mt-3 block font-[family-name:var(--font-display)] text-sm font-medium tracking-wide text-[var(--on-dark-2)]">
               {lang === "es" ? "16 reseñas en Airbnb" : "16 reviews on Airbnb"}
             </small>
           </div>
@@ -43,7 +43,7 @@ export function Reviews() {
                     style={{ width: `${((s.v - 4.5) / 0.5) * 100}%`, transitionDelay: `${i * 90}ms` }}
                   />
                 </span>
-                <span className="text-right font-[var(--font-display)] tabular-nums">
+                <span className="text-right font-[family-name:var(--font-display)] tabular-nums">
                   {s.v.toFixed(1).replace(".", lang === "es" ? "," : ".")}
                 </span>
               </div>

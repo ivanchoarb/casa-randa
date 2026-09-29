@@ -20,7 +20,7 @@ export function LangToggle() {
   };
 
   const btn = (active: boolean) =>
-    `relative z-10 flex-1 px-2 py-1 font-[var(--font-display)] text-xs font-semibold tracking-wide transition-colors duration-300 ${
+    `relative z-10 flex-1 px-2 py-1 font-[family-name:var(--font-display)] text-xs font-semibold tracking-wide transition-colors duration-300 ${
       active ? "text-[var(--night)]" : "text-[var(--on-dark-2)] hover:text-[var(--on-dark)]"
     }`;
 
