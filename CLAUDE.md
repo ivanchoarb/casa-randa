@@ -48,6 +48,66 @@ Requires Node.js (installed here via nvm — run `. ~/.nvm/nvm.sh` first in a ne
 
 There is no test suite yet.
 
+## Commits y despliegue a producción (Vercel)
+
+Regla explícita de Ivan (2026-09-29), vale para Claude Code y para Codex —
+**anula** la regla general de "nunca hacer commit sin que el usuario lo pida":
+
+**Commits automáticos, sin preguntar.** Cada vez que se complete una unidad
+de trabajo coherente (un fix, una función, un grupo de archivos
+relacionados), hacer un commit organizado con un mensaje que diga qué
+cambió y por qué — no esperar a que el usuario lo pida, y no acumular todo
+en un commit gigante al final de la sesión. Esto no cambia las demás reglas
+de higiene: revisar `git status`/`git diff` antes de `git add`, nunca incluir
+`.env`, credenciales, ni archivos de otra tarea o de otro agente en curso
+(ver "Coordinación" en [AGENTS.md](AGENTS.md)) — commitear solo lo que
+pertenece al cambio actual.
+
+**Cuándo desplegar.** Cuando el usuario exprese la intención de subir los
+cambios a producción — frases como "subamos los cambios", "quiero subir
+esto a GitHub", "súbelo", "llévalo a producción", "quiero verlo en Vercel",
+o cualquier variante equivalente — ejecutar, en este orden, sin saltarse
+pasos:
+
+1. `pnpm build` desde la raíz del repo (turbo corre el build de ambas apps).
+   Si falla, **parar y corregir** antes de continuar — nunca hacer push con
+   un build roto.
+2. `pnpm lint` desde la raíz. Si falla, parar y corregir.
+3. Hacer commit de cualquier cambio pendiente que pertenezca a la tarea
+   actual (ver regla de arriba) — sin arrastrar cambios ajenos.
+4. `git push` a la rama actual.
+5. Confirmar el trigger real del deploy antes de "esperar" nada: ambos
+   proyectos (`apps/web` → randahome.com, `apps/intranet` →
+   intranet.randahome.com) están conectados a este repo de GitHub y Vercel
+   despliega automáticamente cada push a `main` — no hace falta `vercel
+   deploy` manual. Si el cambio se hizo vía PR, el deploy real lo dispara el
+   **merge** a `main`, no el push a la rama del PR — verificar después de
+   mergear, no antes.
+6. **Verificar que el deployment terminó bien**, nunca asumirlo solo porque
+   el push no dio error. Consultar la API de Vercel con curl (no hay `vercel`
+   ni `gh` instalados en esta máquina — usar las APIs REST directamente, como
+   ya se hizo en sesiones anteriores para GitHub):
+
+   ```bash
+   # Token: primero variable de entorno VERCEL_TOKEN; si no existe, el archivo
+   # local de la CLI de Vercel (macOS: ~/Library/Application Support/com.vercel.cli/auth.json;
+   # Linux: ~/.local/share/com.vercel.cli/auth.json). Nunca imprimir el token
+   # completo ni commitear ese archivo. Si no se encuentra ninguno, avisar al
+   # usuario que no se puede verificar el deploy desde este entorno y parar
+   # después del push.
+   PROJECT_ID=$(python3 -c "import json;print(json.load(open('apps/web/.vercel/project.json'))['projectId'])")
+   curl -s "https://api.vercel.com/v6/deployments?projectId=$PROJECT_ID&limit=1&teamId=team_BJ5SO3uFkb8p56nrcXCnpRv5" \
+     -H "Authorization: Bearer $TOKEN" | python3 -m json.tool
+   ```
+
+   Repetir con `apps/intranet/.vercel/project.json` si esa app también
+   cambió. Leer `readyState` en la respuesta: `READY` es éxito (reportar la
+   URL), `ERROR` es fallo (leer `errorMessage`, no reportar éxito), `BUILDING`
+   o `QUEUED` significa que aún no terminó — volver a consultar antes de dar
+   el resultado por bueno.
+7. Reportar al usuario el resultado real — éxito con URL, o fallo con el
+   error concreto — nunca "listo" solo porque el `git push` no falló.
+
 ## Documentation practice
 
 Decisions and plans get written to a Markdown file in [docs/](docs/), not left to live only in chat history. When a session produces a real plan, architecture decision, or analysis worth remembering, save it there (topic-named file, dated inside the doc) instead of treating the conversation as the record. [docs/arquitectura-migracion.md](docs/arquitectura-migracion.md) (which tools, and the running decisions log) and [docs/logica-negocio-y-flujos.md](docs/logica-negocio-y-flujos.md) (how they connect — entities, end-to-end flows, integration map, workflow diagram) are the first of these.
