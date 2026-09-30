@@ -34,13 +34,13 @@ export function Extras({ productos }: { productos: Producto[] }) {
           <Reveal delayMs={120} className="flex flex-wrap gap-3">
             <Link
               href="/tienda"
-              className="btn-sweep inline-flex items-center justify-center rounded-[1px] border border-[var(--ink)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold"
+              className="btn-sweep inline-flex items-center justify-center rounded-full border border-[var(--ink)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold"
             >
               {lang === "es" ? "Ver la tienda" : "Open the shop"}
             </Link>
             <Link
               href="/que-hacer-en-panama"
-              className="btn-sweep inline-flex items-center justify-center rounded-[1px] border border-[var(--ink)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold"
+              className="btn-sweep inline-flex items-center justify-center rounded-full border border-[var(--ink)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold"
             >
               {lang === "es" ? "Ver la guía de Panamá" : "Open the Panama guide"}
             </Link>
