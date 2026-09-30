@@ -52,7 +52,13 @@ export async function POST(req: Request) {
     .single();
   if (error || !contacto) return fail("No se pudo guardar la suscripción.", 500);
 
-  if (yaSuscrito) return Response.json({ ok: true });
+  // 2026-09-30, bug real reportado por Ivan ("no envía correo electrónico"):
+  // cuando el correo ya estaba suscrito, esta ruta respondía { ok: true } sin
+  // enviar nada — correcto para no reenviar el cupón, pero el popup no tenía
+  // forma de distinguirlo de un envío real y siempre mostraba "se ha enviado
+  // el cupón", mintiéndole al visitante. Ahora se le informa a la interfaz
+  // si de verdad se envió un correo o no.
+  if (yaSuscrito) return Response.json({ ok: true, correoEnviado: false });
 
   const origin = new URL(req.url).origin;
   const enlaceBaja = `${origin}/darse-de-baja?id=${contacto.id}`;
@@ -68,5 +74,5 @@ export async function POST(req: Request) {
     return fail(`No se pudo enviar el correo: ${e instanceof Error ? e.message : String(e)}`, 502);
   }
 
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, correoEnviado: true });
 }

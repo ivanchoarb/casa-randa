@@ -25,6 +25,7 @@ export function PopupDescuento() {
   const [consentimiento, setConsentimiento] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [yaSuscrito, setYaSuscrito] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,6 +78,7 @@ export function PopupDescuento() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Error");
+      setYaSuscrito(json.correoEnviado === false);
       setEnviado(true);
       try {
         localStorage.setItem(CLAVE_LOCALSTORAGE, "1");
@@ -120,12 +122,16 @@ export function PopupDescuento() {
         {enviado ? (
           <div>
             <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--on-dark)]">
-              {lang === "es" ? "¡Listo!" : "All set!"}
+              {yaSuscrito ? (lang === "es" ? "Ya estás suscrito" : "You're already subscribed") : lang === "es" ? "¡Listo!" : "All set!"}
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-[var(--on-dark-2)]">
-              {lang === "es"
-                ? "Se ha enviado el cupón de descuento a tu correo electrónico."
-                : "We've sent the discount coupon to your email."}
+              {yaSuscrito
+                ? lang === "es"
+                  ? "Este correo ya recibió el cupón de bienvenida antes — revisa tu bandeja de entrada (y spam). Si no lo encuentras, escríbenos a booking@randahome.com."
+                  : "This email already received the welcome coupon before — check your inbox (and spam). If you can't find it, email us at booking@randahome.com."
+                : lang === "es"
+                  ? "Se ha enviado el cupón de descuento a tu correo electrónico."
+                  : "We've sent the discount coupon to your email."}
             </p>
             <button
               type="button"
