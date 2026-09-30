@@ -83,6 +83,7 @@ export default function LoginPage() {
   const loginError = data && data.success === false ? data.error : undefined;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mostrarPassword, setMostrarPassword] = useState(false);
   const [modo, setModo] = useState<"entrar" | "recuperar">("entrar");
 
   if (modo === "recuperar") {
@@ -120,14 +121,23 @@ export default function LoginPage() {
         <label className="mt-4 block text-sm font-medium" htmlFor="password">
           Contraseña
         </label>
-        <input
-          id="password"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={input}
-        />
+        <div className="relative">
+          <input
+            id="password"
+            type={mostrarPassword ? "text" : "password"}
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={`${input} pr-16`}
+          />
+          <button
+            type="button"
+            onClick={() => setMostrarPassword((v) => !v)}
+            className="absolute inset-y-0 right-0 px-3 text-xs font-medium text-ink-2 hover:text-ink"
+          >
+            {mostrarPassword ? "Ocultar" : "Mostrar"}
+          </button>
+        </div>
 
         {loginError && (
           <p className="mt-4 text-sm text-caoba">
