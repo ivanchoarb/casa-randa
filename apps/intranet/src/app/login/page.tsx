@@ -68,7 +68,19 @@ function RecuperarContrasena({ onVolver }: { onVolver: () => void }) {
 }
 
 export default function LoginPage() {
-  const { mutate: login, isPending, error } = useLogin<{ email: string; password: string }>();
+  // 2026-09-30, bug real reportado por Ivan ("doy ingresar y no hace
+  // ninguna acción"): reproducido en producción con credenciales de
+  // prueba — el authProvider (auth-provider.ts) devuelve
+  // { success: false, error } para un login inválido, sin lanzar una
+  // excepción. `useMutation` de react-query considera eso una mutación
+  // EXITOSA (la promesa resolvió, no rechazó), así que `error` de
+  // useLogin nunca se llena — queda en el "data" resuelto, no en
+  // "error". Sin un notificationProvider configurado en este proyecto
+  // (no hay ninguno en providers.tsx), el toast interno de Refine para
+  // este caso tampoco se ve, así que el usuario no veía nada. Se lee
+  // `data` en vez de `error`.
+  const { mutate: login, isPending, data } = useLogin<{ email: string; password: string }>();
+  const loginError = data && data.success === false ? data.error : undefined;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [modo, setModo] = useState<"entrar" | "recuperar">("entrar");
@@ -117,10 +129,10 @@ export default function LoginPage() {
           className={input}
         />
 
-        {error && (
+        {loginError && (
           <p className="mt-4 text-sm text-caoba">
-            {typeof error === "object" && error && "message" in error
-              ? String(error.message)
+            {typeof loginError === "object" && loginError && "message" in loginError
+              ? String(loginError.message)
               : "No se pudo iniciar sesión."}
           </p>
         )}
