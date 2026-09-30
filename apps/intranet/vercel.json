@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapis.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/sync/ical", "schedule": "0 13 * * *" },
+    { "path": "/api/sync/pricelabs", "schedule": "0 13 * * *" },
+    { "path": "/api/sync/ical", "schedule": "0 15 * * *" },
+    { "path": "/api/sync/pricelabs", "schedule": "0 15 * * *" },
+    { "path": "/api/sync/ical", "schedule": "0 20 * * *" },
+    { "path": "/api/sync/pricelabs", "schedule": "0 20 * * *" },
+    { "path": "/api/sync/ical", "schedule": "0 1 * * *" },
+    { "path": "/api/sync/pricelabs", "schedule": "0 1 * * *" },
+    { "path": "/api/sync/ical", "schedule": "0 3 * * *" },
+    { "path": "/api/sync/pricelabs", "schedule": "0 3 * * *" }
+  ]
+}

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTable } from "@refinedev/core";
 import { usePermisos } from "@/lib/use-permisos";
+import { supabaseClient } from "@/lib/supabase-client";
 
 interface Bloqueo {
   id: string;
@@ -124,6 +125,43 @@ export default function CalendarioPage() {
   const mensajeWhatsApp = useMemo(() => construirMensajeWhatsApp(proximasConfirmadas), [proximasConfirmadas]);
   const enlaceWhatsApp = `https://wa.me/?text=${encodeURIComponent(mensajeWhatsApp)}`;
 
+  // 2026-09-30, a pedido de Ivan: botón para disparar la sincronización
+  // (iCal Airbnb/Vrbo + tarifas PriceLabs) sin pedirlo por chat. También
+  // corre automático 5 veces al día vía Vercel Cron (ver vercel.json) —
+  // este botón es para cuando no se quiere esperar al siguiente horario.
+  const [sincronizando, setSincronizando] = useState(false);
+  const [resultadoSync, setResultadoSync] = useState<string | null>(null);
+  async function sincronizarAhora() {
+    setSincronizando(true);
+    setResultadoSync(null);
+    try {
+      const { data } = await supabaseClient.auth.getSession();
+      const token = data.session?.access_token;
+      const res = await fetch("/api/sync/manual", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setResultadoSync(body.error ?? "No se pudo sincronizar.");
+      } else {
+        const airbnb = body.ical?.airbnb;
+        const vrbo = body.ical?.vrbo;
+        const partes = [
+          airbnb?.ok ? `Airbnb: ${airbnb.bloqueos} bloqueos` : `Airbnb: error`,
+          vrbo?.ok ? `Vrbo: ${vrbo.bloqueos} bloqueos` : `Vrbo: error`,
+          body.pricelabs?.ok !== false ? "Tarifas actualizadas" : "PriceLabs: error",
+        ];
+        setResultadoSync(`Sincronizado — ${partes.join(" · ")}`);
+        tableQuery.refetch();
+      }
+    } catch (error) {
+      setResultadoSync(String(error));
+    } finally {
+      setSincronizando(false);
+    }
+  }
+
   return (
     <div>
       <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Disponibilidad</p>
@@ -132,6 +170,14 @@ export default function CalendarioPage() {
         <p className="text-sm text-ink-2">
           {tableQuery.isLoading ? "Cargando…" : `${vigentes.length} bloqueos vigentes`}
         </p>
+        <button
+          type="button"
+          onClick={sincronizarAhora}
+          disabled={sincronizando}
+          className="rounded-md border border-line bg-panel px-3 py-1.5 text-xs font-semibold text-ink disabled:opacity-60"
+        >
+          {sincronizando ? "Sincronizando…" : "Sincronizar ahora"}
+        </button>
         {can("reservas") && proximasConfirmadas.length > 0 && (
           <a
             href={enlaceWhatsApp}
@@ -143,6 +189,8 @@ export default function CalendarioPage() {
           </a>
         )}
       </div>
+      {resultadoSync && <p className="mt-1 text-xs text-ink-2">{resultadoSync}</p>}
+
       {can("reservas") && proximasConfirmadas.length > 0 && (
         <p className="mt-1 text-xs text-ink-2">
           {proximasConfirmadas.length} reserva{proximasConfirmadas.length === 1 ? "" : "s"} confirmada
