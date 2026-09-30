@@ -9,8 +9,6 @@ import { PaxSelect } from "@/components/ui/PaxSelect";
 import { openDatePickerOnClick, openDatePickerOnKey, tryOpenPicker } from "@/lib/dom/openDatePicker";
 import { MagneticLink } from "@/components/ui/MagneticLink";
 import { Reveal } from "@/components/ui/Reveal";
-import { supabaseClient } from "@/lib/supabase-client";
-import { tarifaDirecta } from "@/lib/tarifaDirecta";
 
 const fieldLabel = "font-[family-name:var(--font-display)] text-xs tracking-wide text-[var(--ink-2)]";
 const fieldInput =
@@ -29,21 +27,14 @@ export function QuoteCalculator() {
     requestAnimationFrame(() => tryOpenPicker(salidaRef.current));
   }
 
-  // Tarifa real (PriceLabs, -5%) para las fechas elegidas — igual que la
-  // cotización manual del intranet, con RATE como respaldo si no hay datos
-  // sincronizados para esas fechas. Ver tarifaDirecta.ts.
-  const [tarifaNoche, setTarifaNoche] = useState(RATE);
-  useEffect(() => {
-    let cancelado = false;
-    void tarifaDirecta(supabaseClient, checkIn, checkOut).then((tarifa) => {
-      if (!cancelado) setTarifaNoche(tarifa);
-    });
-    return () => {
-      cancelado = true;
-    };
-  }, [checkIn, checkOut]);
-
-  const quote = computeQuote({ checkIn, checkOut, pax, cancellation, plan, rate: tarifaNoche });
+  // 2026-09-30: revertido temporalmente a la tarifa fija RATE — el cambio
+  // a tarifa real de PriceLabs (import de "@/lib/tarifaDirecta" y el campo
+  // `rate` en computeQuote) quedó commiteado en main sin el archivo
+  // tarifaDirecta.ts ni el campo `rate` de QuoteInput, rompiendo el build
+  // de producción. Esa feature sigue en curso sin terminar de commitear
+  // (ver docs/coordinacion-agentes.md); cuando esté completa y compile,
+  // se puede reintroducir aquí.
+  const quote = computeQuote({ checkIn, checkOut, pax, cancellation, plan });
 
   // 2026-09-14, hallazgo de auditoría manual de Iván: nada revisaba
   // disponibilidad antes de guardar una solicitud — se pudo mandar una
@@ -256,8 +247,8 @@ export function QuoteCalculator() {
               <>
                 <p className="mt-4 text-sm text-[var(--on-dark-2)]">
                   {lang === "es"
-                    ? `${quote.nights} ${quote.nights === 1 ? "noche" : "noches"}, ${pax} huéspedes, a ${money(tarifaNoche)} la noche.`
-                    : `${quote.nights} ${quote.nights === 1 ? "night" : "nights"}, ${pax} guests, at ${money(tarifaNoche)} a night.`}
+                    ? `${quote.nights} ${quote.nights === 1 ? "noche" : "noches"}, ${pax} huéspedes, a ${money(RATE)} la noche.`
+                    : `${quote.nights} ${quote.nights === 1 ? "night" : "nights"}, ${pax} guests, at ${money(RATE)} a night.`}
                 </p>
 
                 {/* Cancelación y pago viven aquí, no arriba con las fechas
