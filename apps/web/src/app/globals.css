@@ -163,9 +163,10 @@ html.lenis.lenis-stopped {
   --on-dark-2: #a9bca4;
 
   /* 2026-09-29: Fraunces (serif, display) + Inter (sans, body/UI) —
-     replaces Archivo + Source Serif 4. See layout.tsx for why. */
+     replaces Archivo + Source Serif 4. 2026-09-30: body/UI swapped Inter
+     → Lato, at Ivan's request, headings stay Fraunces. See layout.tsx. */
   --font-display: var(--font-fraunces);
-  --font-body: var(--font-inter);
+  --font-body: var(--font-lato);
 }
 
 @theme inline {
@@ -182,7 +183,7 @@ html.lenis.lenis-stopped {
   /* 2026-09-29: kept pointing at what they actually are now, not at the
      old display/body roles — --font-display is a serif today (Fraunces),
      so Tailwind's font-sans utility has to resolve to the real sans
-     (Inter/--font-body) or any component using font-sans would silently
+     (Lato/--font-body) or any component using font-sans would silently
      render serif text. */
   --font-sans: var(--font-body);
   --font-serif: var(--font-display);

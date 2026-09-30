@@ -1,27 +1,29 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Fraunces, Lato } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { SmoothScrollProvider } from "@/lib/scroll/SmoothScrollProvider";
 import { PopupDescuento } from "@/components/ui/PopupDescuento";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import "./globals.css";
 
-// 2026-09-29, at Ivan's request ("no me gusta la tipografía"): swapped the
-// display/body pair from Archivo+Source Serif to Fraunces+Inter — flips
-// which font carries the loud voice (a serif display now, per the
-// "Hotel NuVe Heritage" reference audit) instead of the sans doing all the
-// heavy lifting. Every component reads the semantic --font-display/
-// --font-body tokens (see globals.css), never these two directly, so this
-// is the only file besides globals.css that needed to change.
+// 2026-09-29: Fraunces (serif, display/headings) + Inter (sans, body/UI).
+// 2026-09-30, at Ivan's request ("usa sans-serif como Open Sans, Roboto o
+// Lato en párrafos, botones y menús"): body/UI swapped from Inter to Lato
+// — he picked it after a live comparison of the three. Headings stay on
+// Fraunces, unchanged (his own explicit choice when asked). Every
+// component reads the semantic --font-display/--font-body tokens (see
+// globals.css), never these two directly, so this is the only file besides
+// globals.css that needed to change.
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
   axes: ["opsz"],
 });
 
-const inter = Inter({
-  variable: "--font-inter",
+const lato = Lato({
+  variable: "--font-lato",
   subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 const SITE_URL = "https://randahome.com";
@@ -62,7 +64,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${fraunces.variable} ${inter.variable} h-full antialiased`}>
+    <html lang="es" className={`${fraunces.variable} ${lato.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <SmoothScrollProvider>
           <LanguageProvider>
