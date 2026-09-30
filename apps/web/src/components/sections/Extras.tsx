@@ -57,7 +57,7 @@ export function Extras({ productos }: { productos: Producto[] }) {
                 <Link
                   key={p.id}
                   href="/tienda"
-                  className="group w-44 shrink-0 snap-start border border-[var(--ink)]/10 bg-white transition-colors hover:border-[var(--caoba)]/40 sm:w-52"
+                  className="group w-44 shrink-0 snap-start sm:w-52"
                 >
                   <div className="relative aspect-square w-full overflow-hidden bg-white">
                     {p.imagen_url && (
