@@ -19,7 +19,7 @@
   --good: #3f7a4c;
   --good-bg: #dce9dd;
 
-  --font-display: var(--font-inter);
+  --font-display: var(--font-lato);
 }
 
 @theme inline {

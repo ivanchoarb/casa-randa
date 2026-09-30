@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Lato } from "next/font/google";
 import { Suspense } from "react";
 import { Providers } from "./providers";
 import "./globals.css";
 
-// 2026-09-29, at Ivan's request ("tampoco me gusta la de la intranet"):
-// Archivo -> Inter, same swap as apps/web's body font. See globals.css
-// for the wdth-axis note (Inter has no width axis, unlike Archivo).
-const inter = Inter({
-  variable: "--font-inter",
+// 2026-09-29: Archivo -> Inter, same swap as apps/web's body font.
+// 2026-09-30, at Ivan's request ("usa sans-serif como Open Sans, Roboto o
+// Lato en párrafos, botones y menús" — he picked Lato after a live
+// comparison): Inter -> Lato. See globals.css for the wdth-axis note
+// (neither Inter nor Lato has a width axis, unlike Archivo).
+const lato = Lato({
+  variable: "--font-lato",
   subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
@@ -23,7 +26,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${inter.variable} h-full antialiased`}>
+    <html lang="es" className={`${lato.variable} h-full antialiased`}>
       <body className="min-h-full">
         {/*
           @refinedev/nextjs-router's RouteChangeHandler calls useSearchParams()
