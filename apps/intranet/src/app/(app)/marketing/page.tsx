@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { useGetIdentity, useTable } from "@refinedev/core";
+import { useCreate, useGetIdentity, useTable } from "@refinedev/core";
 import Link from "next/link";
 import * as XLSX from "xlsx";
 import type { CancellationPolicy, PaymentPlan } from "@casa-randa/pricing";
@@ -16,6 +16,7 @@ import {
   type ResultadoImportContactos,
 } from "@/lib/importar-contactos";
 import { IDIOMA_LABEL, idiomaSugerido } from "@/lib/idioma";
+import { usePermisos } from "@/lib/use-permisos";
 
 interface Solicitud {
   id: string;
@@ -76,8 +77,20 @@ interface Contacto {
   created_at: string;
 }
 
+interface CodigoDescuento {
+  codigo: string;
+  descuento_pct: number;
+  vigente_desde: string;
+  vigente_hasta: string;
+  maximo_usos: number;
+  usos_actuales: number;
+  notas: string | null;
+}
+
 type Filtro = "todos" | Solicitud["estado"];
 type FiltroIdioma = "todos" | "es" | "en" | "desconocido";
+
+const inputClass = "rounded-md border border-line bg-ground px-2 py-1.5 text-sm";
 
 // 2026-09-13, a pedido de Ivan: gráfico de países de origen de los
 // contactos de marketing (leads con consentimiento — no huéspedes reales,
@@ -329,6 +342,142 @@ function ImportarContactos({ onImportado }: { onImportado: () => void }) {
   );
 }
 
+function CodigosDeDescuento() {
+  const { result, tableQuery } = useTable<CodigoDescuento>({
+    resource: "codigos_descuento",
+    sorters: { initial: [{ field: "vigente_desde", order: "desc" }] },
+    pagination: { pageSize: 100 },
+  });
+  const { mutate: crear, mutation } = useCreate<CodigoDescuento>();
+  const isPending = mutation.isPending;
+
+  const [codigo, setCodigo] = useState("");
+  const [pct, setPct] = useState("");
+  const [desde, setDesde] = useState("");
+  const [hasta, setHasta] = useState("");
+  const [maximo, setMaximo] = useState("0");
+  const [notas, setNotas] = useState("");
+
+  function agregar() {
+    if (!codigo.trim() || !pct || !desde || !hasta) return;
+    crear(
+      {
+        resource: "codigos_descuento",
+        values: {
+          codigo: codigo.toUpperCase(),
+          descuento_pct: Number(pct),
+          vigente_desde: desde,
+          vigente_hasta: hasta,
+          maximo_usos: Number(maximo) || 0,
+          notas: notas || null,
+        },
+      },
+      {
+        onSuccess: () => {
+          setCodigo("");
+          setPct("");
+          setDesde("");
+          setHasta("");
+          setMaximo("0");
+          setNotas("");
+        },
+      },
+    );
+  }
+
+  return (
+    <section className="mt-10 rounded-xl border border-line bg-panel p-4">
+      <h2 className="text-lg font-bold">Códigos de descuento</h2>
+
+      <div className="mt-4 flex flex-wrap items-end gap-2 rounded-lg border border-line bg-ground/40 p-3">
+        <input
+          placeholder="Código"
+          value={codigo}
+          onChange={(e) => setCodigo(e.target.value)}
+          className={`${inputClass} w-40 uppercase`}
+        />
+        <input
+          placeholder="% descuento"
+          type="number"
+          value={pct}
+          onChange={(e) => setPct(e.target.value)}
+          className={`${inputClass} w-28`}
+        />
+        <input
+          type="date"
+          value={desde}
+          onChange={(e) => setDesde(e.target.value)}
+          className={inputClass}
+        />
+        <input
+          type="date"
+          value={hasta}
+          onChange={(e) => setHasta(e.target.value)}
+          className={inputClass}
+        />
+        <input
+          placeholder="Máx. usos (0 = sin límite)"
+          type="number"
+          value={maximo}
+          onChange={(e) => setMaximo(e.target.value)}
+          className={`${inputClass} w-44`}
+        />
+        <input
+          placeholder="Notas"
+          value={notas}
+          onChange={(e) => setNotas(e.target.value)}
+          className={`${inputClass} min-w-[10rem] flex-1`}
+        />
+        <button
+          type="button"
+          onClick={agregar}
+          disabled={isPending}
+          className="rounded-md bg-caoba px-4 py-1.5 text-sm font-semibold text-panel disabled:opacity-60"
+        >
+          Crear código
+        </button>
+      </div>
+
+      {tableQuery.isError && (
+        <p className="mt-4 text-sm text-caoba">
+          No se pudo conectar a Supabase — completa <code>.env.local</code>.
+        </p>
+      )}
+
+      {!tableQuery.isLoading && result.data.length > 0 && (
+        <div className="mt-4 overflow-x-auto rounded-xl border border-line">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-line text-xs tracking-wide text-ink-2 uppercase">
+                <th className="px-4 py-3 font-medium">Código</th>
+                <th className="px-4 py-3 text-right font-medium">%</th>
+                <th className="px-4 py-3 font-medium">Vigencia</th>
+                <th className="px-4 py-3 text-right font-medium">Usos</th>
+                <th className="px-4 py-3 font-medium">Notas</th>
+              </tr>
+            </thead>
+            <tbody>
+              {result.data.map((c) => (
+                <tr key={c.codigo} className="border-b border-line last:border-0">
+                  <td className="px-4 py-3 font-semibold">{c.codigo}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{c.descuento_pct}%</td>
+                  <td className="px-4 py-3 tabular-nums">
+                    {c.vigente_desde} → {c.vigente_hasta}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {c.usos_actuales} / {c.maximo_usos || "∞"}
+                  </td>
+                  <td className="px-4 py-3 text-ink-2">{c.notas ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 /**
  * Audiencia = dos fuentes, unificadas:
  * - `solicitudes` con consentimiento de marketing marcado en el formulario
@@ -341,6 +490,7 @@ function ImportarContactos({ onImportado }: { onImportado: () => void }) {
  * gente que nunca aceptó recibirlo.
  */
 export default function MarketingPage() {
+  const { can } = usePermisos();
   const solicitudesTable = useTable<Solicitud>({
     resource: "solicitudes",
     filters: { permanent: [{ field: "consentimiento", operator: "eq", value: true }] },
@@ -622,6 +772,8 @@ export default function MarketingPage() {
         — de a uno, con un límite diario, nunca todo de golpe, para no arriesgar la entrega de
         los correos reales de reservas que usan la misma cuenta.
       </p>
+
+      {can("descuentos") && <CodigosDeDescuento />}
     </div>
   );
 }

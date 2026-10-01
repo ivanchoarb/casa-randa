@@ -41,7 +41,7 @@ export const RUTAS: Record<string, Permiso[]> = {
   "/reservas": ["reservas", "reservas_exportar", "solicitudes"],
   "/calendario": ["calendario"], "/operacion": ["operacion"],
   "/contabilidad": ["contabilidad"], "/conciliacion": ["conciliacion"],
-  "/analisis": ["analisis_financiero", "plan_compras", "cuentas_pagar", "descuentos"],
-  "/cotizaciones": ["cotizaciones"], "/marketing": ["marketing"], "/marketing/campanas": ["marketing"],
+  "/analisis": ["analisis_financiero", "plan_compras", "cuentas_pagar"],
+  "/cotizaciones": ["cotizaciones"], "/marketing": ["marketing", "descuentos"], "/marketing/campanas": ["marketing"],
   "/tienda": ["contabilidad"], "/check-in": ["contabilidad"], "/usuarios": ["usuarios"],
 };

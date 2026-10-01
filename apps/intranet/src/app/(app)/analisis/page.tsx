@@ -38,16 +38,6 @@ interface PlanCompra {
   notas: string | null;
 }
 
-interface CodigoDescuento {
-  codigo: string;
-  descuento_pct: number;
-  vigente_desde: string;
-  vigente_hasta: string;
-  maximo_usos: number;
-  usos_actuales: number;
-  notas: string | null;
-}
-
 const CATEGORIAS: CategoriaCapex[] = [
   "mejora",
   "reparacion",
@@ -643,142 +633,6 @@ function PlanDeCompras({
   );
 }
 
-function CodigosDeDescuento() {
-  const { result, tableQuery } = useTable<CodigoDescuento>({
-    resource: "codigos_descuento",
-    sorters: { initial: [{ field: "vigente_desde", order: "desc" }] },
-    pagination: { pageSize: 100 },
-  });
-  const { mutate: crear, mutation } = useCreate<CodigoDescuento>();
-  const isPending = mutation.isPending;
-
-  const [codigo, setCodigo] = useState("");
-  const [pct, setPct] = useState("");
-  const [desde, setDesde] = useState("");
-  const [hasta, setHasta] = useState("");
-  const [maximo, setMaximo] = useState("0");
-  const [notas, setNotas] = useState("");
-
-  function agregar() {
-    if (!codigo.trim() || !pct || !desde || !hasta) return;
-    crear(
-      {
-        resource: "codigos_descuento",
-        values: {
-          codigo: codigo.toUpperCase(),
-          descuento_pct: Number(pct),
-          vigente_desde: desde,
-          vigente_hasta: hasta,
-          maximo_usos: Number(maximo) || 0,
-          notas: notas || null,
-        },
-      },
-      {
-        onSuccess: () => {
-          setCodigo("");
-          setPct("");
-          setDesde("");
-          setHasta("");
-          setMaximo("0");
-          setNotas("");
-        },
-      },
-    );
-  }
-
-  return (
-    <section className="mt-12">
-      <h2 className="text-lg font-bold">Códigos de descuento</h2>
-
-      <div className="mt-4 flex flex-wrap items-end gap-2 rounded-lg border border-line bg-panel p-3">
-        <input
-          placeholder="Código"
-          value={codigo}
-          onChange={(e) => setCodigo(e.target.value)}
-          className={`${inputClass} w-40 uppercase`}
-        />
-        <input
-          placeholder="% descuento"
-          type="number"
-          value={pct}
-          onChange={(e) => setPct(e.target.value)}
-          className={`${inputClass} w-28`}
-        />
-        <input
-          type="date"
-          value={desde}
-          onChange={(e) => setDesde(e.target.value)}
-          className={inputClass}
-        />
-        <input
-          type="date"
-          value={hasta}
-          onChange={(e) => setHasta(e.target.value)}
-          className={inputClass}
-        />
-        <input
-          placeholder="Máx. usos (0 = sin límite)"
-          type="number"
-          value={maximo}
-          onChange={(e) => setMaximo(e.target.value)}
-          className={`${inputClass} w-44`}
-        />
-        <input
-          placeholder="Notas"
-          value={notas}
-          onChange={(e) => setNotas(e.target.value)}
-          className={`${inputClass} min-w-[10rem] flex-1`}
-        />
-        <button
-          type="button"
-          onClick={agregar}
-          disabled={isPending}
-          className="rounded-md bg-caoba px-4 py-1.5 text-sm font-semibold text-panel disabled:opacity-60"
-        >
-          Crear código
-        </button>
-      </div>
-
-      {tableQuery.isError && (
-        <p className="mt-4 text-sm text-caoba">
-          No se pudo conectar a Supabase — completa <code>.env.local</code>.
-        </p>
-      )}
-
-      {!tableQuery.isLoading && result.data.length > 0 && (
-        <div className="mt-4 overflow-x-auto rounded-xl border border-line bg-panel">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-line text-xs tracking-wide text-ink-2 uppercase">
-                <th className="px-4 py-3 font-medium">Código</th>
-                <th className="px-4 py-3 text-right font-medium">%</th>
-                <th className="px-4 py-3 font-medium">Vigencia</th>
-                <th className="px-4 py-3 text-right font-medium">Usos</th>
-                <th className="px-4 py-3 font-medium">Notas</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.data.map((c) => (
-                <tr key={c.codigo} className="border-b border-line last:border-0">
-                  <td className="px-4 py-3 font-semibold">{c.codigo}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{c.descuento_pct}%</td>
-                  <td className="px-4 py-3 tabular-nums">
-                    {c.vigente_desde} → {c.vigente_hasta}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    {c.usos_actuales} / {c.maximo_usos || "∞"}
-                  </td>
-                  <td className="px-4 py-3 text-ink-2">{c.notas ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
-  );
-}
-
 export default function AnalisisPage() {
   const { can } = usePermisos();
   // Quinto módulo conectado a datos reales. El comparativo año a año ya no
@@ -821,7 +675,6 @@ export default function AnalisisPage() {
         />}
         {can("plan_compras") && <PlanDeCompras planes={planes} cargando={planesQuery.isLoading} error={planesQuery.isError} />}
         {can("cuentas_pagar") && <CuentasPorPagar planes={planes} cargando={planesQuery.isLoading} />}
-        {can("descuentos") && <CodigosDeDescuento />}
       </div>
     </div>
   );
