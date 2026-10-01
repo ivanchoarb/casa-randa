@@ -30,8 +30,14 @@ const BookingContext = createContext<BookingContextValue | null>(null);
  * fields updates the quote fields below (see legacy-static/js/casa-randa.js).
  */
 export function BookingProvider({ children }: { children: ReactNode }) {
-  const [checkIn, setCheckInState] = useState("2026-11-20");
-  const [checkOut, setCheckOut] = useState("2026-11-23");
+  // 2026-09-30, bug real reportado por Ivan: estas fechas de ejemplo hacían
+  // que la cotización mostrara un total real (p. ej. $1,908) antes de que
+  // el huésped tocara nada — parecía una cotización de verdad sin serlo.
+  // Vacías, computeQuote() devuelve null (nightsBetween con fecha inválida
+  // da 0 noches) y QuoteCalculator ya muestra su mensaje de "estancia
+  // mínima" para ese caso — no hace falta tocar nada más.
+  const [checkIn, setCheckInState] = useState("");
+  const [checkOut, setCheckOut] = useState("");
   const [pax, setPax] = useState(12);
   const [cancellation, setCancellation] = useState<CancellationPolicy>("flex");
   const [plan, setPlan] = useState<PaymentPlan>("30");
