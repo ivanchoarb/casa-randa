@@ -15,6 +15,7 @@ interface Resumen {
     solicitudes_con_codigo: number;
     aperturas_correo: number;
   };
+  por_pais: { pais: string; visitas: number; clicks_codigo: number }[];
   campanas: { id: string; asunto: string; enviados: number; abiertos: number }[];
   por_dia: { dia: string; visitas: number; clicks_codigo: number }[];
   por_pagina: { ruta: string; visitas: number }[];
@@ -22,6 +23,18 @@ interface Resumen {
 }
 
 const PERIODOS = [7, 30, 90] as const;
+
+const nombrePais = new Intl.DisplayNames(["es"], { type: "region" });
+// Bandera a partir del código ISO (letras regionales de Unicode).
+const bandera = (iso: string) => String.fromCodePoint(...[...iso.toUpperCase()].map((c) => 127397 + c.charCodeAt(0)));
+function etiquetaPais(iso: string) {
+  if (!/^[A-Z]{2}$/.test(iso) || iso === "??") return "Desconocido";
+  try {
+    return `${bandera(iso)} ${nombrePais.of(iso) ?? iso}`;
+  } catch {
+    return iso;
+  }
+}
 
 const pct = (parte: number, total: number) => (total > 0 ? `${((parte / total) * 100).toFixed(1)} %` : "—");
 
@@ -222,6 +235,40 @@ export default function MetricasPage() {
                   {datos.por_origen.length === 0 && (
                     <tr>
                       <td colSpan={3} className="py-3 text-ink-2">
+                        Todavía no hay visitas en este período.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </section>
+
+            <section className="rounded-xl border border-line bg-panel p-5">
+              <h2 className="font-semibold">Países desde donde nos visitan</h2>
+              <p className="mt-1 text-xs text-ink-2">
+                Según la ubicación aproximada de la conexión. No se guarda la dirección IP, solo el país.
+              </p>
+              <table className="mt-3 w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-ink-2">
+                    <th className="pb-1 font-semibold">País</th>
+                    <th className="pb-1 text-right font-semibold">Visitas</th>
+                    <th className="pb-1 text-right font-semibold">%</th>
+                    <th className="pb-1 text-right font-semibold">Clicks código</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {datos.por_pais.map((p) => (
+                    <tr key={p.pais} className="border-t border-line">
+                      <td className="py-1.5">{etiquetaPais(p.pais)}</td>
+                      <td className="py-1.5 text-right tabular-nums">{p.visitas}</td>
+                      <td className="py-1.5 text-right tabular-nums">{pct(p.visitas, t.visitas)}</td>
+                      <td className="py-1.5 text-right tabular-nums">{p.clicks_codigo}</td>
+                    </tr>
+                  ))}
+                  {datos.por_pais.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-3 text-ink-2">
                         Todavía no hay visitas en este período.
                       </td>
                     </tr>

@@ -34,6 +34,8 @@ export async function POST(req: Request) {
       utm_campaign: texto(b.utm_campaign, 100),
       utm_content: texto(b.utm_content, 100),
       idioma: texto(b.idioma, 10),
+      // Código ISO del país que Vercel deduce de la IP (no se guarda la IP). Sin cabecera en local.
+      pais: /^[A-Za-z]{2}$/.test(req.headers.get("x-vercel-ip-country") ?? "") ? req.headers.get("x-vercel-ip-country")!.toUpperCase() : null,
       dispositivo: b.dispositivo === "movil" || b.dispositivo === "escritorio" ? b.dispositivo : null,
     });
   } catch {
