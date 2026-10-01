@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { VS } from "@casa-randa/data";
+import { trackEvento } from "@/lib/analytics";
 import { MIN_NIGHTS, RATE, computeQuote, type CancellationPolicy, type PaymentPlan } from "@casa-randa/pricing";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { useBooking } from "@/lib/booking/BookingProvider";
@@ -40,7 +41,7 @@ export function QuoteCalculator() {
   const [codigoTexto, setCodigoTexto] = useState("");
   const [descuento, setDescuento] = useState<{ codigo: string; pct: number } | null>(null);
   const [codigoError, setCodigoError] = useState(false);
-  async function aplicarCodigo(texto = codigoTexto) {
+  async function aplicarCodigo(texto = codigoTexto, manual = false) {
     const codigo = texto.trim();
     if (!codigo) return;
     setCodigoError(false);
@@ -49,6 +50,7 @@ export function QuoteCalculator() {
       const data = await res.json();
       if (res.ok && data.ok) {
         setDescuento({ codigo: data.codigo, pct: data.pct });
+        if (manual) trackEvento("codigo_aplicado");
         setCodigoTexto(data.codigo);
       } else {
         setDescuento(null);
@@ -358,7 +360,7 @@ export function QuoteCalculator() {
                     />
                     <button
                       type="button"
-                      onClick={() => void aplicarCodigo()}
+                      onClick={() => void aplicarCodigo(codigoTexto, true)}
                       className="rounded-lg border border-[var(--on-dark-2)]/50 px-4 text-sm font-semibold text-[var(--on-dark)] hover:bg-[var(--on-dark)]/10"
                     >
                       {lang === "es" ? "Aplicar" : "Apply"}

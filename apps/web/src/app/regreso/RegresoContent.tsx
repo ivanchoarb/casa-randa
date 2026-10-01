@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { Reveal } from "@/components/ui/Reveal";
+import { trackEvento } from "@/lib/analytics";
 
 const CODIGO = "COMINGBACKRANDA5%";
 
@@ -31,6 +32,7 @@ export function RegresoContent() {
 
   async function copiar() {
     try {
+      trackEvento("click_codigo");
       await navigator.clipboard.writeText(CODIGO);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
@@ -74,7 +76,7 @@ export function RegresoContent() {
                     : "We just launched randahome.com. Book directly with us, with no middlemen and no platform fees."}
                 </p>
                 <div className="mt-6 flex flex-wrap items-center gap-4">
-                  <a href={reservar} className={boton}>
+                  <a href={reservar} onClick={() => trackEvento("click_cta")} className={boton}>
                     {es ? "Ver fechas y reservar" : "See dates and book"}
                   </a>
                   <p className="text-sm text-[var(--on-dark-2)]">
@@ -169,7 +171,7 @@ export function RegresoContent() {
           <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold">
             {es ? "Las mismas 6 habitaciones y el mismo patio, esperándole." : "The same 6 bedrooms and the same patio, waiting for you."}
           </h2>
-          <a href={reservar} className={`${boton} mt-8`}>
+          <a href={reservar} onClick={() => trackEvento("click_cta")} className={`${boton} mt-8`}>
             {es ? "Ver fechas y reservar" : "See dates and book"}
           </a>
         </div>

@@ -3,6 +3,7 @@ import { Fraunces, Lato } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { SmoothScrollProvider } from "@/lib/scroll/SmoothScrollProvider";
 import { PopupDescuento } from "@/components/ui/PopupDescuento";
+import { Analytics } from "@/components/ui/Analytics";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import "./globals.css";
 
@@ -69,6 +70,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SmoothScrollProvider>
           <LanguageProvider>
             {children}
+            <Analytics />
             <PopupDescuento />
             <WhatsAppButton />
           </LanguageProvider>
