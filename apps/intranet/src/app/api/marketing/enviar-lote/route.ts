@@ -113,7 +113,10 @@ export async function POST(req: Request) {
   const pieBaja = ingles
     ? `If you no longer wish to receive these emails, <a href="${enlaceBaja}">click here to unsubscribe</a>.`
     : `Si no quieres seguir recibiendo estos correos, <a href="${enlaceBaja}">haz clic aquí para darte de baja</a>.`;
-  const html = `${cuerpoPersonalizado}<hr style="margin-top:24px;border:none;border-top:1px solid #ddd" /><p style="font-size:11px;color:#888">${pieBaja}</p>`;
+  // Imagen invisible para medir aperturas (apps/web /api/p). Cifra orientativa.
+  const webPublica = (process.env.WEB_PUBLICA_URL || "https://randahome.com").replace(/\/$/, "");
+  const pixel = `<img src="${webPublica}/api/p?d=${siguiente.id}" width="1" height="1" alt="" style="display:block;border:0;width:1px;height:1px" />`;
+  const html = `${cuerpoPersonalizado}<hr style="margin-top:24px;border:none;border-top:1px solid #ddd" /><p style="font-size:11px;color:#888">${pieBaja}</p>${pixel}`;
   const texto = `${html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()}\n\n${ingles ? "Unsubscribe" : "Darte de baja"}: ${enlaceBaja}`;
 
   try {
