@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { crearTransporte, transporteDisponible } from "@/lib/mailer";
 import { correoSolicitudHtml, ASUNTO_SOLICITUD } from "@/lib/correo-solicitud";
 import { buscarConflictos } from "@/lib/disponibilidad";
+import { validarCodigo } from "@/lib/codigo-descuento";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ interface CuerpoSolicitud {
   huespedes?: number;
   plan_tarifa?: CancellationPolicy;
   plan_pago?: PaymentPlan;
+  codigo_descuento?: string;
   consentimiento?: boolean;
   consentimiento_politica?: boolean;
 }
@@ -64,10 +66,25 @@ export async function POST(req: Request) {
   if (plan_pago !== "30" && plan_pago !== "100") return fail("Plan de pago inválido.");
   if (!body.consentimiento || !body.consentimiento_politica) return fail("Falta aceptar las autorizaciones.");
 
-  const quote = computeQuote({ checkIn: entrada, checkOut: salida, pax: huespedes, cancellation: plan_tarifa, plan: plan_pago });
-  if (!quote) return fail("La estancia no alcanza el mínimo de noches.");
-
   const db = getSupabaseAdmin();
+
+  // El porcentaje sale de la base de datos, nunca del navegador: el cliente
+  // solo manda el texto del código.
+  let descuento: { codigo: string; pct: number } | null = null;
+  if (typeof body.codigo_descuento === "string" && body.codigo_descuento.trim()) {
+    descuento = await validarCodigo(db, body.codigo_descuento);
+    if (!descuento) return fail("El código de descuento no es válido o ya venció.");
+  }
+
+  const quote = computeQuote({
+    checkIn: entrada,
+    checkOut: salida,
+    pax: huespedes,
+    cancellation: plan_tarifa,
+    plan: plan_pago,
+    discountPct: descuento ? descuento.pct / 100 : 0,
+  });
+  if (!quote) return fail("La estancia no alcanza el mínimo de noches.");
 
   let conflictos;
   try {
@@ -92,6 +109,8 @@ export async function POST(req: Request) {
       huespedes,
       plan_tarifa,
       plan_pago,
+      codigo_descuento: descuento?.codigo ?? null,
+      descuento_pct: descuento?.pct ?? null,
       consentimiento: true,
       consentimiento_politica: true,
       estado: "pendiente",
@@ -128,7 +147,7 @@ export async function POST(req: Request) {
         from: remitente,
         to: "booking@randahome.com",
         subject: `Nueva solicitud — ${nombre} ${apellido}`,
-        text: `Solicitud nueva desde la página, pendiente de revisión.\n\n${nombre} ${apellido}\n${email}${telefono ? ` · ${telefono}` : ""}\nPaís: ${pais}\n\nFechas: ${entrada} → ${salida} (${quote.nights} ${quote.nights === 1 ? "noche" : "noches"})\nHuéspedes: ${huespedes}\nCotización estimada: USD ${quote.totalUsd.toFixed(2)}\n\nRevísala en la intranet, sección Reservas.`,
+        text: `Solicitud nueva desde la página, pendiente de revisión.\n\n${nombre} ${apellido}\n${email}${telefono ? ` · ${telefono}` : ""}\nPaís: ${pais}\n\nFechas: ${entrada} → ${salida} (${quote.nights} ${quote.nights === 1 ? "noche" : "noches"})\nHuéspedes: ${huespedes}\nCotización estimada: USD ${quote.totalUsd.toFixed(2)}${descuento ? ` (código ${descuento.codigo}, −${descuento.pct}%)` : ""}\n\nRevísala en la intranet, sección Reservas.`,
       });
     } catch {
       // Mismo criterio: el aviso a booking@ es best-effort.

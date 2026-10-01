@@ -34,7 +34,42 @@ export function QuoteCalculator() {
   // de producción. Esa feature sigue en curso sin terminar de commitear
   // (ver docs/coordinacion-agentes.md); cuando esté completa y compile,
   // se puede reintroducir aquí.
-  const quote = computeQuote({ checkIn, checkOut, pax, cancellation, plan });
+  // Código de descuento: el porcentaje lo valida /api/codigo contra la base
+  // de datos (no se confía en nada que calcule el navegador), y
+  // /api/solicitudes lo vuelve a validar al enviar.
+  const [codigoTexto, setCodigoTexto] = useState("");
+  const [descuento, setDescuento] = useState<{ codigo: string; pct: number } | null>(null);
+  const [codigoError, setCodigoError] = useState(false);
+  async function aplicarCodigo(texto = codigoTexto) {
+    const codigo = texto.trim();
+    if (!codigo) return;
+    setCodigoError(false);
+    try {
+      const res = await fetch(`/api/codigo?codigo=${encodeURIComponent(codigo)}`);
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setDescuento({ codigo: data.codigo, pct: data.pct });
+        setCodigoTexto(data.codigo);
+      } else {
+        setDescuento(null);
+        setCodigoError(true);
+      }
+    } catch {
+      setDescuento(null);
+      setCodigoError(true);
+    }
+  }
+  // /regreso enlaza con ?codigo=... para que el descuento llegue ya aplicado.
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get("codigo");
+    if (c) {
+      setCodigoTexto(c);
+      void aplicarCodigo(c);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const quote = computeQuote({ checkIn, checkOut, pax, cancellation, plan, discountPct: descuento ? descuento.pct / 100 : 0 });
 
   // 2026-09-14, hallazgo de auditoría manual de Iván: nada revisaba
   // disponibilidad antes de guardar una solicitud — se pudo mandar una
@@ -103,6 +138,7 @@ export function QuoteCalculator() {
           huespedes: pax,
           plan_tarifa: cancellation,
           plan_pago: plan,
+          codigo_descuento: descuento?.codigo,
           consentimiento,
           consentimiento_politica: consentimientoPolitica,
         }),
@@ -308,6 +344,37 @@ export function QuoteCalculator() {
                   </dt>
                   <dd className="m-0 text-right font-[family-name:var(--font-display)] tabular-nums">{money(quote.dueTodayUsd)}</dd>
                 </dl>
+
+                <div className="mt-4 flex flex-col gap-1">
+                  <label htmlFor="q-codigo" className={fieldLabel}>
+                    {lang === "es" ? "Código de descuento" : "Discount code"}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      id="q-codigo"
+                      value={codigoTexto}
+                      onChange={(e) => setCodigoTexto(e.target.value)}
+                      className={`${fieldInput} flex-1`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void aplicarCodigo()}
+                      className="rounded-lg border border-[var(--on-dark-2)]/50 px-4 text-sm font-semibold text-[var(--on-dark)] hover:bg-[var(--on-dark)]/10"
+                    >
+                      {lang === "es" ? "Aplicar" : "Apply"}
+                    </button>
+                  </div>
+                  {descuento && (
+                    <p className="text-xs text-[var(--lamp-fill)]">
+                      {lang === "es" ? `Código aplicado: −${descuento.pct} %` : `Code applied: −${descuento.pct}%`}
+                    </p>
+                  )}
+                  {codigoError && (
+                    <p className="text-xs text-[var(--caoba)]">
+                      {lang === "es" ? "Ese código no es válido o ya venció." : "That code isn't valid or has expired."}
+                    </p>
+                  )}
+                </div>
 
                 <p className="mt-4 text-sm leading-relaxed text-[var(--on-dark-2)]">
                   {lang === "es"

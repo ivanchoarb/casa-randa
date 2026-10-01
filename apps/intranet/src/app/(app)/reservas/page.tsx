@@ -21,6 +21,8 @@ interface Solicitud {
   huespedes: number;
   plan_tarifa: CancellationPolicy;
   plan_pago: PaymentPlan;
+  codigo_descuento: string | null;
+  descuento_pct: number | null;
   notas: string | null;
   estado: "pendiente" | "aprobada" | "rechazada" | "convertida";
   created_at: string;
@@ -61,7 +63,7 @@ function SolicitudCard({ s }: { s: Solicitud }) {
   const { mutate: actualizar, mutation } = useUpdate<Solicitud>();
   const { mutate: eliminar, mutation: eliminando } = useDelete<Solicitud>();
   const [editando, setEditando] = useState(false);
-  const quote = computeQuote({ checkIn: s.entrada, checkOut: s.salida, pax: s.huespedes, cancellation: s.plan_tarifa, plan: s.plan_pago });
+  const quote = computeQuote({ checkIn: s.entrada, checkOut: s.salida, pax: s.huespedes, cancellation: s.plan_tarifa, plan: s.plan_pago, discountPct: (s.descuento_pct ?? 0) / 100 });
 
   const [nombre, setNombre] = useState(s.nombre);
   const [apellido, setApellido] = useState(s.apellido ?? "");
@@ -156,6 +158,12 @@ function SolicitudCard({ s }: { s: Solicitud }) {
         <div>
           <p className="text-xs text-ink-2 uppercase">Pago</p>
           <p>{PLAN_PAGO_LABEL[s.plan_pago]}</p>
+          {s.codigo_descuento && (
+            <p className="text-good">
+              Código {s.codigo_descuento}
+              {s.descuento_pct ? ` (−${s.descuento_pct}%)` : ""}
+            </p>
+          )}
         </div>
       </div>
 
