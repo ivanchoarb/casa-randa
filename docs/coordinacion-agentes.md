@@ -383,3 +383,45 @@ registro detallado de cambios. Validación oficial bloqueada por ausencia de
 `git diff --check` completada correctamente. No se editaron apps, listings ni
 servicios externos. Siguiente paso: usar la skill en una solicitud real y
 ajustar reglas si aparece una necesidad concreta.
+
+## 2026-09-30 — Claude: diagnóstico de error en Calendario y reubicación de Códigos de descuento
+
+Diagnóstico (no resuelto, no replicado del lado del servidor): Ivan reportó
+"No se pudo conectar a Supabase todavía" en Calendario y disponibilidad
+(`apps/intranet/src/app/(app)/calendario/page.tsx`), persistente tras recargar.
+Se descartó una falla real de Supabase o de permisos: el proyecto está
+`ACTIVE_HEALTHY`, `bloqueos_calendario` tiene 23 filas reales, su política RLS
+es de lectura pública (`publico_lee_bloqueos`, `qual: true`), y una llamada
+REST directa con la misma anon key y los mismos parámetros que usa `useTable`
+(`select=*&order=inicio.asc&limit=200`, `Prefer: count=exact`) respondió 200 con
+los datos correctos. En la misma pantalla, la consulta hermana a
+`reservas_acceso` sí cargó bien (15 reservas), lo que descarta una caída general
+de conexión o de sesión. Se le pidió a Ivan revisar la pestaña Network del
+navegador para capturar el código de estado real de la petición fallida, o
+probar en una ventana de incógnito — no llegó respuesta sobre esa comprobación
+en esta sesión. Queda abierto: es la explicación más probable una interferencia
+puntual del lado del cliente (extensión, caché, red), pero no se confirmó la
+causa exacta.
+
+Cambio de UI (verificado en vivo, pendiente de commit/PR): a pedido de Ivan
+("Esa opción debe estar en la sección de Marketing"), se movió la sección
+"Códigos de descuento" (tabla `codigos_descuento`, formulario de creación
+incluido) de `apps/intranet/src/app/(app)/analisis/page.tsx` a
+`apps/intranet/src/app/(app)/marketing/page.tsx`, sin cambios de lógica ni de
+esquema — mismo componente, mismos campos. `apps/intranet/src/lib/permisos.ts`
+se actualizó para que `RUTAS["/marketing"]` incluya el permiso `descuentos`
+(antes solo en `RUTAS["/analisis"]`), así que una cuenta con `descuentos` pero
+sin `marketing`/`analisis_financiero`/`plan_compras`/`cuentas_pagar` sigue
+teniendo una ruta a la que entrar. El permiso en sí no cambió: `descuentos` lo
+tienen por defecto administrador y dueño, igual que antes. `tsc --noEmit`
+limpio en intranet; verificado en vivo contra el servidor real (puerto 3002,
+sesión ya autenticada) — la sección ya no aparece en Análisis, aparece al
+final de Marketing con los 3 códigos reales (`COMINGBACKRANDA5%`,
+`REGISTRO$RANDA5%`, `FAMILIAPARRADO2026`), sin errores de consola.
+
+Estado en git al cierre de esta sesión: cambios sin commitear, en el árbol de
+trabajo sobre la rama local `fix/tienda-usar-fuente-body` (esa rama ya está
+mergeada a `main` vía PR #12 — no tiene relación con este cambio, es solo la
+rama que había activa). No se abrió PR. Pendiente: crear una rama nueva desde
+`main`, commitear estos tres archivos (`analisis/page.tsx`,
+`marketing/page.tsx`, `permisos.ts`) y abrir la PR para que Ivan la mergee.
