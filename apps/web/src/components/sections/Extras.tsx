@@ -34,13 +34,13 @@ export function Extras({ productos }: { productos: Producto[] }) {
           <Reveal delayMs={120} className="flex flex-wrap gap-3">
             <Link
               href="/tienda"
-              className="btn-sweep inline-flex items-center justify-center rounded-[1px] border border-[var(--ink)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold"
+              className="btn-sweep inline-flex items-center justify-center rounded-full border border-[var(--ink)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold"
             >
               {lang === "es" ? "Ver la tienda" : "Open the shop"}
             </Link>
             <Link
               href="/que-hacer-en-panama"
-              className="btn-sweep inline-flex items-center justify-center rounded-[1px] border border-[var(--ink)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold"
+              className="btn-sweep inline-flex items-center justify-center rounded-full border border-[var(--ink)] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-semibold"
             >
               {lang === "es" ? "Ver la guía de Panamá" : "Open the Panama guide"}
             </Link>
@@ -57,7 +57,7 @@ export function Extras({ productos }: { productos: Producto[] }) {
                 <Link
                   key={p.id}
                   href="/tienda"
-                  className="group w-44 shrink-0 snap-start border border-[var(--ink)]/10 bg-white transition-colors hover:border-[var(--caoba)]/40 sm:w-52"
+                  className="group w-44 shrink-0 snap-start sm:w-52"
                 >
                   <div className="relative aspect-square w-full overflow-hidden bg-white">
                     {p.imagen_url && (
