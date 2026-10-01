@@ -4,7 +4,8 @@ Marketing > Campañas de correo) con el diseño de la landing /regreso.
 Uso: python3 generar-campana.py"""
 B = "https://wrroflxjgljwdhfijemc.supabase.co/storage/v1/object/public/imagenes-correo/"
 FACHADA, PATIO, HAB = B + "regreso/fachada-hero.jpg", B + "bienvenida/patio-cubierto.jpg", B + "regreso/habitacion-cama-king.jpg"
-URL = "https://randahome.com/regreso"
+# utm_*: permiten ver en la intranet (/metricas) cuántas visitas y clicks al código trae cada campaña.
+URL = "https://randahome.com/regreso?utm_source=correo&amp;utm_medium=email&amp;utm_campaign=regreso-2026-10"
 NIGHT, BEIGE, PANEL, INK, INK2, CAOBA, LAMP, ON, ON2 = "#14211a", "#f3e9d7", "#f8f2e6", "#18291d", "#4a5a4f", "#d1502a", "#2fb6a3", "#e3e8da", "#a9bca4"
 
 T = {
@@ -39,7 +40,7 @@ T = {
 }
 G = "font-family:Georgia,'Times New Roman',serif;"
 def btn(t, cta):
-    return f'<table role="presentation"><tr><td bgcolor="{CAOBA}" style="background-color:{CAOBA};border-radius:8px;"><a href="{URL}" style="display:inline-block;padding:16px 28px;color:#ffffff;font-size:16px;line-height:22px;font-weight:bold;text-decoration:none;{G}">{cta}</a></td></tr></table>'
+    return f'<table role="presentation"><tr><td bgcolor="{CAOBA}" style="background-color:{CAOBA};border-radius:8px;"><a href="{URL}&amp;utm_content={t["lang"]}" style="display:inline-block;padding:16px 28px;color:#ffffff;font-size:16px;line-height:22px;font-weight:bold;text-decoration:none;{G}">{cta}</a></td></tr></table>'
 def build(t):
     steps = "".join(f'''
             <tr><td style="border-top:1px solid #d9cdb6;padding:20px 0;">
@@ -91,7 +92,7 @@ def build(t):
       </td></tr>
       <tr><td align="center" bgcolor="{NIGHT}" style="background-color:{NIGHT};padding:40px 32px;border-radius:12px;">
         <h2 style="margin:0 0 24px;color:{ON};font-size:24px;line-height:31px;font-weight:bold;{G}">{t["close"]}</h2>
-        <table role="presentation" align="center"><tr><td bgcolor="{CAOBA}" style="background-color:{CAOBA};border-radius:8px;"><a href="{URL}" style="display:inline-block;padding:16px 28px;color:#ffffff;font-size:16px;line-height:22px;font-weight:bold;text-decoration:none;{G}">{t["cta"]}</a></td></tr></table>
+        <table role="presentation" align="center"><tr><td bgcolor="{CAOBA}" style="background-color:{CAOBA};border-radius:8px;"><a href="{URL}&amp;utm_content={t["lang"]}" style="display:inline-block;padding:16px 28px;color:#ffffff;font-size:16px;line-height:22px;font-weight:bold;text-decoration:none;{G}">{t["cta"]}</a></td></tr></table>
       </td></tr>
       <tr><td bgcolor="{BEIGE}" style="background-color:{BEIGE};padding:28px 8px 0;">
         <p style="margin:0;color:{INK};font-size:15px;line-height:24px;">{t["thanks"]}<br><strong>{t["team"]}</strong></p>

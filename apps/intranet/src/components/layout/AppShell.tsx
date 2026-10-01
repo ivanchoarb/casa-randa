@@ -25,6 +25,7 @@ function conCotizaciones<T extends { key: string }>(menuItems: T[]) {
     ...menuItems.slice(0, idx),
     { key: "/cotizaciones", route: "/cotizaciones", label: "Cotizaciones" } as unknown as T,
     { key: "/marketing", route: "/marketing", label: "Marketing" } as unknown as T,
+    { key: "/metricas", route: "/metricas", label: "Métricas web" } as unknown as T,
     { key: "/tienda", route: "/tienda", label: "Tienda" } as unknown as T,
     { key: "/check-in", route: "/check-in", label: "Check-in" } as unknown as T,
     ...menuItems.slice(idx),
@@ -55,6 +56,8 @@ function NavIcon({ route }: { route: string }) {
       return <svg {...common}><path d="M4.5 2.5h6l3 3v10h-9z" /><path d="M10.5 2.5V6h3" /><path d="M7 10.2c0 .7.6 1 1.4 1s1.4-.4 1.4-1-.6-.9-1.4-1.1-1.4-.5-1.4-1.1c0-.6.6-1 1.4-1s1.3.3 1.3.9" /><path d="M8.4 6.9v1M8.4 11.2v1" /></svg>;
     case "/marketing":
       return <svg {...common}><rect x="2.5" y="4" width="13" height="10" rx="1" /><path d="M2.5 5l6.5 5 6.5-5" /></svg>;
+    case "/metricas":
+      return <svg {...common}><path d="M2.5 15.5V2.5" /><path d="M2.5 15.5H15.5" /><path d="M4.5 12l3-3.5 2.5 2 4.5-5.5" /></svg>;
     case "/tienda":
       return <svg {...common}><path d="M3 5.5 4 2.5h10l1 3" /><path d="M3 5.5h12v9H3z" /><path d="M7 8.5a2 2 0 0 0 4 0" /></svg>;
     case "/check-in":
