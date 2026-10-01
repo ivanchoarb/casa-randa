@@ -240,11 +240,11 @@ export default function CampanasPage() {
 
       // Idioma por país de origen (misma regla que la columna "Idioma" de
       // Marketing). Un contacto sin país, o con un país que no se sabe si
-      // es hispano o no, no entra en una campaña filtrada por idioma —
-      // mejor omitirlo que mandarle el correo en el idioma equivocado.
+      // es hispano o no, recibe la versión en inglés (decisión de Iván,
+      // 2026-10-01); solo la campaña en español exige un país hispano.
       const vistos = new Map<string, { nombre: string; apellido: string | null }>();
       for (const r of [...(sol ?? []), ...(con ?? [])]) {
-        if (idioma !== "todos" && idiomaSugerido(r.pais) !== idioma) continue;
+        if (idioma !== "todos" && (idiomaSugerido(r.pais) ?? "en") !== idioma) continue;
         const email = r.email.toLowerCase();
         if (!vistos.has(email)) vistos.set(email, { nombre: r.nombre, apellido: r.apellido });
       }
@@ -324,8 +324,8 @@ export default function CampanasPage() {
             <option value="en">Solo angloparlantes (según su país)</option>
           </select>
           <span className="mt-1 block text-xs text-ink-2">
-            Con un idioma elegido, los contactos sin país registrado no reciben esta campaña. El pie
-            de baja sale en el mismo idioma.
+            Los contactos sin país registrado reciben la versión en inglés. El pie de baja sale en el
+            idioma de la campaña.
           </span>
         </label>
         <label className="block text-sm">
