@@ -13,7 +13,9 @@ interface Resumen {
     codigos_aplicados: number;
     clicks_cta: number;
     solicitudes_con_codigo: number;
+    aperturas_correo: number;
   };
+  campanas: { id: string; asunto: string; enviados: number; abiertos: number }[];
   por_dia: { dia: string; visitas: number; clicks_codigo: number }[];
   por_pagina: { ruta: string; visitas: number }[];
   por_origen: { origen: string; visitas: number; clicks_codigo: number }[];
@@ -101,7 +103,7 @@ export default function MetricasPage() {
 
       {t && (
         <>
-          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-5">
             <Tarjeta titulo="Visitas a la página" valor={t.visitas} nota="Páginas vistas, todo el sitio" />
             <Tarjeta titulo="Visitantes únicos" valor={t.visitantes} nota="Navegadores distintos" />
             <Tarjeta titulo="Visitas a /regreso" valor={t.visitas_regreso} nota="La landing de la campaña" />
@@ -110,7 +112,48 @@ export default function MetricasPage() {
               valor={t.clicks_codigo}
               nota={`${pct(t.clicks_codigo, t.visitas_regreso)} de las visitas a /regreso`}
             />
+            <Tarjeta
+              titulo="Aperturas del correo"
+              valor={t.aperturas_correo}
+              nota="Destinatarios distintos que abrieron. Cifra orientativa"
+            />
           </div>
+
+          <section className="mt-6 rounded-xl border border-line bg-panel p-5">
+            <h2 className="font-semibold">Campañas de correo</h2>
+            <p className="mt-1 text-xs text-ink-2">
+              Totales de cada campaña. Una apertura se cuenta cuando el correo carga una imagen invisible: Gmail y Apple
+              Mail a veces la cargan sin que la persona lo abra, y quien bloquea imágenes no se cuenta, así que úsalo como
+              referencia, no como cifra exacta.
+            </p>
+            <table className="mt-3 w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-ink-2">
+                  <th className="pb-1 font-semibold">Campaña</th>
+                  <th className="pb-1 text-right font-semibold">Enviados</th>
+                  <th className="pb-1 text-right font-semibold">Abiertos</th>
+                  <th className="pb-1 text-right font-semibold">% apertura</th>
+                </tr>
+              </thead>
+              <tbody>
+                {datos.campanas.map((c) => (
+                  <tr key={c.id} className="border-t border-line">
+                    <td className="py-1.5">{c.asunto}</td>
+                    <td className="py-1.5 text-right tabular-nums">{c.enviados}</td>
+                    <td className="py-1.5 text-right tabular-nums">{c.abiertos}</td>
+                    <td className="py-1.5 text-right tabular-nums">{pct(c.abiertos, c.enviados)}</td>
+                  </tr>
+                ))}
+                {datos.campanas.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-3 text-ink-2">
+                      Todavía no hay campañas creadas.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </section>
 
           <section className="mt-6 rounded-xl border border-line bg-panel p-5">
             <h2 className="font-semibold">Embudo del código</h2>
