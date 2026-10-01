@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { useGetIdentity, useTable } from "@refinedev/core";
+import { idiomaSugerido } from "@/lib/idioma";
 import Link from "next/link";
 import { supabaseClient } from "@/lib/supabase-client";
 
@@ -191,6 +192,7 @@ export default function CampanasPage() {
 
   const [asunto, setAsunto] = useState("");
   const [cuerpoHtml, setCuerpoHtml] = useState("");
+  const [idioma, setIdioma] = useState<"todos" | "es" | "en">("todos");
   const [limiteDiario, setLimiteDiario] = useState(String(LIMITE_DIARIO_DEFECTO));
   const [creando, setCreando] = useState(false);
   const [errorCrear, setErrorCrear] = useState<string | null>(null);
@@ -230,24 +232,30 @@ export default function CampanasPage() {
       // snapshot al crear, no una vista en vivo (ver 0020_campanas_
       // marketing.sql).
       const [{ data: sol, error: eSol }, { data: con, error: eCon }] = await Promise.all([
-        supabaseClient.from("solicitudes").select("nombre, apellido, email").eq("consentimiento", true),
-        supabaseClient.from("contactos_marketing").select("nombre, apellido, email").eq("consentimiento", true),
+        supabaseClient.from("solicitudes").select("nombre, apellido, email, pais").eq("consentimiento", true),
+        supabaseClient.from("contactos_marketing").select("nombre, apellido, email, pais").eq("consentimiento", true),
       ]);
       if (eSol) throw new Error(eSol.message);
       if (eCon) throw new Error(eCon.message);
 
+      // Idioma por país de origen (misma regla que la columna "Idioma" de
+      // Marketing). Un contacto sin país, o con un país que no se sabe si
+      // es hispano o no, no entra en una campaña filtrada por idioma —
+      // mejor omitirlo que mandarle el correo en el idioma equivocado.
       const vistos = new Map<string, { nombre: string; apellido: string | null }>();
       for (const r of [...(sol ?? []), ...(con ?? [])]) {
+        if (idioma !== "todos" && idiomaSugerido(r.pais) !== idioma) continue;
         const email = r.email.toLowerCase();
         if (!vistos.has(email)) vistos.set(email, { nombre: r.nombre, apellido: r.apellido });
       }
-      if (vistos.size === 0) throw new Error("No hay contactos con consentimiento todavía — revisa Marketing.");
+      if (vistos.size === 0) throw new Error("No hay contactos con consentimiento para esa audiencia — revisa Marketing.");
 
       const { data: campana, error: eCampana } = await supabaseClient
         .from("campanas_marketing")
         .insert({
           asunto,
           cuerpo_html: cuerpoHtml,
+          idioma: idioma === "todos" ? null : idioma,
           limite_diario: Number(limiteDiario) || LIMITE_DIARIO_DEFECTO,
           creado_por: identity?.id,
         })
@@ -266,6 +274,7 @@ export default function CampanasPage() {
 
       setAsunto("");
       setCuerpoHtml("");
+      setIdioma("todos");
       setLimiteDiario(String(LIMITE_DIARIO_DEFECTO));
       setMensajePrueba(null);
       recargar();
@@ -302,6 +311,22 @@ export default function CampanasPage() {
             required
             className="mt-1 block w-full rounded-md border border-line bg-ground px-3 py-2 text-sm"
           />
+        </label>
+        <label className="block text-sm">
+          Audiencia por idioma
+          <select
+            value={idioma}
+            onChange={(e) => setIdioma(e.target.value as "todos" | "es" | "en")}
+            className="mt-1 block w-full rounded-md border border-line bg-ground px-3 py-2 text-sm"
+          >
+            <option value="todos">Todos los contactos con consentimiento</option>
+            <option value="es">Solo hispanohablantes (según su país)</option>
+            <option value="en">Solo angloparlantes (según su país)</option>
+          </select>
+          <span className="mt-1 block text-xs text-ink-2">
+            Con un idioma elegido, los contactos sin país registrado no reciben esta campaña. El pie
+            de baja sale en el mismo idioma.
+          </span>
         </label>
         <label className="block text-sm">
           Cuerpo del correo (HTML)

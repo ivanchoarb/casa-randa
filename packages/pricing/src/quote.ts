@@ -45,6 +45,8 @@ export interface QuoteInput {
   pax: number;
   cancellation: CancellationPolicy;
   plan: PaymentPlan;
+  /** Código de descuento ya validado, 0–1 (0.05 = 5 %). Se resta del neto antes de absorber la comisión de tarjeta. */
+  discountPct?: number;
 }
 
 export interface QuoteLine {
@@ -84,7 +86,9 @@ export function computeQuote(input: QuoteInput): Quote | null {
   const isFlex = input.cancellation === "flex";
   const adj = isFlex ? Math.round(sub * 0.03) : -Math.round(sub * 0.05);
   const taxed = Math.round((sub + adj) * TAX);
-  const netUsd = sub + adj + taxed;
+  const netBeforeDiscount = sub + adj + taxed;
+  const discount = Math.round(netBeforeDiscount * Math.min(Math.max(input.discountPct ?? 0, 0), 1));
+  const netUsd = netBeforeDiscount - discount;
 
   // Absorbed into the Alojamiento line rather than shown as its own line —
   // the breakdown still sums exactly to totalUsd, it just means the
@@ -127,6 +131,14 @@ export function computeQuote(input: QuoteInput): Quote | null {
     label: { es: "Impuesto de hospedaje, 10 %", en: "Lodging tax, 10%" },
     amountUsd: taxed,
   });
+
+  if (discount > 0) {
+    const pct = Math.round((input.discountPct ?? 0) * 100);
+    lines.push({
+      label: { es: `Código de descuento, −${pct} %`, en: `Discount code, −${pct}%` },
+      amountUsd: -discount,
+    });
+  }
 
   return { nights, lines, totalUsd, dueTodayUsd };
 }

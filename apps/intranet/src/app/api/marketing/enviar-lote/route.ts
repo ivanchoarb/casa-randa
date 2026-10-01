@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
   const { data: campana, error: campanaError } = await db
     .from("campanas_marketing")
-    .select("id, asunto, cuerpo_html, limite_diario, estado")
+    .select("id, asunto, cuerpo_html, limite_diario, estado, idioma")
     .eq("id", body.campana_id)
     .single();
   if (campanaError || !campana) return fail("No se encontró la campaña.", 404);
@@ -104,11 +104,17 @@ export async function POST(req: Request) {
     return Response.json({ enviado: false, motivo: "sin_destinatarios_validos_en_este_lote" });
   }
 
-  const origin = new URL(req.url).origin;
+  // En local el origen es localhost: un enlace de baja que el destinatario no
+  // puede abrir. ENLACE_BAJA_BASE (URL pública de la intranet) lo evita.
+  const origin = process.env.ENLACE_BAJA_BASE?.replace(/\/$/, "") || new URL(req.url).origin;
   const enlaceBaja = `${origin}/darse-de-baja?token=${siguiente.id}`;
   const cuerpoPersonalizado = personalizar(campana.cuerpo_html, siguiente.nombre, siguiente.apellido);
-  const html = `${cuerpoPersonalizado}<hr style="margin-top:24px;border:none;border-top:1px solid #ddd" /><p style="font-size:11px;color:#888">Si no quieres seguir recibiendo estos correos, <a href="${enlaceBaja}">haz clic aquí para darte de baja</a>.</p>`;
-  const texto = `${html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()}\n\nDarte de baja: ${enlaceBaja}`;
+  const ingles = campana.idioma === "en";
+  const pieBaja = ingles
+    ? `If you no longer wish to receive these emails, <a href="${enlaceBaja}">click here to unsubscribe</a>.`
+    : `Si no quieres seguir recibiendo estos correos, <a href="${enlaceBaja}">haz clic aquí para darte de baja</a>.`;
+  const html = `${cuerpoPersonalizado}<hr style="margin-top:24px;border:none;border-top:1px solid #ddd" /><p style="font-size:11px;color:#888">${pieBaja}</p>`;
+  const texto = `${html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()}\n\n${ingles ? "Unsubscribe" : "Darte de baja"}: ${enlaceBaja}`;
 
   try {
     const { transporte, remitente } = crearTransporte();
