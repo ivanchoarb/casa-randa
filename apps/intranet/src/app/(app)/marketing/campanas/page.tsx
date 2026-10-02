@@ -66,6 +66,12 @@ function CampanaCard({
       if (json.enviado) setMensaje(`Enviado a ${json.destinatario} (${json.enviadosHoy}/${json.limite} hoy).`);
       else if (json.motivo === "limite_diario_alcanzado")
         setMensaje(`Límite diario alcanzado (${json.enviadosHoy}/${json.limite}). Vuelve mañana o sube el límite.`);
+      else if (json.motivo === "espaciado")
+        setMensaje(`Espera ${json.esperarSegundos} s: se deja ${json.espaciado} s entre correos para no saturar el servidor de correo.`);
+      else if (json.motivo === "tope_hora")
+        setMensaje(`Tope de ${json.tope} correos por hora alcanzado (entre todas las campañas). Vuelve a intentar en ${Math.ceil(json.esperarSegundos / 60)} min.`);
+      else if (json.motivo === "servidor_limite")
+        setMensaje("El servidor de correo pidió esperar. No se perdió nada: ese contacto sigue pendiente. Espera al menos una hora antes de seguir.");
       else if (json.motivo === "completada") setMensaje("Esta campaña ya se terminó de enviar.");
       else if (json.motivo === "sin_destinatarios_validos_en_este_lote")
         setMensaje("Los pendientes revisados ya se habían dado de baja — vuelve a intentar para revisar el resto.");

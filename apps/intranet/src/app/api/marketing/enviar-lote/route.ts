@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { crearTransporte, personalizar, transporteDisponible } from "@/lib/mailer";
 import { puede } from "@/lib/permisos";
+import { ESPACIADO_SEGUNDOS, TOPE_POR_HORA, esErrorTransitorio, esperaNecesaria } from "@/lib/ritmo-envio";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +67,17 @@ export async function POST(req: Request) {
     return Response.json({ enviado: false, motivo: "limite_diario_alcanzado", enviadosHoy: enviadosHoy ?? 0, limite: campana.limite_diario });
   }
 
+  // Ritmo global (todas las campañas juntas): espaciado entre correos y tope por hora.
+  const { data: recientes } = await db
+    .from("campana_destinatarios")
+    .select("enviado_en")
+    .eq("estado", "enviado")
+    .gte("enviado_en", new Date(Date.now() - 3_600_000).toISOString())
+    .order("enviado_en", { ascending: false })
+    .limit(TOPE_POR_HORA);
+  const espera = esperaNecesaria((recientes ?? []).map((r) => r.enviado_en as string), Date.now());
+  if (espera) return Response.json({ enviado: false, ...espera, espaciado: ESPACIADO_SEGUNDOS, tope: TOPE_POR_HORA });
+
   let siguiente: { id: string; nombre: string; apellido: string | null; email: string } | null = null;
   for (let intento = 0; intento < INTENTOS_MAXIMOS && !siguiente; intento++) {
     const { data: candidatos } = await db
@@ -123,6 +135,13 @@ export async function POST(req: Request) {
     const { transporte, remitente } = crearTransporte();
     await transporte.sendMail({ from: remitente, to: siguiente.email, subject: campana.asunto, html, text: texto });
   } catch (e) {
+    // "Intenta más tarde" del servidor (límite de envíos) no es culpa de la
+    // dirección: el destinatario sigue pendiente y no se marca fallido.
+    // ponytail: no hay enfriamiento forzado tras este error (solo el espaciado y el tope
+    // por hora); si el servidor sigue rechazando, subir ENVIO_ESPACIADO_SEGUNDOS o bajar ENVIO_TOPE_HORA.
+    if (esErrorTransitorio(e)) {
+      return Response.json({ enviado: false, motivo: "servidor_limite", detalle: e instanceof Error ? e.message.slice(0, 200) : String(e) });
+    }
     await db
       .from("campana_destinatarios")
       .update({ estado: "fallido", error: e instanceof Error ? e.message : String(e) })
