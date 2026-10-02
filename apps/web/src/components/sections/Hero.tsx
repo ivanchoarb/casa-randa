@@ -116,7 +116,7 @@ export function Hero() {
     lang === "es"
       ? "Seis habitaciones, seis baños privados."
       : "Six bedrooms, six private bathrooms.";
-  const proof = lang === "es" ? "4,94 · 16 reseñas en Airbnb" : "4.94 · 16 reviews on Airbnb";
+  const proof = lang === "es" ? "4,89 · 19 reseñas en Airbnb" : "4.89 · 19 reviews on Airbnb";
 
   return (
     <section ref={wrapperRef} className="relative" style={{ height: `${SCROLL_LENGTH_VH}vh` }}>

@@ -20,8 +20,8 @@ export function JsonLd() {
     petsAllowed: false,
     aggregateRating: {
       "@type": "AggregateRating",
-      ratingValue: "4.94",
-      reviewCount: "16",
+      ratingValue: "4.89",
+      reviewCount: "19",
     },
   };
 
