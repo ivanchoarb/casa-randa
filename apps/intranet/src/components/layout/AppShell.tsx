@@ -12,7 +12,7 @@ interface Identity {
   rol?: string;
 }
 
-// "Cotizaciones", "Marketing", "Tienda" y "Check-in" no son resources de
+// "Cotizaciones", "Marketing", "Tienda", "Check-in" y "Qué hacer" no son resources de
 // Refine (no hay `useTable`/CRUD genérico detrás con el que useMenu() los
 // liste solo — ver src/lib/cotizacion.ts, marketing/page.tsx, tienda/page.tsx
 // y check-in/page.tsx), así que se insertan a mano. Cotizaciones en la
@@ -28,6 +28,7 @@ function conCotizaciones<T extends { key: string }>(menuItems: T[]) {
     { key: "/metricas", route: "/metricas", label: "Métricas web" } as unknown as T,
     { key: "/tienda", route: "/tienda", label: "Tienda" } as unknown as T,
     { key: "/check-in", route: "/check-in", label: "Check-in" } as unknown as T,
+    { key: "/que-hacer", route: "/que-hacer", label: "Qué hacer" } as unknown as T,
     ...menuItems.slice(idx),
   ];
 }
@@ -64,6 +65,8 @@ function NavIcon({ route }: { route: string }) {
       return <svg {...common}><rect x="2.5" y="3" width="13" height="12" rx="1.5" /><circle cx="9" cy="7.3" r="1.6" /><path d="M5.8 12.3c.4-1.6 1.7-2.4 3.2-2.4s2.8.8 3.2 2.4" /></svg>;
     case "/usuarios":
       return <svg {...common}><circle cx="9" cy="6.3" r="2.3" /><path d="M4 15c.6-2.8 2.5-4.2 5-4.2s4.4 1.4 5 4.2" /></svg>;
+    case "/que-hacer":
+      return <svg {...common}><circle cx="9" cy="9" r="6.5" /><path d="m11.8 6.2-1.6 4-4 1.6 1.6-4z" /></svg>;
     default:
       return <svg {...common}><circle cx="9" cy="9" r="5.5" /></svg>;
   }

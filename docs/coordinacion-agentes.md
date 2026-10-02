@@ -425,3 +425,23 @@ mergeada a `main` vía PR #12 — no tiene relación con este cambio, es solo la
 rama que había activa). No se abrió PR. Pendiente: crear una rama nueva desde
 `main`, commitear estos tres archivos (`analisis/page.tsx`,
 `marketing/page.tsx`, `permisos.ts`) y abrir la PR para que Ivan la mergee.
+
+## 2026-10-02 — Claude: guía "Qué hacer" administrable desde la intranet
+
+Pedido de Ivan: la sección "Qué hacer" de la intranet debe listar todos los
+lugares de la guía y permitir editarlos, agregarlos y borrarlos. Antes vivían
+fijos en `apps/web/src/app/que-hacer-en-panama/places.ts`. Alcance:
+`supabase/migrations/0034_lugares_guia.sql` (tabla `lugares_guia`, lectura
+pública, escritura con el permiso `marketing`, bucket público `imagenes-guia`;
+ya aplicada a la base real con los 5 lugares existentes cargados desde
+`places.ts` por script), `apps/web/src/lib/guia.ts` (lectura),
+`que-hacer-en-panama/{page,GuideList,[slug]/page,[slug]/PlaceDetail}.tsx` y
+`sitemap.ts` (ahora leen de la base con ISR), y en la intranet la página nueva
+`(app)/que-hacer/page.tsx` + ítem "Qué hacer" en `AppShell.tsx` (reemplaza el
+enlace externo de la PR #21) y ruta en `permisos.ts`. Verificado en vivo:
+agregar, ver en la web pública, editar, eliminar; el anon puede leer pero no
+escribir; `pnpm build` y `tsc` limpios en ambas apps. No verificado: subir
+fotos con el selector de archivos real (no automatizable aquí). Lint: hay un
+error previo en `QuoteCalculator.tsx` y otro en `metricas/page.tsx`, ajenos a
+este cambio. Quien edite la guía necesita `marketing` (administrador y dueño
+por defecto; Host y Empleado no).
