@@ -12,6 +12,13 @@ interface Identity {
   rol?: string;
 }
 
+// Misma lógica que NEXT_PUBLIC_INTRANET_URL en el footer de apps/web, a la
+// inversa: en dev apunta al sitio local, en producción al dominio real.
+const WEB_URL =
+  process.env.NEXT_PUBLIC_WEB_URL ||
+  (process.env.NODE_ENV === "development" ? "http://localhost:3000" : "https://randahome.com");
+const QUE_HACER_URL = `${WEB_URL}/que-hacer-en-panama`;
+
 // "Cotizaciones", "Marketing", "Tienda" y "Check-in" no son resources de
 // Refine (no hay `useTable`/CRUD genérico detrás con el que useMenu() los
 // liste solo — ver src/lib/cotizacion.ts, marketing/page.tsx, tienda/page.tsx
@@ -64,6 +71,8 @@ function NavIcon({ route }: { route: string }) {
       return <svg {...common}><rect x="2.5" y="3" width="13" height="12" rx="1.5" /><circle cx="9" cy="7.3" r="1.6" /><path d="M5.8 12.3c.4-1.6 1.7-2.4 3.2-2.4s2.8.8 3.2 2.4" /></svg>;
     case "/usuarios":
       return <svg {...common}><circle cx="9" cy="6.3" r="2.3" /><path d="M4 15c.6-2.8 2.5-4.2 5-4.2s4.4 1.4 5 4.2" /></svg>;
+    case "/que-hacer":
+      return <svg {...common}><circle cx="9" cy="9" r="6.5" /><path d="m11.8 6.2-1.6 4-4 1.6 1.6-4z" /></svg>;
     default:
       return <svg {...common}><circle cx="9" cy="9" r="5.5" /></svg>;
   }
@@ -132,6 +141,17 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
+          <a
+            href={QUE_HACER_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="nav-entrance relative z-10 flex items-center gap-2.5 rounded-md border-l-[3px] border-transparent px-2.5 py-2 text-sm font-medium text-ink-2 transition-colors duration-150 hover:text-ink"
+            style={{ animationDelay: `${items.length * 35}ms` }}
+          >
+            <NavIcon route="/que-hacer" />
+            Qué hacer
+            <span aria-hidden className="ml-auto text-xs">↗</span>
+          </a>
         </nav>
 
         <div className="border-t border-line px-5 py-4">
