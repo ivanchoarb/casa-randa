@@ -12,14 +12,7 @@ interface Identity {
   rol?: string;
 }
 
-// Misma lógica que NEXT_PUBLIC_INTRANET_URL en el footer de apps/web, a la
-// inversa: en dev apunta al sitio local, en producción al dominio real.
-const WEB_URL =
-  process.env.NEXT_PUBLIC_WEB_URL ||
-  (process.env.NODE_ENV === "development" ? "http://localhost:3000" : "https://randahome.com");
-const QUE_HACER_URL = `${WEB_URL}/que-hacer-en-panama`;
-
-// "Cotizaciones", "Marketing", "Tienda" y "Check-in" no son resources de
+// "Cotizaciones", "Marketing", "Tienda", "Check-in" y "Qué hacer" no son resources de
 // Refine (no hay `useTable`/CRUD genérico detrás con el que useMenu() los
 // liste solo — ver src/lib/cotizacion.ts, marketing/page.tsx, tienda/page.tsx
 // y check-in/page.tsx), así que se insertan a mano. Cotizaciones en la
@@ -35,6 +28,7 @@ function conCotizaciones<T extends { key: string }>(menuItems: T[]) {
     { key: "/metricas", route: "/metricas", label: "Métricas web" } as unknown as T,
     { key: "/tienda", route: "/tienda", label: "Tienda" } as unknown as T,
     { key: "/check-in", route: "/check-in", label: "Check-in" } as unknown as T,
+    { key: "/que-hacer", route: "/que-hacer", label: "Qué hacer" } as unknown as T,
     ...menuItems.slice(idx),
   ];
 }
@@ -141,17 +135,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
-          <a
-            href={QUE_HACER_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="nav-entrance relative z-10 flex items-center gap-2.5 rounded-md border-l-[3px] border-transparent px-2.5 py-2 text-sm font-medium text-ink-2 transition-colors duration-150 hover:text-ink"
-            style={{ animationDelay: `${items.length * 35}ms` }}
-          >
-            <NavIcon route="/que-hacer" />
-            Qué hacer
-            <span aria-hidden className="ml-auto text-xs">↗</span>
-          </a>
         </nav>
 
         <div className="border-t border-line px-5 py-4">

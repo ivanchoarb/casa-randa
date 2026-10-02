@@ -5,14 +5,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { Reveal } from "@/components/ui/Reveal";
-import { CATEGORIES, PLACES, type CategoryKey } from "./places";
+import { CATEGORIES, type CategoryKey, type Place } from "./places";
 import { PlacePlaceholder } from "./PlacePlaceholder";
 
-export function GuideList() {
+export function GuideList({ places }: { places: Place[] }) {
   const { lang, t } = useLanguage();
   const [active, setActive] = useState<CategoryKey | "all">("all");
 
-  const visible = active === "all" ? PLACES : PLACES.filter((p) => p.category === active);
+  const visible = active === "all" ? places : places.filter((p) => p.category === active);
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">

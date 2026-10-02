@@ -13,6 +13,15 @@ export function PlaceDetail({ place }: { place: Place }) {
   const { lang, t } = useLanguage();
   const category = CATEGORIES.find((c) => c.key === place.category)!;
 
+  // Un lugar nuevo puede no tener todos los datos (se administran desde la
+  // intranet): lo que esté vacío en este idioma simplemente no se muestra.
+  const facts = [
+    { label: lang === "es" ? "Distancia" : "Distance", text: t(place.distance) },
+    { label: lang === "es" ? "Cómo llegar" : "Getting there", text: t(place.howToGetThere) },
+    { label: lang === "es" ? "Horario" : "Hours", text: t(place.hours) },
+    { label: lang === "es" ? "Precio de referencia" : "Reference pricing", text: t(place.priceReference) },
+  ].filter((f) => f.text);
+
   const requestSubject =
     lang === "es" ? `Solicitar experiencia: ${place.name}` : `Request experience: ${place.name}`;
   const requestHref = `mailto:booking@randahome.com?subject=${encodeURIComponent(requestSubject)}`;
@@ -38,31 +47,25 @@ export function PlaceDetail({ place }: { place: Place }) {
         </p>
       </Reveal>
 
-      <Reveal delayMs={120} className="mt-10 border-t border-[var(--ink)]/10 pt-8">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-bold">
-          {lang === "es" ? "Por qué lo recomendamos" : "Why we recommend it"}
-        </h2>
-        <p className="mt-3 leading-relaxed text-[var(--ink-2)]">{t(place.why)}</p>
-      </Reveal>
+      {t(place.why) && (
+        <Reveal delayMs={120} className="mt-10 border-t border-[var(--ink)]/10 pt-8">
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-bold">
+            {lang === "es" ? "Por qué lo recomendamos" : "Why we recommend it"}
+          </h2>
+          <p className="mt-3 leading-relaxed text-[var(--ink-2)]">{t(place.why)}</p>
+        </Reveal>
+      )}
 
-      <Reveal delayMs={160} className="mt-10 grid gap-8 border-t border-[var(--ink)]/10 pt-8 sm:grid-cols-2">
-        <div>
-          <h3 className={fieldLabel}>{lang === "es" ? "Distancia" : "Distance"}</h3>
-          <p className="mt-2 text-sm text-[var(--ink-2)]">{t(place.distance)}</p>
-        </div>
-        <div>
-          <h3 className={fieldLabel}>{lang === "es" ? "Cómo llegar" : "Getting there"}</h3>
-          <p className="mt-2 text-sm text-[var(--ink-2)]">{t(place.howToGetThere)}</p>
-        </div>
-        <div>
-          <h3 className={fieldLabel}>{lang === "es" ? "Horario" : "Hours"}</h3>
-          <p className="mt-2 text-sm text-[var(--ink-2)]">{t(place.hours)}</p>
-        </div>
-        <div>
-          <h3 className={fieldLabel}>{lang === "es" ? "Precio de referencia" : "Reference pricing"}</h3>
-          <p className="mt-2 text-sm text-[var(--ink-2)]">{t(place.priceReference)}</p>
-        </div>
-      </Reveal>
+      {facts.length > 0 && (
+        <Reveal delayMs={160} className="mt-10 grid gap-8 border-t border-[var(--ink)]/10 pt-8 sm:grid-cols-2">
+          {facts.map((f) => (
+            <div key={f.label}>
+              <h3 className={fieldLabel}>{f.label}</h3>
+              <p className="mt-2 text-sm text-[var(--ink-2)]">{f.text}</p>
+            </div>
+          ))}
+        </Reveal>
+      )}
 
       <Reveal
         delayMs={200}
@@ -85,22 +88,26 @@ export function PlaceDetail({ place }: { place: Place }) {
           >
             {lang === "es" ? "Solicitar experiencia" : "Request experience"}
           </MagneticLink>
-          <a
-            href={place.officialSite}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm text-[var(--on-dark-2)] underline decoration-[var(--on-dark-2)]/40 underline-offset-2 transition-colors hover:text-[var(--on-dark)]"
-          >
-            {lang === "es" ? "Sitio oficial" : "Official site"}
-          </a>
-          <a
-            href={place.mapUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm text-[var(--on-dark-2)] underline decoration-[var(--on-dark-2)]/40 underline-offset-2 transition-colors hover:text-[var(--on-dark)]"
-          >
-            {lang === "es" ? "Abrir mapa" : "Open map"}
-          </a>
+          {place.officialSite && (
+            <a
+              href={place.officialSite}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-[var(--on-dark-2)] underline decoration-[var(--on-dark-2)]/40 underline-offset-2 transition-colors hover:text-[var(--on-dark)]"
+            >
+              {lang === "es" ? "Sitio oficial" : "Official site"}
+            </a>
+          )}
+          {place.mapUrl && (
+            <a
+              href={place.mapUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-[var(--on-dark-2)] underline decoration-[var(--on-dark-2)]/40 underline-offset-2 transition-colors hover:text-[var(--on-dark)]"
+            >
+              {lang === "es" ? "Abrir mapa" : "Open map"}
+            </a>
+          )}
           {place.phone && (
             <a
               href={`tel:${place.phone.replace(/[^+\d]/g, "")}`}

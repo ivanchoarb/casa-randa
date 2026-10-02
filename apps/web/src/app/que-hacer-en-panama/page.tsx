@@ -2,14 +2,20 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/ui/SiteHeader";
 import { SiteFooter } from "@/components/ui/SiteFooter";
 import { PageHero } from "@/components/ui/PageHero";
+import { obtenerLugares } from "@/lib/guia";
 import { GuideList } from "./GuideList";
+
+// Los lugares se administran desde la intranet (tabla lugares_guia): ISR
+// para que un cambio aparezca en minutos sin hacer deploy.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Qué hacer en Panamá",
   description: "Una selección honesta de lugares, sabores y experiencias que sí recomendamos cerca de Casa Randa.",
 };
 
-export default function Page() {
+export default async function Page() {
+  const places = await obtenerLugares();
   return (
     <>
       <SiteHeader />
@@ -24,7 +30,7 @@ export default function Page() {
             en: "An honest selection of places, flavors and experiences we genuinely recommend, with real distance, pricing and hours from the house.",
           }}
         />
-        <GuideList />
+        <GuideList places={places} />
       </main>
       <SiteFooter />
     </>

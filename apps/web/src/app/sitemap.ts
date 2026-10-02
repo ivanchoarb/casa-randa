@@ -1,8 +1,11 @@
 import type { MetadataRoute } from "next";
-import { PLACES } from "./que-hacer-en-panama/places";
+import { obtenerLugares } from "@/lib/guia";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export const revalidate = 3600;
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date();
+  const lugares = await obtenerLugares();
   return [
     {
       url: "https://randahome.com",
@@ -22,7 +25,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.6,
     },
-    ...PLACES.map((p) => ({
+    ...lugares.map((p) => ({
       url: `https://randahome.com/que-hacer-en-panama/${p.slug}`,
       lastModified,
       changeFrequency: "monthly" as const,
