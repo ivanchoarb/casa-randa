@@ -498,3 +498,23 @@ por cabecera, nunca por query); `SYNC_SECRET` sigue igual. La ruta pasó a
 **Corrección (2026-10-03, mismo día):** la primera versión de esta entrada decía que producción no tenía ninguna variable de la sincronización y que por eso el endpoint siempre respondía 401. **Era falso.** Listé las variables desde la raíz del repo, que está enlazada al proyecto `web`, no a `intranet`; el proyecto `intranet` ya tenía `SYNC_SECRET`, `AIRBNB_ICAL_URL`, `VRBO_ICAL_URL`, `ICAL_EXPORT_KEY` y `PRICELABS_*` desde el 2026-09-22 (el 401 era simplemente una llamada sin credenciales). Por el mismo enlace equivocado, `CRON_SECRET`, `AIRBNB_ICAL_URL` y `VRBO_ICAL_URL` se crearon en `web` por error: ya se borraron de ahí (las variables propias de `web` siguen intactas) y `CRON_SECRET` (aleatoria, sensitive) se creó en `intranet`. Lección: los comandos `vercel env` se corren desde `apps/intranet` o `apps/web`, nunca desde la raíz. Verificado en producción tras redesplegar: sin credenciales → 401; con `CRON_SECRET` en la cabecera → 200, Airbnb 16 bloqueos y Vrbo 7, 1,7 s; el deployment lista el cron `/api/sync/ical` a las `0 10 * * *`. Lo que no se puede probar hasta las 10:00 UTC es que Vercel lo dispare por sí mismo. Pendiente: PriceLabs (`/api/sync/pricelabs`) sigue sin agendar, a
 mano. Probado: lógica de `checkSyncSecret` en 10 casos (cerrado sin secretos;
 `CRON_SECRET` solo por cabecera; `SYNC_SECRET` por cabecera y query), `tsc` limpio.
+
+## 2026-10-03 — Claude: la sincronización iCal completa las reservas terminadas
+
+Pedido de Ivan: que una reserva pase sola a `completada` al terminar la
+estancia (antes se quedaba `confirmada` para siempre y se mezclaba con las
+próximas en Reservas; se corregía a mano). `api/sync/ical/route.ts` suma un
+tercer paso, independiente de los feeds (corre aunque Airbnb o Vrbo fallen, como
+ya hacen los canales entre sí): `completarReservasTerminadas()` hace
+`update reservas set estado='completada' where estado='confirmada' and salida < hoy`.
+"Hoy" se calcula en `America/Panama`, no en UTC: de noche en Panamá ya es
+"mañana" en UTC y se completaría una estancia que no terminó (el día de la
+salida cuenta como en curso). Seguro: en toda la app `confirmada` y `completada`
+cuentan igual para finanzas, disponibilidad, conciliación y operación; solo
+cambia el grupo en Reservas. La respuesta del endpoint trae
+`reservas_completadas: { ok, cantidad }`. Verificado con dos reservas de prueba
+reales (una con salida pasada, otra que sale hoy): la primera pasó a
+`completada`, la segunda siguió `confirmada`, `cantidad` fue exactamente 1; las
+pruebas y sus tareas se borraron y los totales quedaron como antes (79 reservas:
+14/50/15). Limitación: la sincronización sigue sin tener scheduler (se dispara a
+mano), así que esto ocurre cuando alguien la corre, no a medianoche.
