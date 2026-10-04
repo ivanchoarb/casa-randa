@@ -484,6 +484,21 @@ Balbi, Naia Salazar) pasaron de `confirmada` a `completada`. Los bloqueos 3–4 
 reservas. Nada pasa solo una reserva a `completada` al terminar la estancia
 (pendiente de decidir si se automatiza).
 
+## 2026-10-03 — Claude: la sincronización iCal corre sola (Vercel Cron)
+
+Pedido de Ivan ("haz que corra sola"). `apps/intranet/vercel.json` agenda
+`GET /api/sync/ical` todos los días a las 10:00 UTC (05:00 Panamá). El proyecto
+está en el plan **Hobby**, que solo permite un cron por día (y lo dispara dentro
+de la hora indicada); más frecuencia exige plan Pro o un scheduler externo
+(p. ej. GitHub Actions). Vercel Cron autentica con `Authorization: Bearer
+<CRON_SECRET>`, así que `checkSyncSecret()` acepta también `CRON_SECRET` (solo
+por cabecera, nunca por query); `SYNC_SECRET` sigue igual. La ruta pasó a
+`maxDuration = 60` (el máximo de Hobby) para que un feed lento no la corte.
+
+**Corrección (2026-10-03, mismo día):** la primera versión de esta entrada decía que producción no tenía ninguna variable de la sincronización y que por eso el endpoint siempre respondía 401. **Era falso.** Listé las variables desde la raíz del repo, que está enlazada al proyecto `web`, no a `intranet`; el proyecto `intranet` ya tenía `SYNC_SECRET`, `AIRBNB_ICAL_URL`, `VRBO_ICAL_URL`, `ICAL_EXPORT_KEY` y `PRICELABS_*` desde el 2026-09-22 (el 401 era simplemente una llamada sin credenciales). Por el mismo enlace equivocado, `CRON_SECRET`, `AIRBNB_ICAL_URL` y `VRBO_ICAL_URL` se crearon en `web` por error: ya se borraron de ahí (las variables propias de `web` siguen intactas) y `CRON_SECRET` (aleatoria, sensitive) se creó en `intranet`. Lección: los comandos `vercel env` se corren desde `apps/intranet` o `apps/web`, nunca desde la raíz. Verificado en producción tras redesplegar: sin credenciales → 401; con `CRON_SECRET` en la cabecera → 200, Airbnb 16 bloqueos y Vrbo 7, 1,7 s; el deployment lista el cron `/api/sync/ical` a las `0 10 * * *`. Lo que no se puede probar hasta las 10:00 UTC es que Vercel lo dispare por sí mismo. Pendiente: PriceLabs (`/api/sync/pricelabs`) sigue sin agendar, a
+mano. Probado: lógica de `checkSyncSecret` en 10 casos (cerrado sin secretos;
+`CRON_SECRET` solo por cabecera; `SYNC_SECRET` por cabecera y query), `tsc` limpio.
+
 ## 2026-10-03 — Claude: la sincronización iCal completa las reservas terminadas
 
 Pedido de Ivan: que una reserva pase sola a `completada` al terminar la

@@ -4,18 +4,24 @@ import { NextRequest } from "next/server";
  * Shared-secret check for the /api/sync/* routes. These trigger real writes
  * (via the Supabase service role) and outbound HTTP calls, so they can't be
  * left open the way a normal read-only API route might be — anyone who
- * finds the URL could otherwise trigger them repeatedly. Pass the secret as
- * `Authorization: Bearer <SYNC_SECRET>` (what a cron service like Vercel
- * Cron or a manual `curl` would send) or `?secret=<SYNC_SECRET>` (simplest
- * for a one-off manual trigger while testing).
+ * finds the URL could otherwise trigger them repeatedly.
+ *
+ * Accepted credentials:
+ * - `Authorization: Bearer <SYNC_SECRET>` or `?secret=<SYNC_SECRET>` — a manual
+ *   `curl` or any external scheduler.
+ * - `Authorization: Bearer <CRON_SECRET>` — what Vercel Cron sends on its own
+ *   when a `CRON_SECRET` env var exists in the project (vercel.json `crons`).
+ *   Header only, never the query string: a cron secret has no reason to
+ *   appear in a URL.
  */
 export function checkSyncSecret(req: NextRequest): boolean {
-  const expected = process.env.SYNC_SECRET;
-  if (!expected) return false; // fail closed: no secret configured = no access
+  const syncSecret = process.env.SYNC_SECRET;
+  const cronSecret = process.env.CRON_SECRET;
+  if (!syncSecret && !cronSecret) return false; // fail closed: no secret configured = no access
 
   const auth = req.headers.get("authorization");
-  if (auth === `Bearer ${expected}`) return true;
+  if (syncSecret && auth === `Bearer ${syncSecret}`) return true;
+  if (cronSecret && auth === `Bearer ${cronSecret}`) return true;
 
-  const fromQuery = req.nextUrl.searchParams.get("secret");
-  return fromQuery === expected;
+  return !!syncSecret && req.nextUrl.searchParams.get("secret") === syncSecret;
 }

@@ -4,6 +4,9 @@ import { checkSyncSecret } from "@/lib/sync-auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
+// Dos feeds + una RPC por canal tardan ~2 s; el tope por defecto es holgado para eso,
+// pero un feed lento no debe cortar la sincronización a medias. 60 s es el máximo de Hobby.
+export const maxDuration = 60;
 
 type Fuente = "airbnb" | "vrbo";
 
