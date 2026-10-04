@@ -2,7 +2,7 @@
 
 import { useGetIdentity, useLogout, useMenu } from "@refinedev/core";
 import Link from "next/link";
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { usePermisos } from "@/lib/use-permisos";
 import { RUTAS } from "@/lib/permisos";
 
@@ -90,6 +90,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   // hamburguesa; desde md en adelante sigue siendo la barra lateral fija.
   const [menuAbierto, setMenuAbierto] = useState(false);
 
+  // Con el cajón abierto: Escape lo cierra y la página de atrás no se desplaza.
+  useEffect(() => {
+    if (!menuAbierto) return;
+    const alTeclear = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuAbierto(false);
+    };
+    document.addEventListener("keydown", alTeclear);
+    const overflowPrevio = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", alTeclear);
+      document.body.style.overflow = overflowPrevio;
+    };
+  }, [menuAbierto]);
+
   useLayoutEffect(() => {
     const el = refs.current.get(activeKey);
     if (el) setIndicator({ top: el.offsetTop, height: el.offsetHeight });
@@ -107,6 +122,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           onClick={() => setMenuAbierto((v) => !v)}
           aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
           aria-expanded={menuAbierto}
+          aria-controls="menu-lateral"
           className="btn-press -mr-2 flex h-10 w-10 items-center justify-center rounded-md text-ink"
         >
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
@@ -115,18 +131,20 @@ export function AppShell({ children }: { children: ReactNode }) {
         </button>
       </header>
 
-      {menuAbierto && (
-        <button
-          type="button"
-          aria-label="Cerrar menú"
-          onClick={() => setMenuAbierto(false)}
-          className="fixed inset-0 z-30 bg-ink/40 md:hidden"
-        />
-      )}
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-hidden
+        onClick={() => setMenuAbierto(false)}
+        className={`fixed inset-0 z-30 bg-ink/40 transition-opacity duration-200 motion-reduce:transition-none md:hidden ${
+          menuAbierto ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 max-w-[80vw] shrink-0 flex-col overflow-y-auto border-r border-line bg-panel transition-transform duration-200 md:sticky md:top-0 md:h-screen md:max-w-none md:translate-x-0 ${
-          menuAbierto ? "translate-x-0" : "-translate-x-full"
+        id="menu-lateral"
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 max-w-[80vw] shrink-0 flex-col overflow-y-auto border-r border-line bg-panel transition-[transform,visibility] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none md:visible md:sticky md:top-0 md:h-screen md:max-w-none md:translate-x-0 ${
+          menuAbierto ? "visible translate-x-0" : "invisible -translate-x-full"
         }`}
       >
         <div className="flex items-center gap-2.5 border-b border-line px-5 py-5">
