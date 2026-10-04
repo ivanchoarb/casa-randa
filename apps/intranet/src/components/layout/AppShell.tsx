@@ -86,6 +86,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const activeKey = selectedKey ?? "/";
   const refs = useRef(new Map<string, HTMLAnchorElement>());
   const [indicator, setIndicator] = useState<{ top: number; height: number } | null>(null);
+  // En pantallas angostas el menú es un cajón que se abre con el botón de
+  // hamburguesa; desde md en adelante sigue siendo la barra lateral fija.
+  const [menuAbierto, setMenuAbierto] = useState(false);
 
   useLayoutEffect(() => {
     const el = refs.current.get(activeKey);
@@ -93,8 +96,39 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [activeKey, items.length]);
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="flex w-64 shrink-0 flex-col border-r border-line bg-panel">
+    <div className="flex min-h-screen flex-col md:flex-row">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-panel px-4 py-3 md:hidden">
+        <div>
+          <p className="eyebrow">Casa Randa</p>
+          <p className="text-sm font-bold">Intranet</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMenuAbierto((v) => !v)}
+          aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={menuAbierto}
+          className="btn-press -mr-2 flex h-10 w-10 items-center justify-center rounded-md text-ink"
+        >
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+            {menuAbierto ? <path d="M5 5l12 12M17 5 5 17" /> : <path d="M3 6h16M3 11h16M3 16h16" />}
+          </svg>
+        </button>
+      </header>
+
+      {menuAbierto && (
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          onClick={() => setMenuAbierto(false)}
+          className="fixed inset-0 z-30 bg-ink/40 md:hidden"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 max-w-[80vw] shrink-0 flex-col overflow-y-auto border-r border-line bg-panel transition-transform duration-200 md:sticky md:top-0 md:h-screen md:max-w-none md:translate-x-0 ${
+          menuAbierto ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="flex items-center gap-2.5 border-b border-line px-5 py-5">
           <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="var(--caoba)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M4 12 13 4l9 8" />
@@ -125,6 +159,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   else refs.current.delete(item.key);
                 }}
                 href={item.route ?? "#"}
+                onClick={() => setMenuAbierto(false)}
                 className={`nav-entrance relative z-10 flex items-center gap-2.5 rounded-md border-l-[3px] px-2.5 py-2 text-sm font-medium transition-colors duration-150 ${
                   isActive ? "border-caoba text-ink" : "border-transparent text-ink-2 hover:text-ink"
                 }`}
