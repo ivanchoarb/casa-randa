@@ -399,9 +399,9 @@ los datos correctos. En la misma pantalla, la consulta hermana a
 de conexión o de sesión. Se le pidió a Ivan revisar la pestaña Network del
 navegador para capturar el código de estado real de la petición fallida, o
 probar en una ventana de incógnito — no llegó respuesta sobre esa comprobación
-en esta sesión. Queda abierto: es la explicación más probable una interferencia
-puntual del lado del cliente (extensión, caché, red), pero no se confirmó la
-causa exacta.
+en esta sesión. **Corrección (2026-10-03): la hipótesis de "fallo de red
+puntual" era incorrecta.** La causa real se encontró después: ver la entrada de
+2026-10-03 más abajo (sorters compartidos por URL → 400 en `bloqueos_calendario`).
 
 Cambio de UI (verificado en vivo, pendiente de commit/PR): a pedido de Ivan
 ("Esa opción debe estar en la sección de Marketing"), se movió la sección
@@ -445,3 +445,41 @@ fotos con el selector de archivos real (no automatizable aquí). Lint: hay un
 error previo en `QuoteCalculator.tsx` y otro en `metricas/page.tsx`, ajenos a
 este cambio. Quien edite la guía necesita `marketing` (administrador y dueño
 por defecto; Host y Empleado no).
+
+## 2026-10-03 — Claude: Calendario incluye reservas, y causa real del error "No se pudo conectar a Supabase"
+
+**Causa real del error del 2026-09-30 en Calendario** (diagnosticada mal entonces
+como fallo de red). `providers.tsx` tenía `syncWithLocation: true` global, así
+que todas las `useTable` de una página comparten un único `?sorters[0][field]=…`
+en la URL: la última en montarse lo pisa y las demás lo leen. En Calendario la
+tabla de `reservas_acceso` (ordena por `entrada`) contaminaba la URL y la de
+`bloqueos_calendario` (ordena por `inicio`) terminaba pidiendo
+`order=entrada.asc` → PostgREST 400 (esa tabla no tiene `entrada`) → mensaje
+"No se pudo conectar a Supabase". Recargar no ayudaba porque la URL ya traía el
+parámetro. Se vio en la URL de la captura de Ivan
+(`/calendario?sorters[0][field]=entrada&sorters[0][order]=asc`) y se reprodujo
+con `performance.getEntriesByType('resource')`: el 400 nunca aparecía en
+`read_network_requests`. Corrección: `syncWithLocation: false` global; nada en
+la intranet comparte estado de tabla por URL (la paginación de Usuarios y
+Operación vive en estado interno; Operación ya la tenía desactivada). Las otras
+8 páginas con 2+ tablas tenían el mismo riesgo latente. Verificado con la URL
+contaminada exacta: carga bien, y un recorrido por las 14 páginas del menú no
+dio ninguna respuesta 4xx/5xx ni mensaje de error.
+
+**Calendario ahora incluye reservas.** Solo dibujaba bloqueos del feed iCal; una
+reserva que el feed no trae (el de Airbnb llega hasta ~abril de 2027, y una
+directa nunca genera bloqueo, defecto D2) no aparecía aunque la web pública sí
+la tratara como ocupada. `calendario/page.tsx` lee las reservas confirmadas/
+completadas con `salida >= hoy` de `reservas_acceso` (gate `reservas`, igual que
+el botón de WhatsApp) y agrega solo las que ningún bloqueo del mismo canal
+cubre, marcadas "Reserva · <huésped>", con una nota que dice cuántas son.
+Hoy agrega 1: David Benites (11–14 nov 2027). Contador: "N bloqueos y
+reservas vigentes".
+
+**Datos (no código):** corrida la sincronización iCal del 2026-10-03: se insertó
+David Benites (HMS9RH9KBS), se marcaron canceladas Dwight Gamble (HMYDWW9CNN) y
+Sean Warner (HM9HJB2XJY), y 3 estancias ya terminadas (Tonisha Allen, Nestor
+Balbi, Naia Salazar) pasaron de `confirmada` a `completada`. Los bloqueos 3–4 oct
+2026, 24 feb–3 mar 2027 y 19–25 abr 2027 son `Airbnb (Not available)`, no
+reservas. Nada pasa solo una reserva a `completada` al terminar la estancia
+(pendiente de decidir si se automatiza).

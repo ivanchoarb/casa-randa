@@ -9,6 +9,18 @@ interface Bloqueo {
   inicio: string;
   fin: string;
   fuente: "airbnb" | "vrbo" | "directo";
+  // Solo en las filas que vienen de una reserva y no de un bloqueo del feed.
+  reserva?: { huesped: string | null };
+}
+
+// Vista permisada de reservas: `canal` toma los mismos valores que
+// `bloqueos_calendario.fuente` (airbnb | vrbo | directo).
+interface ReservaCalendario {
+  id: string;
+  canal: Bloqueo["fuente"];
+  entrada: string;
+  salida: string;
+  huesped_nombre: string | null;
 }
 
 interface ReservaProxima {
@@ -91,14 +103,51 @@ export default function CalendarioPage() {
   // los 200 más próximos por `inicio` ascendente — de ahí para atrás en
   // el tiempo no hay bloqueos futuros que perder.
   const hoy = hoyISO();
+
+  // 2026-10-03, a pedido de Ivan: este calendario solo dibujaba los bloqueos
+  // del feed iCal, así que una reserva confirmada que el feed todavía no trae
+  // (el de Airbnb llega hasta ~abril de 2027, y una reserva directa nunca
+  // genera bloqueo — ver el defecto D2 en 0002_reservas.sql) no aparecía
+  // aunque sí estuviera en Reservas y la web pública ya la tratara como
+  // ocupada. Se leen las reservas vigentes de `reservas_acceso` (mismo gate
+  // `reservas` que el botón de WhatsApp de abajo) y se agregan solo las que
+  // ningún bloqueo del mismo canal cubre, para no duplicar fechas.
+  const { result: reservasResult } = useTable<ReservaCalendario>({
+    resource: "reservas_acceso",
+    queryOptions: { enabled: can("reservas") },
+    filters: {
+      permanent: [
+        { field: "estado", operator: "in", value: ["confirmada", "completada"] },
+        { field: "salida", operator: "gte", value: hoy },
+      ],
+    },
+    sorters: { initial: [{ field: "entrada", order: "asc" }] },
+    pagination: { mode: "off" },
+  });
+
+  const { ocupaciones, deReservas } = useMemo(() => {
+    const bloqueos = result.data ?? [];
+    const deReservas: Bloqueo[] = (reservasResult.data ?? [])
+      .filter((r) => !bloqueos.some((b) => b.fuente === r.canal && b.inicio < r.salida && b.fin > r.entrada))
+      .map((r) => ({
+        id: `reserva-${r.id}`,
+        inicio: r.entrada,
+        fin: r.salida,
+        fuente: r.canal,
+        reserva: { huesped: r.huesped_nombre },
+      }));
+    const ocupaciones = [...bloqueos, ...deReservas].sort((a, b) => a.inicio.localeCompare(b.inicio));
+    return { ocupaciones, deReservas };
+  }, [result.data, reservasResult.data]);
+
   const { vigentes, historial } = useMemo(() => {
     const vigentes: Bloqueo[] = [];
     const historial: Bloqueo[] = [];
-    for (const b of result.data ?? []) {
+    for (const b of ocupaciones) {
       (b.fin >= hoy ? vigentes : historial).push(b);
     }
     return { vigentes, historial };
-  }, [result.data, hoy]);
+  }, [ocupaciones, hoy]);
   const [historialAbierto, setHistorialAbierto] = useState(false);
 
   const grupos = agruparPorMes(vigentes);
@@ -130,7 +179,7 @@ export default function CalendarioPage() {
       <h1 className="mt-1 text-2xl font-bold">Calendario y disponibilidad</h1>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-ink-2">
-          {tableQuery.isLoading ? "Cargando…" : `${vigentes.length} bloqueos vigentes`}
+          {tableQuery.isLoading ? "Cargando…" : `${vigentes.length} bloqueos y reservas vigentes`}
         </p>
         {can("reservas") && proximasConfirmadas.length > 0 && (
           <a
@@ -151,6 +200,14 @@ export default function CalendarioPage() {
         </p>
       )}
 
+      {deReservas.some((b) => b.fin >= hoy) && (
+        <p className="mt-1 text-xs text-ink-2">
+          Incluye {deReservas.filter((b) => b.fin >= hoy).length} reserva
+          {deReservas.filter((b) => b.fin >= hoy).length === 1 ? "" : "s"} confirmada
+          {deReservas.filter((b) => b.fin >= hoy).length === 1 ? "" : "s"} que el feed de iCal todavía no trae.
+        </p>
+      )}
+
       {tableQuery.isError && (
         <p className="mt-6 text-sm text-caoba">
           No se pudo conectar a Supabase todavía — completa <code>.env.local</code> (ver{" "}
@@ -158,14 +215,14 @@ export default function CalendarioPage() {
         </p>
       )}
 
-      {!tableQuery.isLoading && !tableQuery.isError && result.data.length === 0 && (
+      {!tableQuery.isLoading && !tableQuery.isError && ocupaciones.length === 0 && (
         <p className="mt-6 text-sm text-ink-2">
           Sin bloqueos todavía. Los trae la sincronización de iCal (apps/intranet/src/app/api/sync/ical) o se
           cargan a mano mientras tanto.
         </p>
       )}
 
-      {!tableQuery.isLoading && !tableQuery.isError && result.data.length > 0 && vigentes.length === 0 && (
+      {!tableQuery.isLoading && !tableQuery.isError && ocupaciones.length > 0 && vigentes.length === 0 && (
         <p className="mt-6 text-sm text-ink-2">
           No hay bloqueos vigentes — todos los que hay quedaron en el Historial, más abajo.
         </p>
@@ -226,6 +283,11 @@ function FilaBloqueo({ b }: { b: Bloqueo }) {
         <span className="text-ink-2">
           {noches(b.inicio, b.fin)} {noches(b.inicio, b.fin) === 1 ? "noche" : "noches"}
         </span>
+        {b.reserva && (
+          <span className="text-xs text-ink-2">
+            Reserva{b.reserva.huesped ? ` · ${b.reserva.huesped}` : ""}
+          </span>
+        )}
       </div>
       <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${FUENTE_STYLE[b.fuente]}`}>
         {b.fuente}
