@@ -483,3 +483,23 @@ Balbi, Naia Salazar) pasaron de `confirmada` a `completada`. Los bloqueos 3–4 
 2026, 24 feb–3 mar 2027 y 19–25 abr 2027 son `Airbnb (Not available)`, no
 reservas. Nada pasa solo una reserva a `completada` al terminar la estancia
 (pendiente de decidir si se automatiza).
+
+## 2026-10-03 — Claude: la sincronización iCal completa las reservas terminadas
+
+Pedido de Ivan: que una reserva pase sola a `completada` al terminar la
+estancia (antes se quedaba `confirmada` para siempre y se mezclaba con las
+próximas en Reservas; se corregía a mano). `api/sync/ical/route.ts` suma un
+tercer paso, independiente de los feeds (corre aunque Airbnb o Vrbo fallen, como
+ya hacen los canales entre sí): `completarReservasTerminadas()` hace
+`update reservas set estado='completada' where estado='confirmada' and salida < hoy`.
+"Hoy" se calcula en `America/Panama`, no en UTC: de noche en Panamá ya es
+"mañana" en UTC y se completaría una estancia que no terminó (el día de la
+salida cuenta como en curso). Seguro: en toda la app `confirmada` y `completada`
+cuentan igual para finanzas, disponibilidad, conciliación y operación; solo
+cambia el grupo en Reservas. La respuesta del endpoint trae
+`reservas_completadas: { ok, cantidad }`. Verificado con dos reservas de prueba
+reales (una con salida pasada, otra que sale hoy): la primera pasó a
+`completada`, la segunda siguió `confirmada`, `cantidad` fue exactamente 1; las
+pruebas y sus tareas se borraron y los totales quedaron como antes (79 reservas:
+14/50/15). Limitación: la sincronización sigue sin tener scheduler (se dispara a
+mano), así que esto ocurre cuando alguien la corre, no a medianoche.

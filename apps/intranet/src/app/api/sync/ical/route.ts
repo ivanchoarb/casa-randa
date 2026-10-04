@@ -55,6 +55,32 @@ async function reemplazarBloqueos(fuente: Fuente, bloqueos: { inicio: string; fi
   if (error) throw error;
 }
 
+// "Hoy" en la zona de la casa, no en UTC: de noche en Panamá ya es "mañana" en
+// UTC y se completaría una estancia que aún no terminó. `en-CA` formatea YYYY-MM-DD.
+function hoyEnPanama(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Panama" }).format(new Date());
+}
+
+/**
+ * Pasa a `completada` toda reserva `confirmada` cuya salida ya pasó
+ * (`salida < hoy`: el día de la salida todavía cuenta como en curso).
+ * Nada más lo hacía — una estancia terminada se quedaba "confirmada" para
+ * siempre y se mezclaba con las próximas en Reservas. Es seguro: en toda la
+ * app `confirmada` y `completada` cuentan igual para finanzas, disponibilidad,
+ * conciliación y operación; solo cambia el grupo en que se muestra.
+ * Ivan lo pidió el 2026-10-03; antes se hacía a mano.
+ */
+async function completarReservasTerminadas(): Promise<number> {
+  const { data, error } = await getSupabaseAdmin()
+    .from("reservas")
+    .update({ estado: "completada", updated_at: new Date().toISOString() })
+    .eq("estado", "confirmada")
+    .lt("salida", hoyEnPanama())
+    .select("id");
+  if (error) throw error;
+  return data?.length ?? 0;
+}
+
 export async function GET(req: NextRequest) {
   if (!checkSyncSecret(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -91,6 +117,13 @@ export async function GET(req: NextRequest) {
     }
   } else {
     resultados.vrbo = { ok: false, error: "VRBO_ICAL_URL no configurada" };
+  }
+
+  // Independiente de los feeds: corre aunque Airbnb o Vrbo hayan fallado.
+  try {
+    resultados.reservas_completadas = { ok: true, cantidad: await completarReservasTerminadas() };
+  } catch (error) {
+    resultados.reservas_completadas = { ok: false, error: String(error) };
   }
 
   return NextResponse.json({ sincronizado_en: new Date().toISOString(), ...resultados });
