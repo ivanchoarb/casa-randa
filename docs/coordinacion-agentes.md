@@ -495,12 +495,6 @@ de la hora indicada); más frecuencia exige plan Pro o un scheduler externo
 por cabecera, nunca por query); `SYNC_SECRET` sigue igual. La ruta pasó a
 `maxDuration = 60` (el máximo de Hobby) para que un feed lento no la corte.
 
-**Hallazgo:** producción no tenía ninguna variable de la sincronización
-(`SYNC_SECRET`, `AIRBNB_ICAL_URL` y `VRBO_ICAL_URL` solo estaban en
-`apps/intranet/.env.local`), por eso el endpoint desplegado siempre respondía
-401 y habría fallado aunque se agendara. Se agregaron a Production como
-variables *sensitive*: `CRON_SECRET` (aleatoria, generada para esto) y las dos
-URLs de los calendarios (copiadas del `.env.local`, sin mostrarlas). `SYNC_SECRET`
-no se subió. Pendiente: PriceLabs (`/api/sync/pricelabs`) sigue sin agendar, a
+**Corrección (2026-10-03, mismo día):** la primera versión de esta entrada decía que producción no tenía ninguna variable de la sincronización y que por eso el endpoint siempre respondía 401. **Era falso.** Listé las variables desde la raíz del repo, que está enlazada al proyecto `web`, no a `intranet`; el proyecto `intranet` ya tenía `SYNC_SECRET`, `AIRBNB_ICAL_URL`, `VRBO_ICAL_URL`, `ICAL_EXPORT_KEY` y `PRICELABS_*` desde el 2026-09-22 (el 401 era simplemente una llamada sin credenciales). Por el mismo enlace equivocado, `CRON_SECRET`, `AIRBNB_ICAL_URL` y `VRBO_ICAL_URL` se crearon en `web` por error: ya se borraron de ahí (las variables propias de `web` siguen intactas) y `CRON_SECRET` (aleatoria, sensitive) se creó en `intranet`. Lección: los comandos `vercel env` se corren desde `apps/intranet` o `apps/web`, nunca desde la raíz. Verificado en producción tras redesplegar: sin credenciales → 401; con `CRON_SECRET` en la cabecera → 200, Airbnb 16 bloqueos y Vrbo 7, 1,7 s; el deployment lista el cron `/api/sync/ical` a las `0 10 * * *`. Lo que no se puede probar hasta las 10:00 UTC es que Vercel lo dispare por sí mismo. Pendiente: PriceLabs (`/api/sync/pricelabs`) sigue sin agendar, a
 mano. Probado: lógica de `checkSyncSecret` en 10 casos (cerrado sin secretos;
 `CRON_SECRET` solo por cabecera; `SYNC_SECRET` por cabecera y query), `tsc` limpio.
