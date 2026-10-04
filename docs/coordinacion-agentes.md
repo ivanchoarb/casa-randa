@@ -483,3 +483,24 @@ Balbi, Naia Salazar) pasaron de `confirmada` a `completada`. Los bloqueos 3–4 
 2026, 24 feb–3 mar 2027 y 19–25 abr 2027 son `Airbnb (Not available)`, no
 reservas. Nada pasa solo una reserva a `completada` al terminar la estancia
 (pendiente de decidir si se automatiza).
+
+## 2026-10-03 — Claude: la sincronización iCal corre sola (Vercel Cron)
+
+Pedido de Ivan ("haz que corra sola"). `apps/intranet/vercel.json` agenda
+`GET /api/sync/ical` todos los días a las 10:00 UTC (05:00 Panamá). El proyecto
+está en el plan **Hobby**, que solo permite un cron por día (y lo dispara dentro
+de la hora indicada); más frecuencia exige plan Pro o un scheduler externo
+(p. ej. GitHub Actions). Vercel Cron autentica con `Authorization: Bearer
+<CRON_SECRET>`, así que `checkSyncSecret()` acepta también `CRON_SECRET` (solo
+por cabecera, nunca por query); `SYNC_SECRET` sigue igual. La ruta pasó a
+`maxDuration = 60` (el máximo de Hobby) para que un feed lento no la corte.
+
+**Hallazgo:** producción no tenía ninguna variable de la sincronización
+(`SYNC_SECRET`, `AIRBNB_ICAL_URL` y `VRBO_ICAL_URL` solo estaban en
+`apps/intranet/.env.local`), por eso el endpoint desplegado siempre respondía
+401 y habría fallado aunque se agendara. Se agregaron a Production como
+variables *sensitive*: `CRON_SECRET` (aleatoria, generada para esto) y las dos
+URLs de los calendarios (copiadas del `.env.local`, sin mostrarlas). `SYNC_SECRET`
+no se subió. Pendiente: PriceLabs (`/api/sync/pricelabs`) sigue sin agendar, a
+mano. Probado: lógica de `checkSyncSecret` en 10 casos (cerrado sin secretos;
+`CRON_SECRET` solo por cabecera; `SYNC_SECRET` por cabecera y query), `tsc` limpio.
