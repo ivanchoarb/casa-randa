@@ -36,7 +36,14 @@ export function Providers({ children }: { children: ReactNode }) {
       authProvider={authProvider}
       resources={resources}
       options={{
-        syncWithLocation: true,
+        // Con `true`, todas las tablas de una página comparten un único
+        // `?sorters[0][field]=…` en la URL: la última en montarse lo pisa y
+        // las demás lo leen. En Calendario, la tabla de reservas escribía
+        // `entrada` y la de bloqueos (que ordena por `inicio`) pedía esa
+        // columna inexistente → 400 → "No se pudo conectar a Supabase", y
+        // recargar no lo arreglaba porque la URL ya quedaba contaminada. Nada
+        // en la intranet necesita compartir el estado de una tabla por URL.
+        syncWithLocation: false,
         disableTelemetry: true,
         title: { text: "Casa Randa · Intranet" },
       }}
