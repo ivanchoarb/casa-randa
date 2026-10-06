@@ -55,8 +55,6 @@ export default function MetricasPage() {
 
   useEffect(() => {
     let cancelado = false;
-    setDatos(null);
-    setError(null);
     void supabaseClient.rpc("resumen_metricas_web", { p_dias: dias }).then(({ data, error: e }) => {
       if (cancelado) return;
       if (e) setError(e.message);
@@ -101,7 +99,11 @@ export default function MetricasPage() {
           <button
             key={p}
             type="button"
-            onClick={() => setDias(p)}
+            onClick={() => {
+              setDatos(null);
+              setError(null);
+              setDias(p);
+            }}
             className={`rounded-full border px-4 py-1.5 text-sm font-semibold ${
               dias === p ? "border-caoba bg-caoba text-white" : "border-line text-ink-2 hover:border-caoba"
             }`}
@@ -139,7 +141,7 @@ export default function MetricasPage() {
               Mail a veces la cargan sin que la persona lo abra, y quien bloquea imágenes no se cuenta, así que úsalo como
               referencia, no como cifra exacta.
             </p>
-            <table className="mt-3 w-full text-sm">
+            <div className="mt-3 overflow-x-auto"><table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-ink-2">
                   <th className="pb-1 font-semibold">Campaña</th>
@@ -165,7 +167,7 @@ export default function MetricasPage() {
                   </tr>
                 )}
               </tbody>
-            </table>
+            </table></div>
           </section>
 
           <section className="mt-6 rounded-xl border border-line bg-panel p-5">
@@ -216,7 +218,7 @@ export default function MetricasPage() {
             <section className="rounded-xl border border-line bg-panel p-5">
               <h2 className="font-semibold">De dónde llegan</h2>
               <p className="mt-1 text-xs text-ink-2">Campaña (utm), sitio de origen o directo.</p>
-              <table className="mt-3 w-full text-sm">
+              <div className="mt-3 overflow-x-auto"><table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-ink-2">
                     <th className="pb-1 font-semibold">Origen</th>
@@ -240,7 +242,7 @@ export default function MetricasPage() {
                     </tr>
                   )}
                 </tbody>
-              </table>
+              </table></div>
             </section>
 
             <section className="rounded-xl border border-line bg-panel p-5">
@@ -248,7 +250,7 @@ export default function MetricasPage() {
               <p className="mt-1 text-xs text-ink-2">
                 Según la ubicación aproximada de la conexión. No se guarda la dirección IP, solo el país.
               </p>
-              <table className="mt-3 w-full text-sm">
+              <div className="mt-3 overflow-x-auto"><table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-ink-2">
                     <th className="pb-1 font-semibold">País</th>
@@ -274,12 +276,12 @@ export default function MetricasPage() {
                     </tr>
                   )}
                 </tbody>
-              </table>
+              </table></div>
             </section>
 
             <section className="rounded-xl border border-line bg-panel p-5">
               <h2 className="font-semibold">Páginas más vistas</h2>
-              <table className="mt-3 w-full text-sm">
+              <div className="mt-3 overflow-x-auto"><table className="w-full text-sm">
                 <tbody>
                   {datos.por_pagina.map((p) => (
                     <tr key={p.ruta} className="border-t border-line first:border-t-0">
@@ -293,7 +295,7 @@ export default function MetricasPage() {
                     </tr>
                   )}
                 </tbody>
-              </table>
+              </table></div>
             </section>
           </div>
         </>

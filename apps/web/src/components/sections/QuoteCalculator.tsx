@@ -65,8 +65,10 @@ export function QuoteCalculator() {
   useEffect(() => {
     const c = new URLSearchParams(window.location.search).get("codigo");
     if (c) {
-      setCodigoTexto(c);
-      void aplicarCodigo(c);
+      queueMicrotask(() => {
+        setCodigoTexto(c);
+        void aplicarCodigo(c);
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
