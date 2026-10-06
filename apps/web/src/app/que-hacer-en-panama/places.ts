@@ -31,6 +31,8 @@ export interface Place {
    *  reales con licencia: la tarjeta y el detalle muestran un marcador de
    *  marca en vez de una foto de stock. */
   images: string[];
+  /** Línea de atribución de las fotos (licencias CC); opcional. */
+  photoCredit?: string;
   teaser: Bilingual;
   why: Bilingual;
   distance: Bilingual;

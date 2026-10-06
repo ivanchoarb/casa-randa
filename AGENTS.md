@@ -21,3 +21,8 @@ instaladas deben consultarse antes de editar código de esas aplicaciones.
 
 La presencia de estos archivos comparte contexto; no establece por sí sola un
 canal de mensajes ni inicia otra sesión de IA.
+
+## Comandos del proyecto
+
+- Pruebas: solo `apps/intranet` tiene pruebas configuradas — `pnpm --filter @casa-randa/intranet test` (`node --test tests/*.test.mjs`). `apps/web` y el resto del repo no tienen pruebas.
+- Build/lint/dev: ver `CLAUDE.md` (sección "Commands").

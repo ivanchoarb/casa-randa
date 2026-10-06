@@ -146,3 +146,18 @@ h1,
     transform: none !important;
   }
 }
+
+/*
+ * 2026-10-03: Safari de iPhone hace zoom automático al enfocar un campo con
+ * letra menor de 16 px y deja la página ampliada. Los campos usan text-sm
+ * (14 px) en todas las páginas; en pantallas angostas se suben a 16 px. Va
+ * fuera de @layer, así que gana sobre las utilidades de Tailwind sin tocar
+ * cada clase.
+ */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
