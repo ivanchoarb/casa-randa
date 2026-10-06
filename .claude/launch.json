@@ -4,22 +4,15 @@
     {
       "name": "casa-randa-dev",
       "runtimeExecutable": "/bin/zsh",
-      "runtimeArgs": [
-        "-c",
-        "source ~/.nvm/nvm.sh && pnpm --filter @casa-randa/web dev"
-      ],
+      "runtimeArgs": ["-c", "source ~/.nvm/nvm.sh && pnpm --filter @casa-randa/web dev"],
       "port": 3000,
       "autoPort": true
     },
     {
       "name": "intranet-dev",
       "runtimeExecutable": "/bin/zsh",
-      "runtimeArgs": [
-        "-c",
-        "source ~/.nvm/nvm.sh && pnpm --filter @casa-randa/intranet dev"
-      ],
-      "port": 3002,
-      "autoPort": true
+      "runtimeArgs": ["-c", "source ~/.nvm/nvm.sh && PORT=3002 pnpm --filter @casa-randa/intranet dev"],
+      "port": 3002
     }
   ]
 }
