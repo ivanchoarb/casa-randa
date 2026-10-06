@@ -20,6 +20,7 @@ out/
 
 # production
 build
+/plantilla-build/
 
 # misc
 .DS_Store
