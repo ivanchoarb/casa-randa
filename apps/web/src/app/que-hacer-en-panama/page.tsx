@@ -21,6 +21,7 @@ export default async function Page() {
       <SiteHeader />
       <main className="flex-1">
         <PageHero
+          image="/images/fachada-diablo-heights.jpg"
           title={{
             es: "Qué hacer en Panamá",
             en: "What to do in Panama",

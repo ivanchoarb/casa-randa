@@ -37,6 +37,7 @@ interface Lugar extends Record<ClaveTexto, string> {
   nombre: string;
   nivel_precio: 1 | 2 | 3;
   imagenes: string[];
+  creditos_foto: string;
   sitio_oficial: string | null;
   mapa_url: string | null;
   telefono: string | null;
@@ -47,6 +48,7 @@ type Borrador = Record<ClaveTexto, string> & {
   categoria: Categoria;
   nombre: string;
   nivel_precio: 1 | 2 | 3;
+  creditos_foto: string;
   sitio_oficial: string;
   mapa_url: string;
   telefono: string;
@@ -74,7 +76,7 @@ function borradorVacio(): Borrador {
   const textos = Object.fromEntries(
     CAMPOS.flatMap((c) => [`${c.base}_es`, `${c.base}_en`].map((k) => [k, ""])),
   ) as Record<ClaveTexto, string>;
-  return { ...textos, slug: "", categoria: "ciudad", nombre: "", nivel_precio: 2, sitio_oficial: "", mapa_url: "", telefono: "" };
+  return { ...textos, slug: "", categoria: "ciudad", nombre: "", nivel_precio: 2, creditos_foto: "", sitio_oficial: "", mapa_url: "", telefono: "" };
 }
 
 function desdeLugar(l: Lugar): Borrador {
@@ -89,6 +91,7 @@ function desdeLugar(l: Lugar): Borrador {
     categoria: l.categoria,
     nombre: l.nombre,
     nivel_precio: l.nivel_precio,
+    creditos_foto: l.creditos_foto ?? "",
     sitio_oficial: l.sitio_oficial ?? "",
     mapa_url: l.mapa_url ?? "",
     telefono: l.telefono ?? "",
@@ -241,6 +244,11 @@ function FormularioLugar({
       <label className="text-xs text-ink-2">
         Teléfono (opcional)
         <input value={b.telefono} onChange={(e) => set("telefono", e.target.value)} placeholder="+507 …" className={`${inputClass} mt-1 block w-full`} />
+      </label>
+
+      <label className="text-xs text-ink-2 sm:col-span-2">
+        Crédito de las fotos (opcional; obligatorio si la licencia lo pide)
+        <input value={b.creditos_foto} onChange={(e) => set("creditos_foto", e.target.value)} placeholder="Foto: Autor, CC BY-SA 4.0, vía Wikimedia Commons" className={`${inputClass} mt-1 block w-full`} />
       </label>
 
       <div className="text-xs text-ink-2 sm:col-span-2">
