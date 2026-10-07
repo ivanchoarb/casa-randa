@@ -28,7 +28,7 @@ export function LangToggle() {
     <div
       role="group"
       aria-label="Idioma / Language"
-      className="relative flex overflow-hidden rounded-[2px] border border-[var(--on-dark-2)]/40"
+      className="relative flex min-w-[4.5rem] shrink-0 overflow-hidden rounded-[2px] border border-[var(--on-dark-2)]/40"
     >
       <span
         aria-hidden
