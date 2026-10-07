@@ -21,6 +21,11 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 // frames (`-bf 0 -g 5 -keyint_min 5 -sc_threshold 0`), audio stripped
 // (the video is muted anyway). That took seeks down to 3-12ms — verified
 // by timing `currentTime` sets against the real file, not assumed.
+//
+// 2026-10-07: re-encoded from the same 1280x720 source at 1280x720 (was
+// downscaled to 960x540 and looked soft on retina phones), `-crf 22`, same
+// GOP settings. Seek times measured in-browser: median ~6-10ms, worst ~36ms
+// (960x540 version: ~5ms) — still well under the 100-200ms of the original.
 const SCROLL_LENGTH_VH = 300;
 
 export function Hero() {
