@@ -17,4 +17,6 @@ assert.equal(esperaNecesaria([hace(4000)], ahora, 20, 1), null, "un envío de ha
 assert.equal(esErrorTransitorio(new Error("550-5.5.1 You have sent too much mail. Try again later")), true);
 assert.equal(esErrorTransitorio(Object.assign(new Error("x"), { responseCode: 451 })), true);
 assert.equal(esErrorTransitorio(new Error("550 5.1.1 User unknown")), false);
+assert.equal(esErrorTransitorio(Object.assign(new Error("connect ECONNREFUSED 116.203.130.126:465"), { code: "ECONNREFUSED" })), true, "conexión rechazada es transitoria");
+assert.equal(esErrorTransitorio(new Error("connect ETIMEDOUT 1.2.3.4:465")), true, "timeout es transitorio");
 console.log("ritmo-envio: todo bien");

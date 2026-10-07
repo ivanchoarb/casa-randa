@@ -38,7 +38,9 @@ export function esperaNecesaria(
 
 /** ¿El error del SMTP es "intenta más tarde" (no culpa de la dirección del destinatario)? */
 export function esErrorTransitorio(e: unknown): boolean {
-  const code = (e as { responseCode?: number })?.responseCode;
+  const { responseCode, code } = (e ?? {}) as { responseCode?: number; code?: string };
   const msg = e instanceof Error ? e.message : String(e);
-  return (typeof code === "number" && code >= 400 && code < 500) || /too much mail|try again later|rate limit|throttl|too many/i.test(msg);
+  // Errores de red (conexión rechazada/cortada/sin respuesta) tampoco son culpa de la dirección del destinatario.
+  if (typeof code === "string" && /^(ECONNREFUSED|ECONNRESET|ETIMEDOUT|ESOCKET|ECONNECTION|EAI_AGAIN)$/.test(code)) return true;
+  return (typeof responseCode === "number" && responseCode >= 400 && responseCode < 500) || /too much mail|try again later|rate limit|throttl|too many|ECONNREFUSED|ECONNRESET|ETIMEDOUT/i.test(msg);
 }
