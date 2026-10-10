@@ -430,7 +430,7 @@ export default function ReservasPage() {
   // estado) rompería los grupos — con 69 reservas reales hoy, traerlas
   // todas de una vez es liviano y evita ese problema.
   const { result, tableQuery } = useTable<Reserva>({
-    resource: "reservas",
+    resource: "reservas_acceso",
     queryOptions: { enabled: can("reservas") || can("reservas_exportar") },
     sorters: { initial: [{ field: "entrada", order: "desc" }] },
     pagination: { mode: "off" },

@@ -115,7 +115,7 @@ export default function InicioPage() {
   // (comparado en vivo el 2026-09-11, incluyendo el formato exacto del
   // Excel que descarga "Descargar liquidación" ahí).
   const { result: reservasResult, tableQuery } = useTable<Reserva>({
-    resource: "reservas",
+    resource: "reservas_acceso",
     pagination: { pageSize: 500 },
   });
   const { result: gastosResult } = useTable<Gasto>({
