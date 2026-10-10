@@ -72,7 +72,13 @@ worktree-viejo/                Parche con cambios sin commitear de un worktree d
 - **Contiene:** el repo completo con `.git` (todas las ramas e historial), `.env.local`, y las carpetas de `casa-randa-archivos` (imágenes, documentos, parche).
 - **No contiene:** `node_modules`, `.next`, `.turbo`, `.vercel` (se regeneran).
 - **Contiene secretos:** `.env.local` va dentro. No subir ni compartir este archivo.
-- **No incluye la base de datos.** Supabase no se respaldó (no hay `pg_dump` en esta máquina). Los datos reales (reservas, contactos, check-ins) viven solo ahí. Recomendado: activar los backups del proyecto en Supabase o hacer un `pg_dump` con la `DATABASE_URL` de `.env.local`.
+- **El `.tar.gz` no incluye la base de datos.** Supabase está en el plan Free, que no trae backups automáticos. Para eso hay una exportación aparte:
+
+  ```bash
+  pnpm db:export
+  ```
+
+  Escribe un JSON por tabla del esquema `public` (solo lectura, usa `DATABASE_URL` de `apps/intranet/.env.local`) en `casa-randa-archivos/backups/db-AAAA-MM-DD/`, con un `_resumen.json` de conteos. El 2026-10-10 salieron 20 tablas, copiadas también a la MicroSD. **Queda fuera** `auth.users` y Storage (fotos de identificación, imágenes de tienda, PDF de cotizaciones). Contiene datos personales de huéspedes: tratarlo como el `.env.local`. El esquema se reconstruye con `supabase/migrations/`. Es manual: repetirlo antes de cambios grandes. Backups automáticos requieren el plan Pro.
 
 ### Restaurar
 
