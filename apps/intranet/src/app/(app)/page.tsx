@@ -4,7 +4,7 @@ import { useTable } from "@refinedev/core";
 import { useMemo, useState } from "react";
 import { usePermisos } from "@/lib/use-permisos";
 import Link from "next/link";
-import { descargarLiquidacionMarquelda } from "@/lib/liquidacion";
+import { descargarLiquidacion } from "@/lib/liquidacion";
 
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
 
@@ -29,6 +29,13 @@ interface Gasto {
   fecha: string;
   valor: number;
 }
+
+interface ConfiguracionCliente {
+  clave: string;
+  valor: string;
+}
+
+const CLAVES_LIQUIDACION = ["nombre_propiedad", "slogan_propiedad", "nombre_host1", "rol_host1"];
 
 const MESES = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -123,9 +130,24 @@ export default function InicioPage() {
     queryOptions: { enabled: can("finanzas_propietario") },
     pagination: { pageSize: 500 },
   });
+  const { result: configuracionResult, tableQuery: configuracionQuery } = useTable<ConfiguracionCliente>({
+    resource: "configuracion_cliente",
+    filters: { permanent: [{ field: "clave", operator: "in", value: CLAVES_LIQUIDACION }] },
+    pagination: { mode: "off" },
+    syncWithLocation: false,
+  });
 
   const reservas = reservasResult.data ?? [];
   const gastos = gastosResult.data ?? [];
+  const valorConfiguracion = (clave: string) =>
+    configuracionResult.data?.find((item) => item.clave === clave)?.valor.trim();
+  const nombrePropiedad = valorConfiguracion("nombre_propiedad");
+  const sloganPropiedad = valorConfiguracion("slogan_propiedad");
+  const nombreHost1 = valorConfiguracion("nombre_host1");
+  const rolHost1 = valorConfiguracion("rol_host1");
+  const configLiquidacion = nombrePropiedad && sloganPropiedad && nombreHost1 && rolHost1
+    ? { nombrePropiedad, sloganPropiedad, nombreHost1, rolHost1 }
+    : null;
 
   const hoy = new Date().toISOString().slice(0, 10);
   const anio = new Date().getFullYear();
@@ -273,8 +295,8 @@ export default function InicioPage() {
                   <p className="disp mt-1 text-xl">{capitalizar(MESES[mes])}</p>
                   <button
                     type="button"
-                    onClick={() => void descargarLiquidacionMarquelda(delMes, anio, mes)}
-                    disabled={tableQuery.isLoading}
+                    onClick={() => configLiquidacion && void descargarLiquidacion(delMes, anio, mes, configLiquidacion)}
+                    disabled={tableQuery.isLoading || configuracionQuery.isLoading || !configLiquidacion}
                     className="btn-press mt-2 rounded-md bg-caoba px-3 py-1.5 text-xs font-semibold text-panel disabled:opacity-60"
                   >
                     Descargar liquidación

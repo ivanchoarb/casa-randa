@@ -10,8 +10,8 @@ import ExcelJS from "exceljs";
 // (was always identical to "Valor recibido" — a literal duplicate, not a
 // distinct figure), "Comisión Iván", "Saldo neto" and "Estado" — the last
 // three were only ever written as empty strings, never real data, and
-// Comisión Iván/Saldo neto are Iván's own figures, not something Marquelda's
-// own statement needs to show.
+// Comisión del segundo host/Saldo neto son cifras del propietario, no datos
+// que deba mostrar la liquidación del host principal.
 interface ReservaParaLiquidacion {
   huesped_nombre: string;
   canal: string;
@@ -22,6 +22,13 @@ interface ReservaParaLiquidacion {
   comision_plataforma: number;
   recibido: number;
   comision_marquelda: number;
+}
+
+export interface ConfigLiquidacion {
+  nombrePropiedad: string;
+  sloganPropiedad: string;
+  nombreHost1: string;
+  rolHost1: string;
 }
 
 const MESES_LARGO = [
@@ -51,10 +58,11 @@ function capitalizar(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export async function descargarLiquidacionMarquelda(
+export async function descargarLiquidacion(
   reservasDelMes: ReservaParaLiquidacion[],
   anio: number,
   mesIndex: number, // 0-11
+  config: ConfigLiquidacion,
 ) {
   const mes = MESES_LARGO[mesIndex];
   const NUM_COLS = 9;
@@ -72,7 +80,7 @@ export async function descargarLiquidacionMarquelda(
   // --- Letterhead ---
   ws.mergeCells(r, 1, r, NUM_COLS);
   const wordmark = ws.getCell(r, 1);
-  wordmark.value = "CASA RANDA";
+  wordmark.value = config.nombrePropiedad.toUpperCase();
   wordmark.font = { name: "Georgia", size: 20, bold: true, color: { argb: CREAM } };
   wordmark.alignment = { vertical: "middle", indent: 1 };
   ws.getRow(r).height = 30;
@@ -81,7 +89,7 @@ export async function descargarLiquidacionMarquelda(
 
   ws.mergeCells(r, 1, r, NUM_COLS);
   const tagline = ws.getCell(r, 1);
-  tagline.value = "Diablo Heights, Ancón · Ciudad de Panamá · randahome.com";
+  tagline.value = config.sloganPropiedad;
   tagline.font = { name: "Calibri", size: 10, italic: true, color: { argb: "FFA9BCA4" } };
   tagline.alignment = { indent: 1 };
   ws.getRow(r).height = 16;
@@ -102,8 +110,8 @@ export async function descargarLiquidacionMarquelda(
 
   // --- Recipient / period info block ---
   const info: [string, string][] = [
-    ["Anfitriona", "Marquelda"],
-    ["Rol", "Recepción de huéspedes y coordinación en sitio"],
+    ["Anfitriona", config.nombreHost1],
+    ["Rol", config.rolHost1],
     ["Período de liquidación", `${capitalizar(mes)} ${anio}`],
     ["Fecha de generación", formatoGenerado(new Date())],
   ];
@@ -122,7 +130,7 @@ export async function descargarLiquidacionMarquelda(
   // --- Table header ---
   const headers = [
     "Cliente", "Plataforma", "Check-in", "Check-out", "Noches",
-    "Valor bruto", "Comisión plataforma", "Valor recibido", "Comisión Marquelda",
+    "Valor bruto", "Comisión plataforma", "Valor recibido", `Comisión ${config.nombreHost1}`,
   ];
   const headerRow = r;
   headers.forEach((h, i) => {
@@ -193,7 +201,7 @@ export async function descargarLiquidacionMarquelda(
   // --- Headline total ---
   ws.mergeCells(r, 1, r, NUM_COLS - 2);
   const headlineLabel = ws.getCell(r, 1);
-  headlineLabel.value = "Total a liquidar a Marquelda";
+  headlineLabel.value = `Total a liquidar a ${config.nombreHost1}`;
   headlineLabel.font = { name: "Calibri", size: 13, bold: true, color: { argb: INK } };
   headlineLabel.alignment = { horizontal: "right", vertical: "middle" };
   headlineLabel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: CAOBA_TINT } };
@@ -212,7 +220,7 @@ export async function descargarLiquidacionMarquelda(
   ws.mergeCells(r, 1, r, NUM_COLS);
   const nota = ws.getCell(r, 1);
   nota.value =
-    "Este documento es un resumen informativo generado automáticamente desde la intranet de Casa Randa " +
+    `Este documento es un resumen informativo generado automáticamente desde la intranet de ${config.nombrePropiedad} ` +
     "a partir de las reservas confirmadas del período. No constituye un comprobante fiscal ni un recibo de nómina.";
   nota.font = { name: "Calibri", size: 8, italic: true, color: { argb: INK_2 } };
   nota.alignment = { wrapText: true };
@@ -225,7 +233,7 @@ export async function descargarLiquidacionMarquelda(
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `casa-randa-marquelda-${mes}-${anio}.xlsx`;
+  a.download = `${config.nombrePropiedad.toLowerCase().replace(/\s+/g, "-")}-host1-${mes}-${anio}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 }
