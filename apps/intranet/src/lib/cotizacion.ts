@@ -2,6 +2,15 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 import { EXTRA_GUEST, FREE_PAX } from "@casa-randa/pricing";
 import { supabaseClient } from "@/lib/supabase-client";
 
+export interface ConfigCotizacion {
+  nombrePropiedad: string;
+  taglineCotizacion: string;
+  descripcionCotizacion: string;
+  direccionPropiedad: string;
+  correoReservas: string;
+  webReservas: string;
+}
+
 export interface CotizacionInput {
   clienteNombre: string;
   huespedes: number;
@@ -134,7 +143,7 @@ function rectRedondeado(
  * cual sea su valor, porque es la línea central de una cotización de
  * hospedaje.
  */
-export async function generarCotizacionPDF(input: CotizacionInput, calculo: CotizacionCalculo) {
+export async function generarCotizacionPDF(input: CotizacionInput, calculo: CotizacionCalculo, config: ConfigCotizacion) {
   const doc = await PDFDocument.create();
   const page = doc.addPage([595, 842]);
   const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -164,13 +173,13 @@ export async function generarCotizacionPDF(input: CotizacionInput, calculo: Coti
   // --- Encabezado ---
   const altoHeader = input.clienteNombre ? 128 : 106;
   rectRedondeado(page, { x: M, yTop: y, width: ANCHO, height: altoHeader, radius: 14, color: verde });
-  texto("CASA RANDA · COTIZACIÓN PERSONALIZADA", M + PAD, y - 28, {
+  texto(`${config.nombrePropiedad.toUpperCase()} · COTIZACIÓN PERSONALIZADA`, M + PAD, y - 28, {
     size: 10,
     f: bold,
     color: rgb(0.949, 0.722, 0.655),
   });
-  texto("Su estadía en Panamá", M + PAD, y - 62, { size: 24, f: bold, color: blanco });
-  texto("Una casa tropical privada en Diablo Heights", M + PAD, y - 84, { size: 11, color: blanco });
+  texto(config.taglineCotizacion, M + PAD, y - 62, { size: 24, f: bold, color: blanco });
+  texto(config.descripcionCotizacion, M + PAD, y - 84, { size: 11, color: blanco });
   if (input.clienteNombre) {
     texto(`Propuesta preparada especialmente para ${input.clienteNombre}`, M + PAD, y - 106, {
       size: 9,
@@ -265,19 +274,19 @@ export async function generarCotizacionPDF(input: CotizacionInput, calculo: Coti
 
   // --- Pie de página ---
   page.drawLine({ start: { x: M, y: 91 }, end: { x: M + ANCHO, y: 91 }, thickness: 1, color: rgb(0.812, 0.855, 0.835) });
-  texto("Casa Randa · Calle Hecker 5624, Diablo Heights, Ancón, Panamá", M, 72, { size: 9, f: bold, color: verde });
-  texto("booking@randahome.com · www.randahome.com", M, 55, { size: 8.5, color: rgb(0.322, 0.392, 0.373) });
+  texto(`${config.nombrePropiedad} · ${config.direccionPropiedad}`, M, 72, { size: 9, f: bold, color: verde });
+  texto(`${config.correoReservas} · ${config.webReservas}`, M, 55, { size: 8.5, color: rgb(0.322, 0.392, 0.373) });
   texto("Documento informativo. No confirma la reserva ni realiza cobros.", M, 31, { size: 7.5, color: gris });
 
   return doc.save();
 }
 
-export function descargarCotizacionPDF(bytes: Uint8Array, codigo: string) {
+export function descargarCotizacionPDF(bytes: Uint8Array, codigo: string, config: ConfigCotizacion) {
   const blob = new Blob([bytes.slice().buffer as ArrayBuffer], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `casa-randa-${codigo.toLowerCase()}.pdf`;
+  a.download = `${config.nombrePropiedad.toLowerCase().replace(/\s+/g, "-")}-${codigo.toLowerCase()}.pdf`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -327,13 +336,14 @@ export function resumenWhatsApp(
   calculo: CotizacionCalculo,
   urlPdf?: string,
   opts?: { emojis?: boolean },
+  config?: ConfigCotizacion,
 ) {
   const conEmojis = opts?.emojis ?? true;
   const saludo = input.clienteNombre ? `¡Hola ${input.clienteNombre}!` : "¡Hola!";
 
   if (conEmojis) {
     const lineas = [
-      `🌴 Casa Randa — Cotización ${calculo.codigo}`,
+      `🌴 ${config?.nombrePropiedad ?? "Cotización"} — Cotización ${calculo.codigo}`,
       "",
       `${saludo} 👋 Aquí tienes el detalle de tu próxima estadía:`,
       "",
@@ -354,7 +364,7 @@ export function resumenWhatsApp(
   }
 
   const lineas = [
-    `*Casa Randa* — Cotización ${calculo.codigo}`,
+    `*${config?.nombrePropiedad ?? "Cotización"}* — Cotización ${calculo.codigo}`,
     "",
     `${saludo} Aquí tienes el detalle de tu próxima estadía:`,
     "",
@@ -388,8 +398,9 @@ export function enlaceWhatsApp(
   calculo: CotizacionCalculo,
   telefono: string,
   urlPdf?: string,
+  config?: ConfigCotizacion,
 ) {
-  const texto = encodeURIComponent(resumenWhatsApp(input, calculo, urlPdf, { emojis: false }).join("\n"));
+  const texto = encodeURIComponent(resumenWhatsApp(input, calculo, urlPdf, { emojis: false }, config).join("\n"));
   const numero = telefono.replace(/[^0-9]/g, "");
   return numero ? `https://wa.me/${numero}?text=${texto}` : `https://wa.me/?text=${texto}`;
 }
