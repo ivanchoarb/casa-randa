@@ -114,7 +114,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col md:flex-row">
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-panel px-4 py-3 md:hidden">
         <div>
-          <p className="eyebrow">Casa Randa</p>
+          <p className="eyebrow">SuperHost</p>
           <p className="text-sm font-bold">Intranet</p>
         </div>
         <button
@@ -154,7 +154,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <path d="M2.5 15.5h21" />
           </svg>
           <div>
-            <p className="eyebrow">Casa Randa</p>
+            <p className="eyebrow">SuperHost</p>
             <p className="text-sm font-bold">Intranet</p>
           </div>
         </div>

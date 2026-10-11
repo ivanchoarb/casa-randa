@@ -45,7 +45,7 @@ function hoyISO() {
 // contra la base real: las 10 reservas confirmadas próximas de hoy
 // tienen las 10 el mismo valor por defecto.
 function construirMensajeWhatsApp(reservas: ReservaProxima[]) {
-  const lineas = ["Casa Randa — Próximas reservas confirmadas", ""];
+  const lineas = ["SuperHost — Próximas reservas confirmadas", ""];
   for (const r of reservas) {
     lineas.push(`*${r.huesped_nombre ?? "Huésped"}*`);
     lineas.push(`${r.entrada} → ${r.salida} (${noches(r.entrada, r.salida)} ${noches(r.entrada, r.salida) === 1 ? "noche" : "noches"})`);

@@ -44,8 +44,8 @@ export async function POST(req: Request) {
       await transporte.sendMail({
         from: remitente,
         to: email,
-        subject: "Restablece tu contraseña — Intranet Casa Randa",
-        text: `Recibimos una solicitud para restablecer la contraseña de tu cuenta en la intranet de Casa Randa.\n\nSi fuiste tú, abre este enlace para elegir una nueva contraseña:\n${enlace}\n\nSi no la solicitaste, ignora este correo — tu contraseña actual sigue funcionando.`,
+        subject: "Restablece tu contraseña — Intranet SuperHost",
+        text: `Recibimos una solicitud para restablecer la contraseña de tu cuenta en la intranet.\n\nSi fuiste tú, abre este enlace para elegir una nueva contraseña:\n${enlace}\n\nSi no la solicitaste, ignora este correo — tu contraseña actual sigue funcionando.`,
       });
     }
   } catch {

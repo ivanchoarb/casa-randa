@@ -416,7 +416,7 @@ export default function ReservasPage() {
         Huésped: r.huesped_nombre, Canal: r.canal, Código: r.codigo_externo,
         Entrada: r.entrada, Salida: r.salida, Noches: r.noches, Estado: r.estado,
       }))), ESTADO_LABEL[estado]);
-      XLSX.writeFile(wb, `casa-randa-reservas-${estado}.xlsx`);
+      XLSX.writeFile(wb, `reservas-${estado}.xlsx`);
     } catch { setErrorExportar("No se pudieron descargar las reservas. Intenta de nuevo."); }
     finally { setExportando(null); }
   }

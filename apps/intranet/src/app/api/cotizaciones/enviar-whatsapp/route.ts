@@ -81,8 +81,8 @@ export async function POST(req: NextRequest) {
       type: "document",
       document: {
         link: urlPdf,
-        filename: `casa-randa-${codigo.toLowerCase()}.pdf`,
-        caption: caption || `Tu cotización de Casa Randa — ${codigo}`,
+        filename: `cotizacion-${codigo.toLowerCase()}.pdf`,
+        caption: caption || `Tu cotización — ${codigo}`,
       },
     }),
   });

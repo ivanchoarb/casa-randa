@@ -20,10 +20,10 @@ async function enviarActivacion(db: SupabaseClient, email: string, origin: strin
     await transporte.sendMail({
       from: remitente,
       to: email,
-      subject: "Tu cuenta de la intranet de Casa Randa está activa",
+      subject: "Tu cuenta de la intranet ya está activa",
       text: enlace
-        ? `Tu cuenta en la intranet de Casa Randa ya está activa. Puedes entrar con la contraseña que te asignaron, o elegir una propia ahora mismo:\n${enlace}\n\nSi no reconoces esta cuenta, ignora este correo.`
-        : "Tu cuenta en la intranet de Casa Randa ya está activa. Puedes entrar con la contraseña que te asignaron.",
+        ? `Tu cuenta en la intranet ya está activa. Puedes entrar con la contraseña que te asignaron, o elegir una propia ahora mismo:\n${enlace}\n\nSi no reconoces esta cuenta, ignora este correo.`
+        : "Tu cuenta en la intranet ya está activa. Puedes entrar con la contraseña que te asignaron.",
     });
     return true;
   } catch {

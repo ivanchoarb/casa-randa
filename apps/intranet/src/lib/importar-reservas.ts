@@ -127,7 +127,7 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
   );
   if (idxHeader === -1) {
     throw new Error(
-      'No se reconoce el archivo — se esperaban columnas "Cliente" y "Check-in" (formato Casa Randa, el mismo que produce "Descargar Excel" en esta página). Los reportes crudos de Airbnb/Vrbo todavía no están soportados.',
+      'No se reconoce el archivo — se esperaban columnas "Cliente" y "Check-in" (el mismo formato que produce "Descargar Excel" en esta página). Los reportes crudos de Airbnb/Vrbo todavía no están soportados.',
     );
   }
 
@@ -143,7 +143,7 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
   const iEstado = col("Estado");
 
   if ([iCliente, iPlataforma, iReserva, iCheckin, iCheckout, iBruto, iComPlat].some((i) => i === -1)) {
-    throw new Error("Faltan columnas obligatorias del formato Casa Randa (Cliente/Plataforma/Reserva/Check-in/Check-out/Valor bruto/Comisión plataforma).");
+    throw new Error("Faltan columnas obligatorias (Cliente/Plataforma/Reserva/Check-in/Check-out/Valor bruto/Comisión plataforma).");
   }
 
   const tasasComision = await cargarTasasComision();

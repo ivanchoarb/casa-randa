@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       text: mensaje || "Adjunto encontrarás la cotización de tu estadía.",
       attachments: [
         {
-          filename: `casa-randa-${codigo.toLowerCase()}.pdf`,
+          filename: `cotizacion-${codigo.toLowerCase()}.pdf`,
           content: Buffer.from(pdfBase64, "base64"),
           contentType: "application/pdf",
         },

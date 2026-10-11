@@ -17,10 +17,10 @@ const lato = Lato({
 
 export const metadata: Metadata = {
   title: {
-    default: "Casa Randa · Intranet",
+    default: "SuperHost · Intranet",
     template: "%s · Intranet",
   },
-  description: "Reservas, calendario, operación, contabilidad y análisis de Casa Randa.",
+  description: "Reservas, calendario, operación, contabilidad y análisis de tu propiedad.",
   robots: { index: false, follow: false },
 };
 
