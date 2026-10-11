@@ -123,15 +123,15 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
     ...(anio === anioActual
       ? [
           {
-            titulo: `${MESES[mes]} · Marquelda`,
+            titulo: `${MESES[mes]} · Host 1`,
             valor: money(comisionMesMarquelda),
             nota: "Comisión del mes actual",
           },
-          { titulo: `${MESES[mes]} · Iván`, valor: money(comisionMesIvan), nota: "Comisión del mes actual" },
+          { titulo: `${MESES[mes]} · Host 2`, valor: money(comisionMesIvan), nota: "Comisión del mes actual" },
         ]
       : []),
-    { titulo: `${anio} · Marquelda`, valor: money(comisionAnualMarquelda), nota: "Acumulado anual" },
-    { titulo: `${anio} · Iván`, valor: money(comisionAnualIvan), nota: "Acumulado anual" },
+    { titulo: `${anio} · Host 1`, valor: money(comisionAnualMarquelda), nota: "Acumulado anual" },
+    { titulo: `${anio} · Host 2`, valor: money(comisionAnualIvan), nota: "Acumulado anual" },
     {
       titulo: `Saldo neto del propietario ${anio}`,
       valor: money(saldoNetoPropietario),
@@ -171,7 +171,7 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
 // El schema limita los anticipos a las personas admitidas por
 // persona_comision; cuál se usa en esta sección viene de configuración.
 function nombrePersona(persona: Persona) {
-  return persona === "ivan" ? "Iván" : "Marquelda";
+  return persona === "ivan" ? "Host 2" : "Host 1";
 }
 
 function AnticiposComision({ reservas, persona }: { reservas: Reserva[]; persona: Persona }) {
@@ -369,7 +369,7 @@ function ImportarCSV({ onImportado }: { onImportado: () => void }) {
         Acepta el formato Casa Randa (las mismas columnas que produce &quot;Descargar Excel&quot; más
         abajo — Cliente, Plataforma, Reserva, Check-in, Check-out, Valor bruto, Comisión
         plataforma, Estado). Al volver a cargar un archivo, las reservas se actualizan por código
-        y no se duplican. Las comisiones internas se calculan solas (10% Marquelda, 9% Iván sobre
+        y no se duplican. Las comisiones internas se calculan solas (Host 1 y Host 2, tasas en configuración) sobre
         el valor recibido). Los reportes crudos de Airbnb o Vrbo (exportados directo desde su
         panel de anfitrión) todavía no están soportados — si tienes uno real, compártelo para
         agregar soporte.

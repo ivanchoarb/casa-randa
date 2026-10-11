@@ -178,12 +178,12 @@ export default function InicioPage() {
     ...(esAnioActual
       ? [
           { permiso: "ingresos_mes" as const, titulo: `Ingresos de ${capitalizar(MESES[mes])}`, valor: money(ingresosDelMes), nota: "Después de comisión de plataforma" },
-          { permiso: "comision_host" as const, titulo: "Comisión Host (Marquelda)", valor: money(comisionMesMarquelda), nota: `${capitalizar(MESES[mes])} ${anio}` },
+          { permiso: "comision_host" as const, titulo: "Comisión Host 1", valor: money(comisionMesMarquelda), nota: `${capitalizar(MESES[mes])} ${anio}` },
         ]
       : []),
     { permiso: "finanzas_propietario" as const, titulo: "Ingresos acumulados", valor: money(ingresosAcumulados), nota: `Acumulado ${anioActivo}` },
-    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Marquelda`, valor: money(comisionAnualMarquelda), nota: "Comisión acumulada del año" },
-    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Iván`, valor: money(comisionAnualIvan), nota: "Comisión acumulada del año" },
+    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Host 1`, valor: money(comisionAnualMarquelda), nota: "Comisión acumulada del año" },
+    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Host 2`, valor: money(comisionAnualIvan), nota: "Comisión acumulada del año" },
     {
       permiso: "finanzas_propietario" as const,
       titulo: "Saldo neto propietario",
@@ -269,7 +269,7 @@ export default function InicioPage() {
 
               {can("liquidacion_host") && esAnioActual && (
                 <div>
-                  <p className="eyebrow">Liquidación Marquelda</p>
+                  <p className="eyebrow">Liquidación Host 1</p>
                   <p className="disp mt-1 text-xl">{capitalizar(MESES[mes])}</p>
                   <button
                     type="button"

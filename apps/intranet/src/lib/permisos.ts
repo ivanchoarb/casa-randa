@@ -1,8 +1,8 @@
 export const PERMISOS = {
   proxima_reserva: "Inicio: próxima reserva",
   ingresos_mes: "Inicio: ingresos del mes",
-  comision_host: "Inicio: comisión Host (Marquelda)",
-  liquidacion_host: "Descargar liquidación Marquelda",
+  comision_host: "Inicio: comisión Host 1",
+  liquidacion_host: "Descargar liquidación Host 1",
   finanzas_propietario: "Inicio: ingresos acumulados y saldo del propietario",
   reservas: "Consultar reservas (sin cifras privadas)",
   reservas_exportar: "Descargar reservas (sin cifras privadas)",
