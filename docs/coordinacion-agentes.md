@@ -1,5 +1,18 @@
 # Coordinación de Codex y Claude
 
+Codex (2026-10-10): tarea 005, configuración por cliente. Alcance reservado:
+`apps/intranet/src/lib/importar-reservas.ts`, `apps/intranet/src/app/(app)/operacion/page.tsx`,
+`apps/intranet/src/app/(app)/contabilidad/page.tsx`, nueva migración
+`supabase/migrations/0035_configuracion_cliente.sql`, la tarea 005 y este registro.
+Se externalizan tasas, responsables operativos y persona de anticipos; sin UI administrativa,
+sin cambios en reservas/tareas ni en `liquidacion.ts`/`cotizacion.ts`.
+Implementación lista para revisión: tabla con seis valores iniciales y RLS, validación de tasas,
+responsables JSON y persona de anticipos en sus consumidores. Pruebas 11/11 y `git diff --check`
+pasan. Limitación: el build requerido falla porque Turbopack no puede abrir un puerto en el
+sandbox; con Webpack alcanza la fase de compilación pero no puede descargar Lato sin red. El comando
+manual de la tarea tampoco resuelve el módulo `.ts` sin extensión bajo Node 24. Siguiente paso:
+repetir `pnpm --filter intranet build` en un entorno con red y permisos normales antes de aprobar.
+
 Actualizado: 2026-09-14.
 
 Codex (2026-09-14): instalación de la skill personal `image-enhancer` de

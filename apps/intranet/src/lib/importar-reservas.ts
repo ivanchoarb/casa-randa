@@ -5,12 +5,36 @@ import { asegurarTareasDeReserva } from "@/lib/tareas-operacion";
 type Canal = "airbnb" | "vrbo" | "directo";
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
 
-// "Las comisiones internas se calculan según las tasas configuradas" (texto
-// de staging) — verificado contra las 58 reservas reales con bruto > 0
-// importadas el 2026-09-11: comision_marquelda = 10% de `recibido`,
-// comision_ivan = 9%, sin una sola excepción. No son tasas inventadas.
-const TASA_MARQUELDA = 0.1;
-const TASA_IVAN = 0.09;
+const CLAVES_TASAS = ["comision_marquelda_tasa", "comision_ivan_tasa"] as const;
+
+function leerTasa(valor: string | undefined, clave: string): number {
+  const tasa = Number(valor);
+  if (!Number.isFinite(tasa) || tasa < 0 || tasa > 1) {
+    throw new Error(`La configuración "${clave}" debe ser una tasa decimal entre 0 y 1.`);
+  }
+  return tasa;
+}
+
+async function cargarTasasComision() {
+  const { data, error } = await supabaseClient
+    .from("configuracion_cliente")
+    .select("clave, valor")
+    .in("clave", [...CLAVES_TASAS]);
+  if (error) throw new Error(`Error al cargar la configuración de comisiones: ${error.message}`);
+
+  const valores = new Map((data ?? []).map((fila) => [fila.clave as string, fila.valor as string]));
+  return {
+    marquelda: leerTasa(valores.get("comision_marquelda_tasa"), "comision_marquelda_tasa"),
+    ivan: leerTasa(valores.get("comision_ivan_tasa"), "comision_ivan_tasa"),
+  };
+}
+
+export function calcularComisiones(recibido: number, tasas: { marquelda: number; ivan: number }) {
+  return {
+    marquelda: Math.round(recibido * tasas.marquelda * 100) / 100,
+    ivan: Math.round(recibido * tasas.ivan * 100) / 100,
+  };
+}
 
 const CANAL_MAP: Record<string, Canal> = {
   airbnb: "airbnb",
@@ -122,6 +146,8 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
     throw new Error("Faltan columnas obligatorias del formato Casa Randa (Cliente/Plataforma/Reserva/Check-in/Check-out/Valor bruto/Comisión plataforma).");
   }
 
+  const tasasComision = await cargarTasasComision();
+
   const dataRows = filas
     .slice(idxHeader + 1)
     .map((f, i) => ({ f, filaNum: idxHeader + 2 + i }))
@@ -166,6 +192,7 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
     }
 
     const recibido = bruto - comPlat;
+    const comisiones = calcularComisiones(recibido, tasasComision);
     filasValidas.push({
       huesped_nombre: nombre,
       canal,
@@ -176,8 +203,8 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
       tarifa_noche: 0, // se recalcula abajo una vez conocidas las noches reales (columna generada)
       bruto,
       comision_plataforma: comPlat,
-      comision_marquelda: Math.round(recibido * TASA_MARQUELDA * 100) / 100,
-      comision_ivan: Math.round(recibido * TASA_IVAN * 100) / 100,
+      comision_marquelda: comisiones.marquelda,
+      comision_ivan: comisiones.ivan,
       estado,
     });
   }

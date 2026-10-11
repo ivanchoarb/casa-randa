@@ -52,6 +52,11 @@ interface Gasto {
   medio_pago: string | null;
 }
 
+interface ConfiguracionCliente {
+  clave: string;
+  valor: string;
+}
+
 const CATEGORIAS: CategoriaGasto[] = [
   "reparacion",
   "fumigacion",
@@ -163,14 +168,16 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
   );
 }
 
-// Staging (staging.randahome.com/intranet/contabilidad/) solo lleva
-// anticipos de comisión para Iván — Marquelda no toma adelantos. El schema
-// sigue soportando ambas personas (persona_comision), pero esta sección
-// se fija en "ivan" para calzar con el sistema real.
-function AnticiposComision({ reservas }: { reservas: Reserva[] }) {
+// El schema limita los anticipos a las personas admitidas por
+// persona_comision; cuál se usa en esta sección viene de configuración.
+function nombrePersona(persona: Persona) {
+  return persona === "ivan" ? "Iván" : "Marquelda";
+}
+
+function AnticiposComision({ reservas, persona }: { reservas: Reserva[]; persona: Persona }) {
   const anioActual = new Date().getFullYear();
   const [anio, setAnio] = useState(anioActual);
-  const persona: Persona = "ivan";
+  const personaNombre = nombrePersona(persona);
 
   const { result, tableQuery } = useTable<Anticipo>({
     resource: "anticipos_comision",
@@ -212,7 +219,7 @@ function AnticiposComision({ reservas }: { reservas: Reserva[] }) {
         (r.estado === "confirmada" || r.estado === "completada") &&
         new Date(`${r.entrada}T12:00:00`).getFullYear() === anio,
     )
-    .reduce((sum, r) => sum + r.comision_ivan, 0);
+    .reduce((sum, r) => sum + (persona === "ivan" ? r.comision_ivan : r.comision_marquelda), 0);
 
   const anticiposDelAnio = anticipos.filter((a) => new Date(`${a.fecha}T12:00:00`).getFullYear() === anio);
   const anticiposPagados = anticiposDelAnio.reduce((sum, a) => sum + a.valor, 0);
@@ -222,7 +229,7 @@ function AnticiposComision({ reservas }: { reservas: Reserva[] }) {
 
   return (
     <section className="mt-12">
-      <h2 className="text-lg font-bold">Anticipos de comisiones de Iván</h2>
+      <h2 className="text-lg font-bold">Anticipos de comisiones de {personaNombre}</h2>
       <p className="mt-1 text-sm text-ink-2">Control anual de pagos parciales y saldo pendiente.</p>
 
       <div className="mt-4 flex items-end gap-2">
@@ -628,9 +635,19 @@ export default function ContabilidadPage() {
     resource: "gastos",
     pagination: { pageSize: 500 },
   });
+  const { result: configuracionResult, tableQuery: configuracionQuery } = useTable<ConfiguracionCliente>({
+    resource: "configuracion_cliente",
+    filters: { permanent: [{ field: "clave", operator: "eq", value: "persona_anticipos_comision" }] },
+    pagination: { mode: "off" },
+    syncWithLocation: false,
+  });
 
   const reservas = useMemo(() => reservasResult.data ?? [], [reservasResult.data]);
   const gastos = useMemo(() => gastosResult.data ?? [], [gastosResult.data]);
+  const personaConfigurada = configuracionResult.data?.[0]?.valor;
+  const personaAnticipos: Persona | null = personaConfigurada === "ivan" || personaConfigurada === "marquelda"
+    ? personaConfigurada
+    : null;
 
   return (
     <div>
@@ -652,7 +669,12 @@ export default function ContabilidadPage() {
           <div className="mt-6">
             <ResumenFinanciero reservas={reservas} gastos={gastos} />
           </div>
-          <AnticiposComision reservas={reservas} />
+          {personaAnticipos && <AnticiposComision reservas={reservas} persona={personaAnticipos} />}
+          {!configuracionQuery.isLoading && (configuracionQuery.isError || !personaAnticipos) && (
+            <p role="alert" className="mt-12 text-sm text-caoba">
+              No se pudo cargar una configuración válida para los anticipos de comisiones.
+            </p>
+          )}
           <ImportarCSV onImportado={() => reservasQuery.refetch()} />
           <Gastos />
           <IngresosYReservas reservas={reservas} loading={reservasQuery.isLoading} />
