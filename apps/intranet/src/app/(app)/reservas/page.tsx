@@ -3,6 +3,7 @@
 import { usePermisos } from "@/lib/use-permisos";
 import { supabaseClient } from "@/lib/supabase-client";
 import * as XLSX from "xlsx";
+import { LOCALE } from "@/lib/locale";
 import { useMemo, useState } from "react";
 import { useDelete, useTable, useUpdate } from "@refinedev/core";
 import { computeQuote, type CancellationPolicy, type PaymentPlan } from "@casa-randa/pricing";
@@ -47,7 +48,7 @@ const PLAN_PAGO_LABEL: Record<PaymentPlan, string> = {
 
 function fechaHora(iso: string) {
   const d = new Date(iso);
-  return d.toLocaleString("es-PA", { dateStyle: "medium", timeStyle: "short" });
+  return d.toLocaleString(LOCALE, { dateStyle: "medium", timeStyle: "short" });
 }
 
 // 2026-09-14, a pedido de Iván (auditoría manual): antes solo se podía
@@ -171,7 +172,7 @@ function SolicitudCard({ s }: { s: Solicitud }) {
         <p className="text-sm text-ink-2">
           Cotización estimada:{" "}
           <span className="font-semibold text-ink">
-            {quote ? `$${quote.totalUsd.toLocaleString("es-PA")}` : "— (estadía por debajo del mínimo)"}
+            {quote ? `$${quote.totalUsd.toLocaleString(LOCALE)}` : "— (estadía por debajo del mínimo)"}
           </span>{" "}
           · recibida {fechaHora(s.created_at)}
         </p>

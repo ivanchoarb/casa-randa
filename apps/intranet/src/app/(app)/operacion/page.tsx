@@ -2,6 +2,7 @@
 
 import { useUpdate, useTable, useInvalidate } from "@refinedev/core";
 import { useState } from "react";
+import { LOCALE } from "@/lib/locale";
 
 type TipoTarea = "preparacion" | "turnover" | "limpieza_salida";
 type EstadoTarea = "pendiente" | "en_proceso" | "completada" | "con_novedad";
@@ -100,7 +101,7 @@ const CHECKLIST_ITEMS: Record<TipoTarea, { key: string; label: string }[]> = {
 };
 
 const money = (n: number) =>
-  `$${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `$${n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 function hoyISO() {
   return new Date().toISOString().slice(0, 10);

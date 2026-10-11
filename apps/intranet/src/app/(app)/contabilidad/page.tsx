@@ -3,6 +3,7 @@
 import { useCreate, useDelete, useTable } from "@refinedev/core";
 import { useMemo, useRef, useState } from "react";
 import { importarReservasCSV, type ResultadoImport } from "@/lib/importar-reservas";
+import { LOCALE } from "@/lib/locale";
 
 type Persona = "marquelda" | "ivan";
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
@@ -70,7 +71,7 @@ const CATEGORIAS: CategoriaGasto[] = [
 
 const inputClass = "rounded-md border border-line bg-ground px-2 py-1.5 text-sm";
 const money = (n: number) =>
-  `$${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `$${n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const MESES = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",

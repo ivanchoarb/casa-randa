@@ -1,6 +1,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { EXTRA_GUEST, FREE_PAX } from "@casa-randa/pricing";
 import { supabaseClient } from "@/lib/supabase-client";
+import { LOCALE } from "@/lib/locale";
 
 export interface ConfigCotizacion {
   nombrePropiedad: string;
@@ -104,7 +105,7 @@ function generarCodigo() {
 }
 
 const money = (n: number) =>
-  `USD ${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `USD ${n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fechaLarga = (iso: string) => {
   const [y, m, d] = iso.split("-");
   return `${d}/${m}/${y}`;

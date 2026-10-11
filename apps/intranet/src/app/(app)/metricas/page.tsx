@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabaseClient } from "@/lib/supabase-client";
+import { TIMEZONE } from "@/lib/locale";
 
 interface Resumen {
   totales: {
@@ -72,7 +73,7 @@ export default function MetricasPage() {
     return Array.from({ length: dias }, (_, i) => {
       const f = new Date();
       f.setDate(f.getDate() - (dias - 1 - i));
-      const clave = f.toLocaleDateString("en-CA", { timeZone: "America/Panama" });
+      const clave = f.toLocaleDateString("en-CA", { timeZone: TIMEZONE });
       return { dia: clave, visitas: mapa.get(clave)?.visitas ?? 0, clicks_codigo: mapa.get(clave)?.clicks_codigo ?? 0 };
     });
   })();

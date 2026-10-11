@@ -2,6 +2,7 @@ import { async as icalAsync, type VEvent } from "node-ical";
 import { NextRequest, NextResponse } from "next/server";
 import { checkSyncSecret } from "@/lib/sync-auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { TIMEZONE } from "@/lib/locale";
 
 export const dynamic = "force-dynamic";
 // Dos feeds + una RPC por canal tardan ~2 s; el tope por defecto es holgado para eso,
@@ -61,7 +62,7 @@ async function reemplazarBloqueos(fuente: Fuente, bloqueos: { inicio: string; fi
 // "Hoy" en la zona de la casa, no en UTC: de noche en Panamá ya es "mañana" en
 // UTC y se completaría una estancia que aún no terminó. `en-CA` formatea YYYY-MM-DD.
 function hoyEnPanama(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Panama" }).format(new Date());
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TIMEZONE }).format(new Date());
 }
 
 /**

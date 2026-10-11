@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { usePermisos } from "@/lib/use-permisos";
 import Link from "next/link";
 import { descargarLiquidacion } from "@/lib/liquidacion";
+import { LOCALE } from "@/lib/locale";
 
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
 
@@ -44,7 +45,7 @@ const MESES = [
 const capitalizar = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const money = (n: number) =>
-  `$${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `$${n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // Entrada/estado nunca se enmascaran en reservas_acceso para quien tiene el
 // permiso "reservas" (Empleado y Host lo tienen por defecto) — a diferencia

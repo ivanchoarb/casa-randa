@@ -33,7 +33,7 @@ const CLAVES_COTIZACION = [
 const inputClass = "rounded-md border border-line bg-ground px-2 py-1.5 text-sm";
 const OPCIONES_HUESPEDES = Array.from({ length: MAX_PAX }, (_, i) => i + 1); // 1..MAX_PAX (16)
 const money = (n: number) =>
-  `USD ${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `USD ${n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 interface Conflicto {
   fuente: "airbnb" | "vrbo" | "directo";
