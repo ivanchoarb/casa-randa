@@ -220,7 +220,7 @@ export default function InicioPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="eyebrow">Resumen ejecutivo</p>
-          <h1 className="disp mt-1 text-3xl">Hoy en Casa Randa</h1>
+          <h1 className="disp mt-1 text-3xl">Hoy en {propiedad?.nombre ?? "…"}</h1>
           <p className="num mt-2 text-sm text-ink-2">
             {hoy} <span className="ml-1 rounded-full bg-panel-2 px-2 py-0.5 text-xs font-semibold">HOY</span>
           </p>

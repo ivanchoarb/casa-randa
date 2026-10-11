@@ -367,7 +367,7 @@ function ImportarCSV({ onImportado }: { onImportado: () => void }) {
     <section className="mt-12">
       <h2 className="text-lg font-bold">Importar o actualizar CSV</h2>
       <p className="mt-1 text-sm text-ink-2">
-        Acepta el formato Casa Randa (las mismas columnas que produce &quot;Descargar Excel&quot; más
+        Acepta el formato SuperHost (las mismas columnas que produce &quot;Descargar Excel&quot; más
         abajo — Cliente, Plataforma, Reserva, Check-in, Check-out, Valor bruto, Comisión
         plataforma, Estado). Al volver a cargar un archivo, las reservas se actualizan por código
         y no se duplican. Las comisiones internas se calculan solas (Host 1 y Host 2, tasas en configuración) sobre
@@ -588,8 +588,8 @@ function IngresosYReservas({ reservas, loading }: { reservas: Reserva[]; loading
                 <th className="px-4 py-3 font-medium">F. sal.</th>
                 <th className="px-4 py-3 text-right font-medium">Bruto</th>
                 <th className="px-4 py-3 text-right font-medium">Platf.</th>
-                <th className="px-4 py-3 text-right font-medium">Marq.</th>
-                <th className="px-4 py-3 text-right font-medium">Iván</th>
+                <th className="px-4 py-3 text-right font-medium">H1</th>
+                <th className="px-4 py-3 text-right font-medium">H2</th>
                 <th className="px-4 py-3 text-right font-medium">Neto</th>
                 <th className="px-4 py-3 font-medium">Estado</th>
               </tr>
