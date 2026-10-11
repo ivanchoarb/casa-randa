@@ -31,12 +31,13 @@ interface Gasto {
   valor: number;
 }
 
-interface ConfiguracionCliente {
-  clave: string;
-  valor: string;
+interface Propiedad {
+  id: string;
+  nombre: string;
+  slogan: string | null;
+  nombre_host1: string | null;
+  rol_host1: string | null;
 }
-
-const CLAVES_LIQUIDACION = ["nombre_propiedad", "slogan_propiedad", "nombre_host1", "rol_host1"];
 
 const MESES = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -131,23 +132,22 @@ export default function InicioPage() {
     queryOptions: { enabled: can("finanzas_propietario") },
     pagination: { pageSize: 500 },
   });
-  const { result: configuracionResult, tableQuery: configuracionQuery } = useTable<ConfiguracionCliente>({
-    resource: "configuracion_cliente",
-    filters: { permanent: [{ field: "clave", operator: "in", value: CLAVES_LIQUIDACION }] },
+  const { result: propiedadResult, tableQuery: configuracionQuery } = useTable<Propiedad>({
+    resource: "propiedades",
     pagination: { mode: "off" },
     syncWithLocation: false,
   });
 
   const reservas = reservasResult.data ?? [];
   const gastos = gastosResult.data ?? [];
-  const valorConfiguracion = (clave: string) =>
-    configuracionResult.data?.find((item) => item.clave === clave)?.valor.trim();
-  const nombrePropiedad = valorConfiguracion("nombre_propiedad");
-  const sloganPropiedad = valorConfiguracion("slogan_propiedad");
-  const nombreHost1 = valorConfiguracion("nombre_host1");
-  const rolHost1 = valorConfiguracion("rol_host1");
-  const configLiquidacion = nombrePropiedad && sloganPropiedad && nombreHost1 && rolHost1
-    ? { nombrePropiedad, sloganPropiedad, nombreHost1, rolHost1 }
+  const propiedad = propiedadResult.data?.[0];
+  const configLiquidacion = propiedad?.nombre && propiedad?.slogan && propiedad?.nombre_host1 && propiedad?.rol_host1
+    ? {
+        nombrePropiedad: propiedad.nombre,
+        sloganPropiedad: propiedad.slogan,
+        nombreHost1: propiedad.nombre_host1,
+        rolHost1: propiedad.rol_host1,
+      }
     : null;
 
   const hoy = new Date().toISOString().slice(0, 10);

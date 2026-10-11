@@ -16,19 +16,15 @@ import {
   type ConfigCotizacion,
 } from "@/lib/cotizacion";
 
-interface ConfiguracionCliente {
-  clave: string;
-  valor: string;
+interface Propiedad {
+  id: string;
+  nombre: string;
+  tagline_cotizacion: string | null;
+  descripcion_cotizacion: string | null;
+  direccion: string | null;
+  correo_reservas: string | null;
+  web_reservas: string | null;
 }
-
-const CLAVES_COTIZACION = [
-  "nombre_propiedad",
-  "tagline_cotizacion",
-  "descripcion_cotizacion",
-  "direccion_propiedad",
-  "correo_reservas",
-  "web_reservas",
-];
 
 const inputClass = "rounded-md border border-line bg-ground px-2 py-1.5 text-sm";
 const OPCIONES_HUESPEDES = Array.from({ length: MAX_PAX }, (_, i) => i + 1); // 1..MAX_PAX (16)
@@ -61,27 +57,22 @@ function sumarDias(iso: string, dias: number) {
 // inicial antes de la primera sincronización, o si PriceLabs no tiene
 // tarifa para las fechas elegidas.
 export default function CotizacionesPage() {
-  const { result: configResult, tableQuery: configQuery } = useTable<ConfiguracionCliente>({
-    resource: "configuracion_cliente",
-    filters: { permanent: [{ field: "clave", operator: "in", value: CLAVES_COTIZACION }] },
+  const { result: propiedadResult, tableQuery: configQuery } = useTable<Propiedad>({
+    resource: "propiedades",
     pagination: { mode: "off" },
     syncWithLocation: false,
   });
-  const valorConfig = (clave: string) => configResult.data?.find((r) => r.clave === clave)?.valor.trim();
+  const propiedad = propiedadResult.data?.[0];
   const config: ConfigCotizacion | null =
-    valorConfig("nombre_propiedad") &&
-    valorConfig("tagline_cotizacion") &&
-    valorConfig("descripcion_cotizacion") &&
-    valorConfig("direccion_propiedad") &&
-    valorConfig("correo_reservas") &&
-    valorConfig("web_reservas")
+    propiedad?.nombre && propiedad?.tagline_cotizacion && propiedad?.descripcion_cotizacion &&
+    propiedad?.direccion && propiedad?.correo_reservas && propiedad?.web_reservas
       ? {
-          nombrePropiedad: valorConfig("nombre_propiedad")!,
-          taglineCotizacion: valorConfig("tagline_cotizacion")!,
-          descripcionCotizacion: valorConfig("descripcion_cotizacion")!,
-          direccionPropiedad: valorConfig("direccion_propiedad")!,
-          correoReservas: valorConfig("correo_reservas")!,
-          webReservas: valorConfig("web_reservas")!,
+          nombrePropiedad: propiedad.nombre,
+          taglineCotizacion: propiedad.tagline_cotizacion,
+          descripcionCotizacion: propiedad.descripcion_cotizacion,
+          direccionPropiedad: propiedad.direccion,
+          correoReservas: propiedad.correo_reservas,
+          webReservas: propiedad.web_reservas,
         }
       : null;
 
