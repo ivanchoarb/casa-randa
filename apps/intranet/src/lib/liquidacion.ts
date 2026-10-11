@@ -21,7 +21,7 @@ interface ReservaParaLiquidacion {
   bruto: number;
   comision_plataforma: number;
   recibido: number;
-  comision_marquelda: number;
+  comision_host1: number;
 }
 
 export interface ConfigLiquidacion {
@@ -156,7 +156,7 @@ export async function descargarLiquidacion(
       res.bruto,
       res.comision_plataforma,
       res.recibido,
-      res.comision_marquelda,
+      res.comision_host1,
     ];
     values.forEach((v, i) => {
       const cell = ws.getCell(r, i + 1);

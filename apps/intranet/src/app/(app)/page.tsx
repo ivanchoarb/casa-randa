@@ -20,8 +20,8 @@ interface Reserva {
   bruto: number;
   comision_plataforma: number;
   recibido: number;
-  comision_marquelda: number;
-  comision_ivan: number;
+  comision_host1: number;
+  comision_host2: number;
   neto: number;
   estado: EstadoReserva;
 }
@@ -185,13 +185,13 @@ export default function InicioPage() {
   // verificado cifra por cifra contra staging el 2026-09-11.
   const ingresosDelMes = delMes.reduce((sum, r) => sum + r.recibido, 0);
   const ingresosAcumulados = delAnio.reduce((sum, r) => sum + r.recibido, 0);
-  const comisionMesMarquelda = delMes.reduce((sum, r) => sum + r.comision_marquelda, 0);
+  const comisionMesHost1 = delMes.reduce((sum, r) => sum + r.comision_host1, 0);
   const gastosDelAnio = gastos
     .filter((g) => new Date(`${g.fecha}T12:00:00`).getFullYear() === anioActivo)
     .reduce((sum, g) => sum + g.valor, 0);
-  const comisionAnualMarquelda = delAnio.reduce((sum, r) => sum + r.comision_marquelda, 0);
-  const comisionAnualIvan = delAnio.reduce((sum, r) => sum + r.comision_ivan, 0);
-  const saldoNetoPropietario = ingresosAcumulados - (comisionAnualMarquelda + comisionAnualIvan) - gastosDelAnio;
+  const comisionAnualHost1 = delAnio.reduce((sum, r) => sum + r.comision_host1, 0);
+  const comisionAnualHost2 = delAnio.reduce((sum, r) => sum + r.comision_host2, 0);
+  const saldoNetoPropietario = ingresosAcumulados - (comisionAnualHost1 + comisionAnualHost2) - gastosDelAnio;
 
   // "Ingresos del mes"/"Comisión Host" son del mes calendario actual — no
   // significan nada para un año distinto al de hoy, así que se ocultan en
@@ -201,12 +201,12 @@ export default function InicioPage() {
     ...(esAnioActual
       ? [
           { permiso: "ingresos_mes" as const, titulo: `Ingresos de ${capitalizar(MESES[mes])}`, valor: money(ingresosDelMes), nota: "Después de comisión de plataforma" },
-          { permiso: "comision_host" as const, titulo: "Comisión Host 1", valor: money(comisionMesMarquelda), nota: `${capitalizar(MESES[mes])} ${anio}` },
+          { permiso: "comision_host" as const, titulo: "Comisión Host 1", valor: money(comisionMesHost1), nota: `${capitalizar(MESES[mes])} ${anio}` },
         ]
       : []),
     { permiso: "finanzas_propietario" as const, titulo: "Ingresos acumulados", valor: money(ingresosAcumulados), nota: `Acumulado ${anioActivo}` },
-    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Host 1`, valor: money(comisionAnualMarquelda), nota: "Comisión acumulada del año" },
-    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Host 2`, valor: money(comisionAnualIvan), nota: "Comisión acumulada del año" },
+    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Host 1`, valor: money(comisionAnualHost1), nota: "Comisión acumulada del año" },
+    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Host 2`, valor: money(comisionAnualHost2), nota: "Comisión acumulada del año" },
     {
       permiso: "finanzas_propietario" as const,
       titulo: "Saldo neto propietario",

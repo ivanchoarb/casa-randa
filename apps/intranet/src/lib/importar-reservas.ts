@@ -5,7 +5,7 @@ import { asegurarTareasDeReserva } from "@/lib/tareas-operacion";
 type Canal = "airbnb" | "vrbo" | "directo";
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
 
-const CLAVES_TASAS = ["comision_marquelda_tasa", "comision_ivan_tasa"] as const;
+const CLAVES_TASAS = ["comision_host1_tasa", "comision_host2_tasa"] as const;
 
 function leerTasa(valor: string | undefined, clave: string): number {
   const tasa = Number(valor);
@@ -24,15 +24,15 @@ async function cargarTasasComision() {
 
   const valores = new Map((data ?? []).map((fila) => [fila.clave as string, fila.valor as string]));
   return {
-    marquelda: leerTasa(valores.get("comision_marquelda_tasa"), "comision_marquelda_tasa"),
-    ivan: leerTasa(valores.get("comision_ivan_tasa"), "comision_ivan_tasa"),
+    host1: leerTasa(valores.get("comision_host1_tasa"), "comision_host1_tasa"),
+    host2: leerTasa(valores.get("comision_host2_tasa"), "comision_host2_tasa"),
   };
 }
 
-export function calcularComisiones(recibido: number, tasas: { marquelda: number; ivan: number }) {
+export function calcularComisiones(recibido: number, tasas: { host1: number; host2: number }) {
   return {
-    marquelda: Math.round(recibido * tasas.marquelda * 100) / 100,
-    ivan: Math.round(recibido * tasas.ivan * 100) / 100,
+    host1: Math.round(recibido * tasas.host1 * 100) / 100,
+    host2: Math.round(recibido * tasas.host2 * 100) / 100,
   };
 }
 
@@ -63,8 +63,8 @@ interface FilaReserva {
   tarifa_noche: number;
   bruto: number;
   comision_plataforma: number;
-  comision_marquelda: number;
-  comision_ivan: number;
+  comision_host1: number;
+  comision_host2: number;
   estado: EstadoReserva;
 }
 
@@ -203,8 +203,8 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
       tarifa_noche: 0, // se recalcula abajo una vez conocidas las noches reales (columna generada)
       bruto,
       comision_plataforma: comPlat,
-      comision_marquelda: comisiones.marquelda,
-      comision_ivan: comisiones.ivan,
+      comision_host1: comisiones.host1,
+      comision_host2: comisiones.host2,
       estado,
     });
   }
