@@ -13,17 +13,13 @@ export const FREE_PAX = 14;
 export const MIN_NIGHTS = 1;
 export const MAX_PAX = 16;
 
-// 2026-09-25, at Ivan's request: Banco General's real published fees for
-// "Enlace de Pago BG" / "Botón de Pago BG" (the card-payment button this
-// project will eventually charge direct bookings through), absorbed into
-// every quoted total so the guest simply pays one clean price and Casa
-// Randa still nets the real quote amount — not shown as its own line.
-// Rates confirmed against BG's own published schedule (updated March
-// 2026): 3.50% + USD 0.50 per Visa/Mastercard transaction, plus 7% ITBMS
-// on BG's commission itself (not on the transaction total).
-export const BG_CARD_FEE_PCT = 0.035;
-export const BG_CARD_FEE_FLAT = 0.5;
-export const BG_ITBMS_ON_FEE = 0.07;
+// Default card-processing fees absorbed into the quoted total so the guest
+// pays one clean price. Values match a typical Latin American payment
+// gateway (3.5% + USD 0.50 per transaction, plus 7% tax on the fee itself).
+// Pass cardFees in QuoteInput to override for any processor or country.
+export const DEFAULT_CARD_FEE_PCT = 0.035;
+export const DEFAULT_CARD_FEE_FLAT = 0.5;
+export const DEFAULT_CARD_FEE_TAX = 0.07;
 
 export interface CardFeeConfig {
   feePct: number;
@@ -31,10 +27,10 @@ export interface CardFeeConfig {
   taxPct: number;
 }
 
-export const BG_FEES: CardFeeConfig = {
-  feePct: BG_CARD_FEE_PCT,
-  flatFee: BG_CARD_FEE_FLAT,
-  taxPct: BG_ITBMS_ON_FEE,
+export const DEFAULT_FEES: CardFeeConfig = {
+  feePct: DEFAULT_CARD_FEE_PCT,
+  flatFee: DEFAULT_CARD_FEE_FLAT,
+  taxPct: DEFAULT_CARD_FEE_TAX,
 };
 
 /**
@@ -59,7 +55,7 @@ export interface QuoteInput {
   plan: PaymentPlan;
   /** Código de descuento ya validado, 0–1 (0.05 = 5 %). Se resta del neto antes de absorber la comisión de tarjeta. */
   discountPct?: number;
-  /** Tarifas del procesador de pago. Por defecto usa Banco General Panama (BG_FEES). */
+  /** Tarifas del procesador de pago. Por defecto usa DEFAULT_FEES; pasa el tuyo para otro procesador. */
   cardFees?: CardFeeConfig;
 }
 
@@ -108,7 +104,7 @@ export function computeQuote(input: QuoteInput): Quote | null {
   // the breakdown still sums exactly to totalUsd, it just means the
   // accommodation line runs a bit above nights × RATE. See the
   // grossUpForCardFees note above for why.
-  const totalUsd = Math.round(grossUpForCardFees(netUsd, input.cardFees ?? BG_FEES) * 100) / 100;
+  const totalUsd = Math.round(grossUpForCardFees(netUsd, input.cardFees ?? DEFAULT_FEES) * 100) / 100;
   const cardFeeSurcharge = totalUsd - netUsd;
   const dueTodayUsd = input.plan === "30" ? Math.round(totalUsd * 0.3) : totalUsd;
 
