@@ -25,14 +25,26 @@ export const BG_CARD_FEE_PCT = 0.035;
 export const BG_CARD_FEE_FLAT = 0.5;
 export const BG_ITBMS_ON_FEE = 0.07;
 
+export interface CardFeeConfig {
+  feePct: number;
+  flatFee: number;
+  taxPct: number;
+}
+
+export const BG_FEES: CardFeeConfig = {
+  feePct: BG_CARD_FEE_PCT,
+  flatFee: BG_CARD_FEE_FLAT,
+  taxPct: BG_ITBMS_ON_FEE,
+};
+
 /**
- * Grosses up a net amount so that, after Banco General deducts its card
- * fee (percentage + flat, both then taxed by ITBMS), the amount Casa
- * Randa actually receives equals `net`. Solves T - (pct*T + flat)*(1+itbms) = net for T.
+ * Grosses up a net amount so that, after the payment processor deducts its
+ * fee (percentage + flat, both taxed by taxPct), the amount received equals
+ * `net`. Solves T - (pct*T + flat)*(1+tax) = net for T.
  */
-function grossUpForCardFees(net: number): number {
-  const factor = 1 - BG_CARD_FEE_PCT * (1 + BG_ITBMS_ON_FEE);
-  const flatWithTax = BG_CARD_FEE_FLAT * (1 + BG_ITBMS_ON_FEE);
+function grossUpForCardFees(net: number, fees: CardFeeConfig): number {
+  const factor = 1 - fees.feePct * (1 + fees.taxPct);
+  const flatWithTax = fees.flatFee * (1 + fees.taxPct);
   return (net + flatWithTax) / factor;
 }
 
@@ -47,6 +59,8 @@ export interface QuoteInput {
   plan: PaymentPlan;
   /** Código de descuento ya validado, 0–1 (0.05 = 5 %). Se resta del neto antes de absorber la comisión de tarjeta. */
   discountPct?: number;
+  /** Tarifas del procesador de pago. Por defecto usa Banco General Panama (BG_FEES). */
+  cardFees?: CardFeeConfig;
 }
 
 export interface QuoteLine {
@@ -94,7 +108,7 @@ export function computeQuote(input: QuoteInput): Quote | null {
   // the breakdown still sums exactly to totalUsd, it just means the
   // accommodation line runs a bit above nights × RATE. See the
   // grossUpForCardFees note above for why.
-  const totalUsd = Math.round(grossUpForCardFees(netUsd) * 100) / 100;
+  const totalUsd = Math.round(grossUpForCardFees(netUsd, input.cardFees ?? BG_FEES) * 100) / 100;
   const cardFeeSurcharge = totalUsd - netUsd;
   const dueTodayUsd = input.plan === "30" ? Math.round(totalUsd * 0.3) : totalUsd;
 
