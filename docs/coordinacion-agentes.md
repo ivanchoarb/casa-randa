@@ -518,3 +518,47 @@ reales (una con salida pasada, otra que sale hoy): la primera pasó a
 pruebas y sus tareas se borraron y los totales quedaron como antes (79 reservas:
 14/50/15). Limitación: la sincronización sigue sin tener scheduler (se dispara a
 mano), así que esto ocurre cuando alguien la corre, no a medianoche.
+
+## 2026-10-13 — Codex: tarea 017, página pública PQRS
+
+Implementada `/pqrs` como asistente bilingüe de ocho pasos, con validación
+pura, honeypot, campos opcionales de teléfono/reserva y radicado final. La API
+aplica límites por hora, vincula reservas sin revelar su existencia y persiste
+solo con service role. Corrección ciclo 1: conteo e inserción ahora ocurren en
+la RPC `registrar_pqrs` bajo un advisory lock transaccional; su ejecución está
+revocada a `public`, `anon` y `authenticated`. Se eliminó el acuse al correo
+escrito por el visitante: solo sale el aviso interno a booking, con `replyTo`.
+Se agregaron migración 0043 con RLS, enlace de pie y sitemap.
+
+Auditoría y cierre (Claude, 2026-10-13). Revisión adversarial de Codex sobre el
+endpoint público encontró dos problemas graves, ya corregidos (ciclo 1): una
+carrera en los límites por frecuencia (conteo e insert separados) y un acuse que
+reenviaba correo de Casa Randa a cualquier dirección escrita por un anónimo
+(reflector de correo). Claude añadió además: el correo rechaza `<>,;"` (el
+transporte los leería como varios destinatarios), y nombre/apellido/asunto no
+admiten saltos de línea ni caracteres de control. Verificado con el comando
+exacto de la tarea y con red: 14 pruebas, ESLint dirigido y `next build` pasan
+(`/pqrs` estática, `/api/pqrs` dinámica).
+
+Migración 0043 APLICADA a la base real el 2026-10-13. Comprobado contra ella:
+RLS activa y solo dos políticas (select/update para `authenticated` con permiso
+`contabilidad`); `registrar_pqrs` solo ejecutable por `service_role`; con la clave
+anónima, insertar y ejecutar la función dan 401 y no se puede leer, actualizar ni
+borrar una fila existente; 12 llamadas simultáneas con el mismo correo dejan pasar
+exactamente 3, y 70 simultáneas con correos distintos detienen el total en
+exactamente 60 (límite global). Prueba de extremo a extremo en navegador con un
+servidor SMTP falso local: el caso se guarda, se vincula a la reserva por el
+código (normalizado), sale UN correo (aviso interno a booking@randahome.com con
+`Reply-To` del remitente), ninguno al remitente ni con el señuelo lleno, y un
+`\r\nBcc:` en el nombre no crea cabecera. Datos de prueba borrados y contador
+de radicados reiniciado (el primer real será PQRS-000001).
+
+Decisiones y limitaciones: (1) NO se envía acuse por correo al remitente; el
+radicado se muestra en pantalla. (2) Sin CAPTCHA ni límite por IP: un atacante
+con correos distintos puede agotar el tope global (60/hora) y bloquear PQRS
+legítimas esa hora (el mensaje de error remite a booking@randahome.com); el
+siguiente paso sensato es Cloudflare Turnstile. (3) El campo señuelo se llama
+`sitio_web`: un autocompletado agresivo podría llenarlo y el caso se descartaría
+en silencio. (4) No hay vista de PQRS en la intranet todavía (tarea aparte): los
+casos llegan por correo y están en la tabla `pqrs`. (5) No se afirma ningún plazo
+de respuesta; falta que Iván decida si quiere publicar uno.

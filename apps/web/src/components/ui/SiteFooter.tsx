@@ -87,6 +87,12 @@ export function SiteFooter() {
             >
               {lang === "es" ? "Intranet" : "Staff intranet"}
             </a>
+            <a
+              href="/pqrs"
+              className="text-[var(--on-dark-2)] underline decoration-[var(--on-dark-2)]/40 underline-offset-2 transition-colors duration-200 hover:text-[var(--on-dark)]"
+            >
+              PQRS
+            </a>
           </span>
           <span>
             {lang === "es"
