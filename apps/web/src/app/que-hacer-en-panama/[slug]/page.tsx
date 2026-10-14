@@ -32,7 +32,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   return (
     <>
       <SiteHeader />
-      <main className="flex-1">
+      <main className="flex-1 pt-[60px] md:pt-[68px]">
         <PlaceDetail place={place} />
       </main>
       <SiteFooter />

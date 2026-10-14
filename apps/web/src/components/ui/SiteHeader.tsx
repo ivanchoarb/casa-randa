@@ -91,7 +91,7 @@ export function SiteHeader() {
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header className={`sticky top-0 z-40 text-[var(--on-dark)] transition-[background-color,backdrop-filter,border-color] duration-300 ${
+    <header className={`fixed inset-x-0 top-0 z-40 w-full text-[var(--on-dark)] transition-[background-color,backdrop-filter,border-color] duration-300 ${
       scrolled
         ? "border-b border-[var(--on-dark-2)]/25 bg-[var(--night)]"
         : "bg-[var(--night)]/20 backdrop-blur-2xl saturate-150"
