@@ -58,9 +58,11 @@ worktree-viejo/                Parche con cambios sin commitear de un worktree d
 ```
 
 **Pendiente (no se tocó a propósito):**
-- El worktree `.claude/worktrees/agitated-swanson-b5b0f0` (rama `claude/agitated-swanson-b5b0f0`, 12 de septiembre) tiene 3 archivos modificados sin commitear. Se guardó su parche en `worktree-viejo/`. Revisar si algo sirve y luego borrarlo con `git worktree remove`.
 - Ramas locales que ya existen en GitHub y se pueden podar cuando se confirmen mergeadas: `docs/reglas-commits-y-despliegue`, `feat/guia-que-hacer`, `fix/docs-sync-cron-variables`, `fix/smtp-errores-de-red`.
 - La copia de la MicroSD sigue en la rama `fix/web-menu-movil` (ya mergeada). Hacer `git checkout main && git pull` antes de usarla.
+
+**Resuelto (2026-10-10):**
+- El worktree `agitated-swanson-b5b0f0` (rama `claude/agitated-swanson-b5b0f0`) fue revisado y borrado. Su parche en `worktree-viejo/` contenía el fix de RLS `reservas` → `reservas_acceso`, aplicado en el PR #39 y desplegado a producción.
 
 ## 5. Backup
 

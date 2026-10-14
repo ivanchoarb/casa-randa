@@ -27,8 +27,16 @@ export function SiteHeader() {
   const { lang } = useLanguage();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   // "/" and "/en" are the same homepage sections in two languages (see
   // app/en/page.tsx) — both stay bare-anchor "home" pages.
   const isHome = pathname === "/" || pathname === "/en";
@@ -83,7 +91,11 @@ export function SiteHeader() {
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--on-dark-2)]/25 bg-[var(--night)] text-[var(--on-dark)]">
+    <header className={`sticky top-0 z-40 text-[var(--on-dark)] transition-[background-color,backdrop-filter,border-color] duration-300 ${
+      scrolled
+        ? "border-b border-[var(--on-dark-2)]/25 bg-[var(--night)]"
+        : "bg-[var(--night)]/40 backdrop-blur-md"
+    }`}>
       <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3 md:gap-4 md:px-6 md:py-4">
         <a
           href={homeHref("#top")}
@@ -158,8 +170,8 @@ export function SiteHeader() {
         id="mobile-site-menu"
         aria-hidden={!menuOpen}
         inert={!menuOpen}
-        className={`absolute inset-x-0 top-full border-b border-[var(--on-dark-2)]/25 bg-[var(--night)] px-4 py-3 font-[family-name:var(--font-display)] text-sm md:hidden ${
-          menuOpen ? "visible" : "invisible pointer-events-none"
+        className={`absolute inset-x-0 top-full border-b border-[var(--on-dark-2)]/25 bg-[var(--night)] px-4 py-3 font-[family-name:var(--font-display)] text-sm md:hidden transition-opacity duration-200 ${
+          menuOpen ? "visible opacity-100" : "invisible pointer-events-none opacity-0"
         }`}
       >
         <div className="mx-auto flex max-w-6xl flex-col">
