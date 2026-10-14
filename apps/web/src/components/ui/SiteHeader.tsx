@@ -94,7 +94,7 @@ export function SiteHeader() {
     <header className={`sticky top-0 z-40 text-[var(--on-dark)] transition-[background-color,backdrop-filter,border-color] duration-300 ${
       scrolled
         ? "border-b border-[var(--on-dark-2)]/25 bg-[var(--night)]"
-        : "bg-[var(--night)]/40 backdrop-blur-md"
+        : "bg-[var(--night)]/20 backdrop-blur-2xl saturate-150"
     }`}>
       <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3 md:gap-4 md:px-6 md:py-4">
         <a
