@@ -87,13 +87,17 @@ export function House() {
         </p>
       </Reveal>
 
-      <Reveal className="mt-12">
-        <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          {lang === "es" ? "De su grupo y de nadie más" : "Shared by your group only"}
+      <Reveal className="mt-12" threshold={0.05}>
+        <h3 className="font-[family-name:var(--font-display)] text-xs font-semibold uppercase tracking-[0.12em] text-[var(--caoba)]">
+          {lang === "es" ? "De su grupo y de nadie más" : "Your group only"}
         </h3>
-        <ul className="mt-5 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
+        <ul className="mt-5 grid grid-cols-1 border-t border-[var(--ink)]/8 sm:grid-cols-2">
           {(lang === "es" ? COMMON_ES : COMMON_EN).map((item, i) => (
-            <li key={item} className="flex items-start gap-3">
+            <li
+              key={item}
+              className="amenity-item flex items-center gap-3 border-b border-[var(--ink)]/8 py-3.5"
+              style={{ "--stagger": i } as React.CSSProperties}
+            >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -101,12 +105,12 @@ export function House() {
                 strokeWidth="1.75"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="h-9 w-9 flex-none rounded-xl bg-[var(--caoba)]/10 p-1.5 text-[var(--caoba)]"
+                className="h-5 w-5 flex-none text-[var(--caoba)]"
                 aria-hidden
               >
                 {AMENITY_ICONS[i]}
               </svg>
-              <span className="text-sm text-[var(--ink-2)]">{item}</span>
+              <span className="text-sm text-[var(--ink)]">{item}</span>
             </li>
           ))}
         </ul>
