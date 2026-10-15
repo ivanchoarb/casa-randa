@@ -7,6 +7,7 @@ interface Fila {
   nombre: string;
   nivel_precio: 1 | 2 | 3;
   imagenes: string[];
+  creditos_foto: string;
   resumen_es: string;
   resumen_en: string;
   por_que_es: string;
@@ -25,7 +26,7 @@ interface Fila {
 }
 
 const COLUMNAS =
-  "slug, categoria, nombre, nivel_precio, imagenes, resumen_es, resumen_en, por_que_es, por_que_en, " +
+  "slug, categoria, nombre, nivel_precio, imagenes, creditos_foto, resumen_es, resumen_en, por_que_es, por_que_en, " +
   "distancia_es, distancia_en, como_llegar_es, como_llegar_en, horario_es, horario_en, " +
   "precio_ref_es, precio_ref_en, sitio_oficial, mapa_url, telefono";
 
@@ -36,6 +37,7 @@ function aLugar(f: Fila): Place {
     name: f.nombre,
     priceLevel: f.nivel_precio,
     images: f.imagenes,
+    photoCredit: f.creditos_foto || undefined,
     teaser: { es: f.resumen_es, en: f.resumen_en },
     why: { es: f.por_que_es, en: f.por_que_en },
     distance: { es: f.distancia_es, en: f.distancia_en },

@@ -34,6 +34,9 @@ export function PlaceDetail({ place }: { place: Place }) {
 
       <Reveal delayMs={40} className="mt-6">
         <ImageCarousel images={place.images} alt={place.name} />
+        {place.photoCredit && place.images.length > 0 && (
+          <p className="mt-2 text-xs text-[var(--ink-2)]">{place.photoCredit}</p>
+        )}
       </Reveal>
 
       <Reveal delayMs={60}>

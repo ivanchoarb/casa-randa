@@ -1,6 +1,15 @@
 # Coordinación de Codex y Claude
 
-Actualizado: 2026-09-14.
+Actualizado: 2026-10-05.
+
+Codex (2026-10-05): completada la tarea
+`.ai/tasks/001-test-creditos-foto-guia.md`. Se agregó
+`apps/intranet/tests/que-hacer-creditos-foto.test.mjs`: extrae y transpila las
+funciones reales de la página y verifica con Supabase/Refine y `fetch` simulado
+que `creditos_foto` se conserva al crear, editar y vaciar. Sin cambios en
+producción, migraciones, dependencias ni UI. Verificación: 1/1 aprobada con el
+comando indicado en la tarea; no se usó red real. Siguiente paso: revisión de
+Claude.
 
 Codex (2026-09-14): instalación de la skill personal `image-enhancer` de
 Codex. Alcance: crear `~/.codex/skills/image-enhancer/SKILL.md` y sus metadatos
