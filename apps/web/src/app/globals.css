@@ -122,6 +122,32 @@ html.lenis.lenis-stopped {
   opacity: 1;
   transform: scale(1);
 }
+/* Gallery accordion — flex row that distributes width via spring-driven
+   flexGrow. The cells carry object-fit: cover so opening a panel admits
+   more of the photo on the sides rather than stretching it. */
+.acc {
+  display: flex;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.acc-cell {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.acc-cell img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
 /* Per-item stagger for amenity list items — gated on parent .is-visible so
    the cascade only fires once the section scrolls into view. */
 .amenity-item {
