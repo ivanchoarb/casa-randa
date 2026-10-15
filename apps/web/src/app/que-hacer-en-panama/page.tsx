@@ -19,7 +19,7 @@ export default async function Page() {
   return (
     <>
       <SiteHeader />
-      <main className="flex-1">
+      <main className="flex-1 pt-[60px] md:pt-[68px]">
         <PageHero
           title={{
             es: "Qué hacer en Panamá",
