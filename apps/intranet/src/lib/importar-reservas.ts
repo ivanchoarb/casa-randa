@@ -7,8 +7,8 @@ type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
 
 // "Las comisiones internas se calculan según las tasas configuradas" (texto
 // de staging) — verificado contra las 58 reservas reales con bruto > 0
-// importadas el 2026-09-11: comision_marquelda = 10% de `recibido`,
-// comision_ivan = 9%, sin una sola excepción. No son tasas inventadas.
+// importadas el 2026-09-11: comision_host1 = 10% de `recibido`,
+// comision_host2 = 9%, sin una sola excepción. No son tasas inventadas.
 const TASA_MARQUELDA = 0.1;
 const TASA_IVAN = 0.09;
 
@@ -39,8 +39,8 @@ interface FilaReserva {
   tarifa_noche: number;
   bruto: number;
   comision_plataforma: number;
-  comision_marquelda: number;
-  comision_ivan: number;
+  comision_host1: number;
+  comision_host2: number;
   estado: EstadoReserva;
 }
 
@@ -176,8 +176,8 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
       tarifa_noche: 0, // se recalcula abajo una vez conocidas las noches reales (columna generada)
       bruto,
       comision_plataforma: comPlat,
-      comision_marquelda: Math.round(recibido * TASA_MARQUELDA * 100) / 100,
-      comision_ivan: Math.round(recibido * TASA_IVAN * 100) / 100,
+      comision_host1: Math.round(recibido * TASA_MARQUELDA * 100) / 100,
+      comision_host2: Math.round(recibido * TASA_IVAN * 100) / 100,
       estado,
     });
   }

@@ -4,7 +4,7 @@ import { useCreate, useDelete, useTable } from "@refinedev/core";
 import { useMemo, useRef, useState } from "react";
 import { importarReservasCSV, type ResultadoImport } from "@/lib/importar-reservas";
 
-type Persona = "marquelda" | "ivan";
+type Persona = "host1" | "host2";
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
 type CategoriaGasto =
   | "reparacion"
@@ -27,8 +27,8 @@ interface Reserva {
   bruto: number;
   comision_plataforma: number;
   recibido: number;
-  comision_marquelda: number;
-  comision_ivan: number;
+  comision_host1: number;
+  comision_host2: number;
   neto: number;
   estado: EstadoReserva;
 }
@@ -99,10 +99,10 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
   const delMes = anio === anioActual ? delAnio.filter((r) => new Date(`${r.entrada}T12:00:00`).getMonth() === mes) : [];
 
   const recibidoAcumulado = delAnio.reduce((sum, r) => sum + r.recibido, 0);
-  const comisionMesMarquelda = delMes.reduce((sum, r) => sum + r.comision_marquelda, 0);
-  const comisionMesIvan = delMes.reduce((sum, r) => sum + r.comision_ivan, 0);
-  const comisionAnualMarquelda = delAnio.reduce((sum, r) => sum + r.comision_marquelda, 0);
-  const comisionAnualIvan = delAnio.reduce((sum, r) => sum + r.comision_ivan, 0);
+  const comisionMesMarquelda = delMes.reduce((sum, r) => sum + r.comision_host1, 0);
+  const comisionMesIvan = delMes.reduce((sum, r) => sum + r.comision_host2, 0);
+  const comisionAnualMarquelda = delAnio.reduce((sum, r) => sum + r.comision_host1, 0);
+  const comisionAnualIvan = delAnio.reduce((sum, r) => sum + r.comision_host2, 0);
   const gastosDelAnio = gastos
     .filter((g) => new Date(`${g.fecha}T12:00:00`).getFullYear() === anio)
     .reduce((sum, g) => sum + g.valor, 0);
@@ -170,7 +170,7 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
 function AnticiposComision({ reservas }: { reservas: Reserva[] }) {
   const anioActual = new Date().getFullYear();
   const [anio, setAnio] = useState(anioActual);
-  const persona: Persona = "ivan";
+  const persona: Persona = "host2";
 
   const { result, tableQuery } = useTable<Anticipo>({
     resource: "anticipos_comision",
@@ -212,7 +212,7 @@ function AnticiposComision({ reservas }: { reservas: Reserva[] }) {
         (r.estado === "confirmada" || r.estado === "completada") &&
         new Date(`${r.entrada}T12:00:00`).getFullYear() === anio,
     )
-    .reduce((sum, r) => sum + r.comision_ivan, 0);
+    .reduce((sum, r) => sum + r.comision_host2, 0);
 
   const anticiposDelAnio = anticipos.filter((a) => new Date(`${a.fecha}T12:00:00`).getFullYear() === anio);
   const anticiposPagados = anticiposDelAnio.reduce((sum, a) => sum + a.valor, 0);
@@ -597,8 +597,8 @@ function IngresosYReservas({ reservas, loading }: { reservas: Reserva[]; loading
                   <td className="px-4 py-3 tabular-nums">{r.salida}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{money(r.bruto)}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{money(r.comision_plataforma)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{money(r.comision_marquelda)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{money(r.comision_ivan)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{money(r.comision_host1)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{money(r.comision_host2)}</td>
                   <td className="px-4 py-3 text-right font-semibold tabular-nums">{money(r.neto)}</td>
                   <td className="px-4 py-3">{ESTADO_LABEL[r.estado]}</td>
                 </tr>

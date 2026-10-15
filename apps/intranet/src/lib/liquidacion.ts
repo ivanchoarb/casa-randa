@@ -21,7 +21,7 @@ interface ReservaParaLiquidacion {
   bruto: number;
   comision_plataforma: number;
   recibido: number;
-  comision_marquelda: number;
+  comision_host1: number;
 }
 
 const MESES_LARGO = [
@@ -148,7 +148,7 @@ export async function descargarLiquidacionMarquelda(
       res.bruto,
       res.comision_plataforma,
       res.recibido,
-      res.comision_marquelda,
+      res.comision_host1,
     ];
     values.forEach((v, i) => {
       const cell = ws.getCell(r, i + 1);

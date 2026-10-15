@@ -19,8 +19,8 @@ interface Reserva {
   bruto: number;
   comision_plataforma: number;
   recibido: number;
-  comision_marquelda: number;
-  comision_ivan: number;
+  comision_host1: number;
+  comision_host2: number;
   neto: number;
   estado: EstadoReserva;
 }
@@ -162,12 +162,12 @@ export default function InicioPage() {
   // verificado cifra por cifra contra staging el 2026-09-11.
   const ingresosDelMes = delMes.reduce((sum, r) => sum + r.recibido, 0);
   const ingresosAcumulados = delAnio.reduce((sum, r) => sum + r.recibido, 0);
-  const comisionMesMarquelda = delMes.reduce((sum, r) => sum + r.comision_marquelda, 0);
+  const comisionMesMarquelda = delMes.reduce((sum, r) => sum + r.comision_host1, 0);
   const gastosDelAnio = gastos
     .filter((g) => new Date(`${g.fecha}T12:00:00`).getFullYear() === anioActivo)
     .reduce((sum, g) => sum + g.valor, 0);
-  const comisionAnualMarquelda = delAnio.reduce((sum, r) => sum + r.comision_marquelda, 0);
-  const comisionAnualIvan = delAnio.reduce((sum, r) => sum + r.comision_ivan, 0);
+  const comisionAnualMarquelda = delAnio.reduce((sum, r) => sum + r.comision_host1, 0);
+  const comisionAnualIvan = delAnio.reduce((sum, r) => sum + r.comision_host2, 0);
   const saldoNetoPropietario = ingresosAcumulados - (comisionAnualMarquelda + comisionAnualIvan) - gastosDelAnio;
 
   // "Ingresos del mes"/"Comisión Host" son del mes calendario actual — no
