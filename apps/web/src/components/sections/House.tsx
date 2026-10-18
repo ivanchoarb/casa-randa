@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { COMMON_EN, COMMON_ES } from "@casa-randa/data";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { Reveal } from "@/components/ui/Reveal";
@@ -130,19 +130,6 @@ function GalleryAccordion() {
   );
 }
 
-// ── amenity icons ─────────────────────────────────────────────────────────────
-const AMENITY_ICONS: ReactNode[] = [
-  <path key="cocina" d="M4.5 4.5h15a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1Z M9 9.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z M15 9.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z M9 15.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z M15 15.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z" />,
-  <path key="sala" d="M4 18v-4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4M3 18h18M5 12V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4" />,
-  <path key="segunda-sala" d="M6 20v-7a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v7M4 20h16M5 20v-3a1 1 0 0 1 1-1M19 20v-3a1 1 0 0 1-1-1" />,
-  <path key="comedor" d="M3 8h18M6 8v11M18 8v11" />,
-  <path key="balcon" d="M4 4l3 8M20 4l-3 8M7 12c2 4 8 4 10 0M9 15v1M12 16v1M15 15v1" />,
-  <path key="patio" d="M4 13a8 8 0 0 1 16 0H4Z M4 13h16M8 20l1.5-6M16 20l-1.5-6M10 5c1-1 1-2 0-3M14 5c1-1 1-2 0-3" />,
-  <path key="lavanderia" d="M5 3h14a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z M8 6h.01 M11 6h.01 M12 15a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M12 13.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />,
-  <path key="parking" d="M5 3.5h14a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1Z M9 17V7h4a3 3 0 0 1 0 6H9" />,
-  <path key="wifi" d="M3 8.5a13 13 0 0 1 18 0M6.5 12a8 8 0 0 1 11 0M10 15.5a3 3 0 0 1 4 0M12 19h.01" />,
-];
-
 // ── section ───────────────────────────────────────────────────────────────────
 export function House() {
   const { lang } = useLanguage();
@@ -172,26 +159,18 @@ export function House() {
         <h3 className="font-[family-name:var(--font-display)] text-xs font-semibold uppercase tracking-[0.12em] text-[var(--caoba)]">
           {lang === "es" ? "De su grupo y de nadie más" : "Your group only"}
         </h3>
-        <ul className="mt-5 grid grid-cols-1 border-t border-[var(--ink)]/8 sm:grid-cols-2">
+        <ul className="mt-5 grid grid-cols-1 gap-x-16 border-t border-[var(--ink)]/8 sm:grid-cols-2">
           {(lang === "es" ? COMMON_ES : COMMON_EN).map((item, i) => (
             <li
               key={item}
-              className="amenity-item flex items-center gap-3 border-b border-[var(--ink)]/8 py-3.5"
+              className="amenity-item flex items-start gap-3 border-b border-[var(--ink)]/8 py-4"
               style={{ "--stagger": i } as React.CSSProperties}
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-5 w-5 flex-none text-[var(--caoba)]"
+              <span
+                className="mt-[0.45em] h-1.5 w-1.5 flex-none rounded-full bg-[var(--caoba)]"
                 aria-hidden
-              >
-                {AMENITY_ICONS[i]}
-              </svg>
-              <span className="text-sm text-[var(--ink)]">{item}</span>
+              />
+              <span className="text-[var(--ink)]">{item}</span>
             </li>
           ))}
         </ul>
