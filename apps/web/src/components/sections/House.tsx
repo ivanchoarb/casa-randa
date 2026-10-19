@@ -6,9 +6,19 @@ import { COMMON_EN, COMMON_ES } from "@casa-randa/data";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { Reveal } from "@/components/ui/Reveal";
 
-// One simple line-icon per COMMON_ES/COMMON_EN entry, same index order —
-// gives the amenities list a visual anchor per row instead of nine stacked
-// sentences of plain text. Hand-picked to match each fact, not decorative.
+const TITLES = [
+  { es: "Cocina",          en: "Kitchen"       },
+  { es: "Sala principal",  en: "Living room"   },
+  { es: "Segunda sala",    en: "Second lounge" },
+  { es: "Comedor",         en: "Dining room"   },
+  { es: "Balcón",          en: "Balcony"       },
+  { es: "Patio & BBQ",     en: "Patio & BBQ"   },
+  { es: "Lavandería",      en: "Laundry"       },
+  { es: "Estacionamiento", en: "Parking"       },
+  { es: "Internet",        en: "Internet"      },
+];
+
+// Unused — kept in case icons are re-enabled later
 const AMENITY_ICONS: ReactNode[] = [
   // Cocina (gorro de chef — limpio y universal)
   <path key="cocina" d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z M6 17h12" />,
@@ -70,7 +80,7 @@ export function House() {
     <div className="mx-auto max-w-6xl px-6 py-20">
       <Reveal className="grid gap-5 sm:grid-cols-2 sm:items-end">
         <h2 className="text-fluid-h2 font-[family-name:var(--font-display)] font-bold">
-          {lang === "es" ? "Aquí nadie comparte nada" : "Nobody shares anything"}
+          {lang === "es" ? "Una casa entera solo para ti y tu grupo" : "An entire house just for you and your group"}
         </h2>
         <p className="text-[var(--ink-2)]">
           {lang === "es"
@@ -92,9 +102,10 @@ export function House() {
           {lang === "es" ? "De su grupo y de nadie más" : "Shared by your group only"}
         </h3>
         <ul className="amenity-list mt-5 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
-          {(lang === "es" ? COMMON_ES : COMMON_EN).map((item) => (
-            <li key={item} className="amenity-item">
-              <span className="text-sm text-[var(--ink-2)]">{item}</span>
+          {TITLES.map((title, i) => (
+            <li key={i} className="amenity-item">
+              <span className="amenity-title">{t(title)}</span>
+              <span className="amenity-desc text-sm">{(lang === "es" ? COMMON_ES : COMMON_EN)[i]}</span>
             </li>
           ))}
         </ul>

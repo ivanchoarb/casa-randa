@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Lato } from "next/font/google";
+import localFont from "next/font/local";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { SmoothScrollProvider } from "@/lib/scroll/SmoothScrollProvider";
 import { PopupDescuento } from "@/components/ui/PopupDescuento";
@@ -19,6 +20,17 @@ const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
   axes: ["opsz"],
+});
+
+const dreamOrphans = localFont({
+  src: [
+    { path: "../fonts/Dream Orphans.otf",       weight: "400", style: "normal"  },
+    { path: "../fonts/Dream Orphans It.otf",    weight: "400", style: "italic"  },
+    { path: "../fonts/Dream Orphans Bd.otf",    weight: "700", style: "normal"  },
+    { path: "../fonts/Dream Orphans Bd It.otf", weight: "700", style: "italic"  },
+  ],
+  variable: "--font-dream",
+  display: "swap",
 });
 
 const lato = Lato({
@@ -65,7 +77,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${fraunces.variable} ${lato.variable} h-full antialiased`}>
+    <html lang="es" className={`${fraunces.variable} ${lato.variable} ${dreamOrphans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <SmoothScrollProvider>
           <LanguageProvider>
