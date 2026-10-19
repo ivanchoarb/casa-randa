@@ -258,6 +258,24 @@ body {
   }
 }
 
+/* Amenity list: hovered card scales up, siblings blur + shrink.
+   Pattern from uiverse.io/kamehame-ha, adapted to Casa Randa tokens.
+   Only on pointer devices — touch sees the plain list at rest. */
+.amenity-item {
+  transition:
+    transform 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+    filter   0.35s cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .amenity-list:hover > .amenity-item:not(:hover) {
+    filter: blur(6px);
+    transform: scale(0.9);
+  }
+  .amenity-list > .amenity-item:hover {
+    transform: scale(1.1);
+  }
+}
+
 /* Gallery: zoom-on-hover only. Scoped to hover-capable, fine-pointer
    devices — touch just shows the photos at rest, unzoomed. */
 .gallery-photo img {
@@ -289,6 +307,14 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .amenity-item {
+    transition: none !important;
+  }
+  .amenity-list:hover > .amenity-item:not(:hover),
+  .amenity-list > .amenity-item:hover {
+    filter: none !important;
+    transform: none !important;
+  }
   .scroll-scale-img {
     animation: none !important;
     transform: none !important;

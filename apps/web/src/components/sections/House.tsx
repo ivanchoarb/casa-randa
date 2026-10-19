@@ -91,9 +91,9 @@ export function House() {
         <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold">
           {lang === "es" ? "De su grupo y de nadie más" : "Shared by your group only"}
         </h3>
-        <ul className="mt-5 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
+        <ul className="amenity-list mt-5 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
           {(lang === "es" ? COMMON_ES : COMMON_EN).map((item, i) => (
-            <li key={item} className="flex items-start gap-3">
+            <li key={item} className="amenity-item flex items-start gap-3">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
