@@ -31,12 +31,12 @@ function Confirmacion() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-ground px-6">
       <div className="w-full max-w-sm rounded-xl border border-line bg-panel p-8 shadow-sm text-center">
-        <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Casa Randa</p>
+        <p className="text-xs font-semibold tracking-wide text-caoba uppercase">SuperHost</p>
         {estado === "procesando" && <p className="mt-4 text-sm text-ink-2">Procesando…</p>}
         {estado === "listo" && (
           <>
             <h1 className="mt-1 text-xl font-bold">Listo</h1>
-            <p className="mt-3 text-sm text-ink-2">Ya no recibirás más correos de marketing de Casa Randa.</p>
+            <p className="mt-3 text-sm text-ink-2">Ya no recibirás más correos de marketing.</p>
           </>
         )}
         {estado === "error" && (

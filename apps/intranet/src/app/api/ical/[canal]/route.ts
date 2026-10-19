@@ -45,14 +45,14 @@ export async function GET(
     uid: `${b.id}@randahome.com`,
     start: fechaADateArray(b.inicio),
     end: fechaADateArray(b.fin),
-    title: "Casa Randa — no disponible",
+    title: "No disponible",
     status: "CONFIRMED",
     busyStatus: "BUSY",
   }));
 
   const { error: icsError, value } = createEvents(eventos, {
-    calName: `Casa Randa — bloqueos (${canal})`,
-    productId: "-//Casa Randa//Intranet//ES",
+    calName: `SuperHost — bloqueos (${canal})`,
+    productId: "-//SuperHost//Intranet//ES",
   });
 
   if (icsError || !value) {
@@ -62,7 +62,7 @@ export async function GET(
   return new NextResponse(value, {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": `inline; filename="casa-randa-${canal}.ics"`,
+      "Content-Disposition": `inline; filename="bloqueos-${canal}.ics"`,
       "Cache-Control": "public, max-age=900", // 15 min — Airbnb/Vrbo poll on their own schedule anyway
     },
   });

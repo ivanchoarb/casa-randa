@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTable } from "@refinedev/core";
 import { supabaseClient } from "@/lib/supabase-client";
+import { LOCALE } from "@/lib/locale";
 
 interface ReservaEmbebida {
   huesped_nombre: string;
@@ -27,7 +28,7 @@ interface CheckinHuesped {
 }
 
 function fechaHora(iso: string) {
-  return new Date(iso).toLocaleString("es-PA", { dateStyle: "medium", timeStyle: "short" });
+  return new Date(iso).toLocaleString(LOCALE, { dateStyle: "medium", timeStyle: "short" });
 }
 
 function CheckinCard({ c }: { c: CheckinHuesped }) {

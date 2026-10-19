@@ -2,6 +2,7 @@
 
 import { useCreate, useTable } from "@refinedev/core";
 import { useMemo, useState } from "react";
+import { LOCALE } from "@/lib/locale";
 
 type EstadoConciliacion = "pendiente" | "conciliado" | "diferencia";
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
@@ -28,7 +29,7 @@ interface Movimiento {
 
 const inputClass = "rounded-md border border-line bg-ground px-2 py-1.5 text-sm";
 const money = (n: number) =>
-  `$${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `$${n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const ESTADO_STYLE: Record<EstadoConciliacion, string> = {
   pendiente: "bg-panel-2 text-ink-2",

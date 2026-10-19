@@ -29,6 +29,7 @@ function conCotizaciones<T extends { key: string }>(menuItems: T[]) {
     { key: "/tienda", route: "/tienda", label: "Tienda" } as unknown as T,
     { key: "/check-in", route: "/check-in", label: "Check-in" } as unknown as T,
     { key: "/que-hacer", route: "/que-hacer", label: "Qué hacer" } as unknown as T,
+    { key: "/configuracion", route: "/configuracion", label: "Configuración" } as unknown as T,
     ...menuItems.slice(idx),
   ];
 }
@@ -67,6 +68,8 @@ function NavIcon({ route }: { route: string }) {
       return <svg {...common}><circle cx="9" cy="6.3" r="2.3" /><path d="M4 15c.6-2.8 2.5-4.2 5-4.2s4.4 1.4 5 4.2" /></svg>;
     case "/que-hacer":
       return <svg {...common}><circle cx="9" cy="9" r="6.5" /><path d="m11.8 6.2-1.6 4-4 1.6 1.6-4z" /></svg>;
+    case "/configuracion":
+      return <svg {...common}><circle cx="9" cy="9" r="2.5" /><path d="M9 2.5v1.8M9 13.7v1.8M2.5 9h1.8M13.7 9h1.8M4.5 4.5l1.3 1.3M12.2 12.2l1.3 1.3M4.5 13.5l1.3-1.3M12.2 5.8l1.3-1.3" /></svg>;
     default:
       return <svg {...common}><circle cx="9" cy="9" r="5.5" /></svg>;
   }
@@ -114,7 +117,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col md:flex-row">
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-panel px-4 py-3 md:hidden">
         <div>
-          <p className="eyebrow">Casa Randa</p>
+          <p className="eyebrow">SuperHost</p>
           <p className="text-sm font-bold">Intranet</p>
         </div>
         <button
@@ -154,7 +157,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <path d="M2.5 15.5h21" />
           </svg>
           <div>
-            <p className="eyebrow">Casa Randa</p>
+            <p className="eyebrow">SuperHost</p>
             <p className="text-sm font-bold">Intranet</p>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useCreate, useDelete, useTable, useUpdate } from "@refinedev/core";
 import { usePermisos } from "@/lib/use-permisos";
+import { LOCALE } from "@/lib/locale";
 import { useMemo, useState } from "react";
 
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
@@ -57,7 +58,7 @@ const ESTADO_STYLE: Record<EstadoCapex, string> = {
 
 const inputClass = "rounded-md border border-line bg-ground px-2 py-1.5 text-sm";
 const money = (n: number) =>
-  `$${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `$${n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCreate, useDelete, useTable, useUpdate } from "@refinedev/core";
 import { supabaseClient } from "@/lib/supabase-client";
+import { LOCALE } from "@/lib/locale";
 
 interface Producto {
   id: string;
@@ -17,7 +18,7 @@ interface Producto {
 }
 
 const inputClass = "rounded-md border border-line bg-ground px-2 py-1.5 text-sm";
-const money = (n: number) => `USD ${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const money = (n: number) => `USD ${n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // Sube a un bucket público (imagenes-tienda, creado en
 // 0025_catalogo_tienda_admin.sql) con la sesión de quien esté armando el

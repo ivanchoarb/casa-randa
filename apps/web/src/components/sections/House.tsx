@@ -6,12 +6,22 @@ import { COMMON_EN, COMMON_ES } from "@casa-randa/data";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { Reveal } from "@/components/ui/Reveal";
 
-// One simple line-icon per COMMON_ES/COMMON_EN entry, same index order —
-// gives the amenities list a visual anchor per row instead of nine stacked
-// sentences of plain text. Hand-picked to match each fact, not decorative.
+const TITLES = [
+  { es: "Cocina",          en: "Kitchen"       },
+  { es: "Sala principal",  en: "Living room"   },
+  { es: "Segunda sala",    en: "Second lounge" },
+  { es: "Comedor",         en: "Dining room"   },
+  { es: "Balcón",          en: "Balcony"       },
+  { es: "Patio & BBQ",     en: "Patio & BBQ"   },
+  { es: "Lavandería",      en: "Laundry"       },
+  { es: "Estacionamiento", en: "Parking"       },
+  { es: "Internet",        en: "Internet"      },
+];
+
+// Unused — kept in case icons are re-enabled later
 const AMENITY_ICONS: ReactNode[] = [
-  // Cocina (estufa con 4 hornillas)
-  <path key="cocina" d="M4.5 4.5h15a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1Z M9 9.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z M15 9.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z M9 15.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z M15 15.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z" />,
+  // Cocina (gorro de chef — limpio y universal)
+  <path key="cocina" d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z M6 17h12" />,
   // Sala principal (sofá)
   <path key="sala" d="M4 18v-4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4M3 18h18M5 12V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4" />,
   // Segunda sala (sillón individual)
@@ -70,7 +80,7 @@ export function House() {
     <div className="mx-auto max-w-6xl px-6 py-20">
       <Reveal className="grid gap-5 sm:grid-cols-2 sm:items-end">
         <h2 className="text-fluid-h2 font-[family-name:var(--font-display)] font-bold">
-          {lang === "es" ? "Aquí nadie comparte nada" : "Nobody shares anything"}
+          {lang === "es" ? "Una casa entera solo para ti y tu grupo" : "An entire house just for you and your group"}
         </h2>
         <p className="text-[var(--ink-2)]">
           {lang === "es"
@@ -91,22 +101,11 @@ export function House() {
         <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold">
           {lang === "es" ? "De su grupo y de nadie más" : "Shared by your group only"}
         </h3>
-        <ul className="mt-5 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
-          {(lang === "es" ? COMMON_ES : COMMON_EN).map((item, i) => (
-            <li key={item} className="flex items-start gap-3">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-9 w-9 flex-none rounded-xl bg-[var(--caoba)]/10 p-1.5 text-[var(--caoba)]"
-                aria-hidden
-              >
-                {AMENITY_ICONS[i]}
-              </svg>
-              <span className="text-sm text-[var(--ink-2)]">{item}</span>
+        <ul className="amenity-list mt-5 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
+          {TITLES.map((title, i) => (
+            <li key={i} className="amenity-item">
+              <span className="amenity-title">{t(title)}</span>
+              <span className="amenity-desc text-sm">{(lang === "es" ? COMMON_ES : COMMON_EN)[i]}</span>
             </li>
           ))}
         </ul>

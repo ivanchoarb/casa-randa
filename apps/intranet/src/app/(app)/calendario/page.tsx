@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTable } from "@refinedev/core";
 import { usePermisos } from "@/lib/use-permisos";
+import { LOCALE } from "@/lib/locale";
 
 interface Bloqueo {
   id: string;
@@ -44,7 +45,7 @@ function hoyISO() {
 // contra la base real: las 10 reservas confirmadas próximas de hoy
 // tienen las 10 el mismo valor por defecto.
 function construirMensajeWhatsApp(reservas: ReservaProxima[]) {
-  const lineas = ["Casa Randa — Próximas reservas confirmadas", ""];
+  const lineas = ["SuperHost — Próximas reservas confirmadas", ""];
   for (const r of reservas) {
     lineas.push(`*${r.huesped_nombre ?? "Huésped"}*`);
     lineas.push(`${r.entrada} → ${r.salida} (${noches(r.entrada, r.salida)} ${noches(r.entrada, r.salida) === 1 ? "noche" : "noches"})`);
@@ -59,7 +60,7 @@ const FUENTE_STYLE: Record<Bloqueo["fuente"], string> = {
   directo: "bg-good-bg text-good",
 };
 
-const MES_FORMATO = new Intl.DateTimeFormat("es-PA", { month: "long", year: "numeric" });
+const MES_FORMATO = new Intl.DateTimeFormat(LOCALE, { month: "long", year: "numeric" });
 
 function noches(inicio: string, fin: string) {
   const d1 = new Date(`${inicio}T12:00:00`);

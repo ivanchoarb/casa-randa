@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTable } from "@refinedev/core";
 import { EXTRA_GUEST, FREE_PAX, MAX_PAX } from "@casa-randa/pricing";
 import { supabaseClient } from "@/lib/supabase-client";
 import {
@@ -12,7 +13,18 @@ import {
   resumenWhatsApp,
   subirCotizacionPDF,
   type CotizacionInput,
+  type ConfigCotizacion,
 } from "@/lib/cotizacion";
+
+interface Propiedad {
+  id: string;
+  nombre: string;
+  tagline_cotizacion: string | null;
+  descripcion_cotizacion: string | null;
+  direccion: string | null;
+  correo_reservas: string | null;
+  web_reservas: string | null;
+}
 
 const inputClass = "rounded-md border border-line bg-ground px-2 py-1.5 text-sm";
 const OPCIONES_HUESPEDES = Array.from({ length: MAX_PAX }, (_, i) => i + 1); // 1..MAX_PAX (16)
@@ -45,6 +57,25 @@ function sumarDias(iso: string, dias: number) {
 // inicial antes de la primera sincronización, o si PriceLabs no tiene
 // tarifa para las fechas elegidas.
 export default function CotizacionesPage() {
+  const { result: propiedadResult, tableQuery: configQuery } = useTable<Propiedad>({
+    resource: "propiedades",
+    pagination: { mode: "off" },
+    syncWithLocation: false,
+  });
+  const propiedad = propiedadResult.data?.[0];
+  const config: ConfigCotizacion | null =
+    propiedad?.nombre && propiedad?.tagline_cotizacion && propiedad?.descripcion_cotizacion &&
+    propiedad?.direccion && propiedad?.correo_reservas && propiedad?.web_reservas
+      ? {
+          nombrePropiedad: propiedad.nombre,
+          taglineCotizacion: propiedad.tagline_cotizacion,
+          descripcionCotizacion: propiedad.descripcion_cotizacion,
+          direccionPropiedad: propiedad.direccion,
+          correoReservas: propiedad.correo_reservas,
+          webReservas: propiedad.web_reservas,
+        }
+      : null;
+
   const [clienteNombre, setClienteNombre] = useState("");
   const [huespedes, setHuespedes] = useState("2");
   const [entrada, setEntrada] = useState(hoyISO());
@@ -198,17 +229,18 @@ export default function CotizacionesPage() {
   const calculo = useMemo(() => calcularCotizacion(input), [input]);
 
   async function descargarPDF() {
-    const bytes = await generarCotizacionPDF(input, calculo);
-    descargarCotizacionPDF(bytes, calculo.codigo);
+    if (!config) return;
+    const bytes = await generarCotizacionPDF(input, calculo, config);
+    descargarCotizacionPDF(bytes, calculo.codigo, config);
   }
 
   async function enviarPorCorreo() {
-    if (!correoDestino.trim()) return;
+    if (!correoDestino.trim() || !config) return;
     setEnviandoCorreo(true);
     setMensajeCorreo(null);
     setErrorCorreo(null);
     try {
-      const bytes = await generarCotizacionPDF(input, calculo);
+      const bytes = await generarCotizacionPDF(input, calculo, config);
       let binary = "";
       for (const b of bytes) binary += String.fromCharCode(b);
       const pdfBase64 = btoa(binary);
@@ -222,8 +254,8 @@ export default function CotizacionesPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           destinatario: correoDestino.trim(),
-          asunto: `Tu cotización de Casa Randa — ${calculo.codigo}`,
-          mensaje: `Hola${clienteNombre ? " " + clienteNombre : ""}, adjunto tu cotización de Casa Randa (${calculo.codigo}). Total: ${money(calculo.total)}.`,
+          asunto: `Tu cotización de ${config.nombrePropiedad} — ${calculo.codigo}`,
+          mensaje: `Hola${clienteNombre ? " " + clienteNombre : ""}, adjunto tu cotización de ${config.nombrePropiedad} (${calculo.codigo}). Total: ${money(calculo.total)}.`,
           pdfBase64,
           codigo: calculo.codigo,
         }),
@@ -256,11 +288,12 @@ export default function CotizacionesPage() {
     // real más abajo, una vez lista (sin "noopener" a propósito: con eso
     // el navegador no devuelve la referencia a la ventana, y sin la
     // referencia no se le puede poner la URL después).
+    if (!config) return;
     const ventana = window.open("", "_blank");
     setEnviandoWhatsapp(true);
     setMensajeWhatsapp(null);
     try {
-      const bytes = await generarCotizacionPDF(input, calculo);
+      const bytes = await generarCotizacionPDF(input, calculo, config);
       const urlLarga = await subirCotizacionPDF(bytes, calculo.codigo);
       const urlPdf = await acortarUrl(urlLarga);
 
@@ -274,7 +307,7 @@ export default function CotizacionesPage() {
             body: JSON.stringify({
               telefono: telefonoWhatsapp,
               urlPdf: urlLarga, // Meta va a buscar el archivo directo, no hace falta acortarla aquí
-              caption: resumenWhatsApp(input, calculo).join("\n"),
+              caption: resumenWhatsApp(input, calculo, undefined, undefined, config).join("\n"),
               codigo: calculo.codigo,
             }),
           });
@@ -289,7 +322,7 @@ export default function CotizacionesPage() {
         }
       }
 
-      const url = enlaceWhatsApp(input, calculo, telefonoWhatsapp, urlPdf);
+      const url = enlaceWhatsApp(input, calculo, telefonoWhatsapp, urlPdf, config);
       if (ventana) ventana.location.href = url;
       else window.open(url, "_blank"); // por si el open en blanco también se bloqueó
     } catch (e) {
@@ -480,7 +513,7 @@ export default function CotizacionesPage() {
             <button
               type="button"
               onClick={descargarPDF}
-              disabled={conflictos.length > 0 && !confirmaConflicto}
+              disabled={!config || configQuery.isLoading || (conflictos.length > 0 && !confirmaConflicto)}
               className="w-full rounded-md bg-caoba px-4 py-2 text-sm font-semibold text-panel disabled:opacity-60"
             >
               Descargar cotización PDF
@@ -500,7 +533,7 @@ export default function CotizacionesPage() {
               <button
                 type="button"
                 onClick={enviarPorCorreo}
-                disabled={enviandoCorreo || !correoDestino.trim() || (conflictos.length > 0 && !confirmaConflicto)}
+                disabled={!config || configQuery.isLoading || enviandoCorreo || !correoDestino.trim() || (conflictos.length > 0 && !confirmaConflicto)}
                 className="rounded-md border border-line px-4 py-1.5 text-sm font-semibold text-ink disabled:opacity-60"
               >
                 {enviandoCorreo ? "Enviando…" : "Enviar por correo"}
@@ -522,7 +555,7 @@ export default function CotizacionesPage() {
               <button
                 type="button"
                 onClick={enviarWhatsApp}
-                disabled={enviandoWhatsapp || (conflictos.length > 0 && !confirmaConflicto)}
+                disabled={!config || configQuery.isLoading || enviandoWhatsapp || (conflictos.length > 0 && !confirmaConflicto)}
                 className="rounded-md border border-line px-4 py-1.5 text-sm font-semibold text-ink disabled:opacity-60"
               >
                 {enviandoWhatsapp ? "Preparando…" : "Enviar por WhatsApp"}

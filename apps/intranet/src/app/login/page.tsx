@@ -32,7 +32,7 @@ function RecuperarContrasena({ onVolver }: { onVolver: () => void }) {
 
   return (
     <div className="w-full max-w-sm rounded-xl border border-line bg-panel p-8 shadow-sm">
-      <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Casa Randa</p>
+      <p className="text-xs font-semibold tracking-wide text-caoba uppercase">SuperHost</p>
       <h1 className="mt-1 text-xl font-bold">Recuperar contraseña</h1>
 
       {enviado ? (
@@ -103,7 +103,7 @@ export default function LoginPage() {
         }}
         className="w-full max-w-sm rounded-xl border border-line bg-panel p-8 shadow-sm"
       >
-        <p className="text-xs font-semibold tracking-wide text-caoba uppercase">Casa Randa</p>
+        <p className="text-xs font-semibold tracking-wide text-caoba uppercase">SuperHost</p>
         <h1 className="mt-1 text-xl font-bold">Intranet</h1>
 
         <label className="mt-6 block text-sm font-medium" htmlFor="email">

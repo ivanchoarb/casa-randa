@@ -45,7 +45,7 @@ export function Providers({ children }: { children: ReactNode }) {
         // en la intranet necesita compartir el estado de una tabla por URL.
         syncWithLocation: false,
         disableTelemetry: true,
-        title: { text: "Casa Randa · Intranet" },
+        title: { text: "SuperHost · Intranet" },
       }}
     >
       {children}

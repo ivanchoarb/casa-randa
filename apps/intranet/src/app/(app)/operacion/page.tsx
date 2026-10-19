@@ -2,6 +2,7 @@
 
 import { useUpdate, useTable, useInvalidate } from "@refinedev/core";
 import { useState } from "react";
+import { LOCALE } from "@/lib/locale";
 
 type TipoTarea = "preparacion" | "turnover" | "limpieza_salida";
 type EstadoTarea = "pendiente" | "en_proceso" | "completada" | "con_novedad";
@@ -26,6 +27,11 @@ interface TareaConReserva {
   } | null;
 }
 
+interface ConfiguracionCliente {
+  clave: string;
+  valor: string;
+}
+
 // Etiquetas, checklist y responsables por tipo — verificados el 2026-09-11
 // haciendo clic tarea por tarea en staging.randahome.com/intranet/operacion/.
 // La única pieza no verificada directamente es el listado de responsables
@@ -46,11 +52,30 @@ const ESTADO_LABEL: Record<EstadoTarea, string> = {
 };
 const ESTADOS: EstadoTarea[] = ["pendiente", "en_proceso", "completada", "con_novedad"];
 
-const RESPONSABLES: Record<TipoTarea, string[]> = {
-  preparacion: ["Marquelda", "Iván"],
-  turnover: ["Marquelda", "Iván"],
-  limpieza_salida: ["Dayra"],
+const CLAVE_RESPONSABLES: Record<TipoTarea, string> = {
+  preparacion: "responsables_preparacion",
+  turnover: "responsables_turnover",
+  limpieza_salida: "responsables_limpieza_salida",
 };
+
+function leerResponsables(filas: ConfiguracionCliente[]): Record<TipoTarea, string[]> | null {
+  const porClave = new Map(filas.map((fila) => [fila.clave, fila.valor]));
+  const resultado = {} as Record<TipoTarea, string[]>;
+
+  for (const tipo of Object.keys(CLAVE_RESPONSABLES) as TipoTarea[]) {
+    try {
+      const valor = JSON.parse(porClave.get(CLAVE_RESPONSABLES[tipo]) ?? "null");
+      if (!Array.isArray(valor) || valor.length === 0 || valor.some((nombre) => typeof nombre !== "string" || !nombre.trim())) {
+        return null;
+      }
+      resultado[tipo] = valor;
+    } catch {
+      return null;
+    }
+  }
+
+  return resultado;
+}
 
 const CHECKLIST_ITEMS: Record<TipoTarea, { key: string; label: string }[]> = {
   preparacion: [
@@ -76,7 +101,7 @@ const CHECKLIST_ITEMS: Record<TipoTarea, { key: string; label: string }[]> = {
 };
 
 const money = (n: number) =>
-  `$${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `$${n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 function hoyISO() {
   return new Date().toISOString().slice(0, 10);
@@ -107,7 +132,7 @@ function agruparPorReserva(tareas: TareaConReserva[]) {
   return Array.from(grupos.values());
 }
 
-function TareaPanel({ tarea }: { tarea: TareaConReserva }) {
+function TareaPanel({ tarea, responsables }: { tarea: TareaConReserva; responsables: string[] }) {
   const { mutate: actualizar, mutation } = useUpdate<TareaConReserva>();
   const invalidate = useInvalidate();
   const [estado, setEstado] = useState<EstadoTarea>(tarea.estado);
@@ -116,6 +141,9 @@ function TareaPanel({ tarea }: { tarea: TareaConReserva }) {
   const [notas, setNotas] = useState(tarea.notas ?? "");
 
   const items = CHECKLIST_ITEMS[tarea.tipo];
+  const opcionesResponsable = responsable && !responsables.includes(responsable)
+    ? [...responsables, responsable]
+    : responsables;
 
   function guardar() {
     actualizar({
@@ -155,7 +183,7 @@ function TareaPanel({ tarea }: { tarea: TareaConReserva }) {
             className="mt-1 block w-full rounded-md border border-line bg-panel px-2 py-1.5 text-sm text-ink"
           >
             <option value="">Sin asignar</option>
-            {RESPONSABLES[tarea.tipo].map((r) => (
+            {opcionesResponsable.map((r) => (
               <option key={r} value={r}>
                 {r}
               </option>
@@ -224,12 +252,14 @@ function GrupoReserva({
   onToggle,
   tareaAbierta,
   onToggleTarea,
+  responsables,
 }: {
   tareasReserva: TareaConReserva[];
   abierta: boolean;
   onToggle: () => void;
   tareaAbierta: string | null;
   onToggleTarea: (id: string | null) => void;
+  responsables: Record<TipoTarea, string[]>;
 }) {
   const reserva = tareasReserva[0].reservas;
   const listas = tareasReserva.filter((t) => t.estado === "completada").length;
@@ -286,7 +316,7 @@ function GrupoReserva({
                     </span>
                   </span>
                 </button>
-                {tareaEstaAbierta && <TareaPanel tarea={t} />}
+                {tareaEstaAbierta && <TareaPanel tarea={t} responsables={responsables[t.tipo]} />}
               </div>
             );
           })}
@@ -308,6 +338,17 @@ export default function OperacionPage() {
   // para ordenar antes del límite y obtener todas las tareas de cada grupo.
   const hoy = hoyISO();
   const desde = sumarDias(hoy, -3);
+
+  const { result: configuracionResult, tableQuery: configuracionQuery } = useTable<ConfiguracionCliente>({
+    resource: "configuracion_cliente",
+    filters: {
+      permanent: [{ field: "clave", operator: "in", value: Object.values(CLAVE_RESPONSABLES) }],
+    },
+    pagination: { mode: "off" },
+    syncWithLocation: false,
+  });
+  const responsables = leerResponsables(configuracionResult.data ?? []);
+  const configuracionInvalida = !configuracionQuery.isLoading && !configuracionQuery.isError && !responsables;
 
   const { result: recientesResult, tableQuery: recientesQuery } = useTable<TareaConReserva>({
     resource: "tareas_operacion",
@@ -386,6 +427,12 @@ export default function OperacionPage() {
         </p>
       )}
 
+      {(configuracionQuery.isError || configuracionInvalida) && (
+        <p role="alert" className="mt-4 text-sm text-caoba">
+          No se pudo cargar una configuración válida de responsables.
+        </p>
+      )}
+
       {!tableQuery.isLoading && (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="rounded-xl border border-line bg-panel p-4">
@@ -411,24 +458,27 @@ export default function OperacionPage() {
         <p className="mt-8 text-sm text-ink-2">Todavía no hay tareas de operación vigentes.</p>
       )}
 
-      <div className="mt-6 space-y-2">
-        {gruposVigentes.map((tareasReserva) => {
-          const reservaId = tareasReserva[0].reserva_id;
-          return (
-            <GrupoReserva
-              key={reservaId}
-              tareasReserva={tareasReserva}
-              abierta={reservaAbierta === reservaId}
-              onToggle={() => {
-                setReservaAbierta(reservaAbierta === reservaId ? null : reservaId);
-                setTareaAbierta(null);
-              }}
-              tareaAbierta={tareaAbierta}
-              onToggleTarea={setTareaAbierta}
-            />
-          );
-        })}
-      </div>
+      {responsables && (
+        <div className="mt-6 space-y-2">
+          {gruposVigentes.map((tareasReserva) => {
+            const reservaId = tareasReserva[0].reserva_id;
+            return (
+              <GrupoReserva
+                key={reservaId}
+                tareasReserva={tareasReserva}
+                abierta={reservaAbierta === reservaId}
+                onToggle={() => {
+                  setReservaAbierta(reservaAbierta === reservaId ? null : reservaId);
+                  setTareaAbierta(null);
+                }}
+                tareaAbierta={tareaAbierta}
+                onToggleTarea={setTareaAbierta}
+                responsables={responsables}
+              />
+            );
+          })}
+        </div>
+      )}
 
       {!tableQuery.isLoading && !tableQuery.isError && (
         <div className="mt-8">
@@ -452,7 +502,7 @@ export default function OperacionPage() {
               {!archivadasQuery.isFetching && !archivadasQuery.isError && gruposHistorial.length === 0 && (
                 <p className="text-sm text-ink-2">No hay reservas completadas o canceladas en esta página.</p>
               )}
-              {!archivadasQuery.isFetching && !archivadasQuery.isError && gruposHistorial.map((tareasReserva) => {
+              {responsables && !archivadasQuery.isFetching && !archivadasQuery.isError && gruposHistorial.map((tareasReserva) => {
                 const reservaId = tareasReserva[0].reserva_id;
                 return (
                   <GrupoReserva
@@ -465,6 +515,7 @@ export default function OperacionPage() {
                     }}
                     tareaAbierta={tareaAbierta}
                     onToggleTarea={setTareaAbierta}
+                    responsables={responsables}
                   />
                 );
               })}

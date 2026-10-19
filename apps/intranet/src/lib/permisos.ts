@@ -1,8 +1,8 @@
 export const PERMISOS = {
   proxima_reserva: "Inicio: próxima reserva",
   ingresos_mes: "Inicio: ingresos del mes",
-  comision_host: "Inicio: comisión Host (Marquelda)",
-  liquidacion_host: "Descargar liquidación Marquelda",
+  comision_host: "Inicio: comisión Host 1",
+  liquidacion_host: "Descargar liquidación Host 1",
   finanzas_propietario: "Inicio: ingresos acumulados y saldo del propietario",
   reservas: "Consultar reservas (sin cifras privadas)",
   reservas_exportar: "Descargar reservas (sin cifras privadas)",
@@ -43,5 +43,6 @@ export const RUTAS: Record<string, Permiso[]> = {
   "/contabilidad": ["contabilidad"], "/conciliacion": ["conciliacion"],
   "/analisis": ["analisis_financiero", "plan_compras", "cuentas_pagar"],
   "/cotizaciones": ["cotizaciones"], "/marketing": ["marketing", "descuentos"], "/marketing/campanas": ["marketing"], "/metricas": ["marketing"],
-  "/tienda": ["contabilidad"], "/check-in": ["contabilidad"], "/que-hacer": ["marketing"], "/usuarios": ["usuarios"],
+  "/tienda": ["contabilidad"], "/check-in": ["contabilidad"], "/que-hacer": ["marketing"],
+  "/configuracion": ["usuarios"], "/usuarios": ["usuarios"],
 };

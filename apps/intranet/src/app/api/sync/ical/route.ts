@@ -2,17 +2,18 @@ import { async as icalAsync, type VEvent } from "node-ical";
 import { NextRequest, NextResponse } from "next/server";
 import { checkSyncSecret } from "@/lib/sync-auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { TIMEZONE } from "@/lib/locale";
 
 export const dynamic = "force-dynamic";
 // Dos feeds + una RPC por canal tardan ~2 s; el tope por defecto es holgado para eso,
 // pero un feed lento no debe cortar la sincronización a medias. 60 s es el máximo de Hobby.
 export const maxDuration = 60;
 
-type Fuente = "airbnb" | "vrbo";
+type Fuente = "airbnb" | "vrbo" | "booking";
 
 /**
  * Fetches one channel's iCal and returns its blocked date ranges.
- * Airbnb/Vrbo export whole-house block events (checkout day = the VEVENT's
+ * Airbnb/Vrbo/Booking export whole-house block events (checkout day = the VEVENT's
  * exclusive DTEND, matching our `salida` convention elsewhere).
  */
 async function fetchBlocks(url: string): Promise<{ inicio: string; fin: string }[]> {
@@ -61,7 +62,7 @@ async function reemplazarBloqueos(fuente: Fuente, bloqueos: { inicio: string; fi
 // "Hoy" en la zona de la casa, no en UTC: de noche en Panamá ya es "mañana" en
 // UTC y se completaría una estancia que aún no terminó. `en-CA` formatea YYYY-MM-DD.
 function hoyEnPanama(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Panama" }).format(new Date());
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TIMEZONE }).format(new Date());
 }
 
 /**
@@ -84,45 +85,47 @@ async function completarReservasTerminadas(): Promise<number> {
   return data?.length ?? 0;
 }
 
+/** Lee las URLs de iCal desde propiedades[0]; cae en env vars si no hay fila o si el campo es null. */
+async function cargarUrls(): Promise<Record<Fuente, string | null>> {
+  const { data } = await getSupabaseAdmin()
+    .from("propiedades")
+    .select("ical_airbnb, ical_vrbo, ical_booking")
+    .limit(1)
+    .single();
+  return {
+    airbnb:  data?.ical_airbnb  ?? process.env.AIRBNB_ICAL_URL ?? null,
+    vrbo:    data?.ical_vrbo    ?? process.env.VRBO_ICAL_URL   ?? null,
+    booking: data?.ical_booking ?? null,
+  };
+}
+
 export async function GET(req: NextRequest) {
   if (!checkSyncSecret(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const airbnbUrl = process.env.AIRBNB_ICAL_URL;
-  const vrboUrl = process.env.VRBO_ICAL_URL;
-
+  const urls = await cargarUrls();
   const resultados: Record<string, unknown> = {};
 
-  // Each channel is fetched and written independently — Casa Randa Puente's
-  // "sincronización tolerante a fallos" design (docs/arquitectura-migracion.md):
+  // Each channel is fetched and written independently — fault-tolerant design:
   // if one channel's feed is down, the other still updates instead of the
   // whole sync aborting silently.
-  if (airbnbUrl) {
-    try {
-      const bloqueos = await fetchBlocks(airbnbUrl);
-      await reemplazarBloqueos("airbnb", bloqueos);
-      resultados.airbnb = { ok: true, bloqueos: bloqueos.length };
-    } catch (error) {
-      resultados.airbnb = { ok: false, error: String(error) };
+  for (const fuente of (["airbnb", "vrbo", "booking"] as Fuente[])) {
+    const url = urls[fuente];
+    if (url) {
+      try {
+        const bloqueos = await fetchBlocks(url);
+        await reemplazarBloqueos(fuente, bloqueos);
+        resultados[fuente] = { ok: true, bloqueos: bloqueos.length };
+      } catch (error) {
+        resultados[fuente] = { ok: false, error: String(error) };
+      }
+    } else {
+      resultados[fuente] = { ok: false, error: `${fuente.toUpperCase()}_ICAL_URL no configurada` };
     }
-  } else {
-    resultados.airbnb = { ok: false, error: "AIRBNB_ICAL_URL no configurada" };
   }
 
-  if (vrboUrl) {
-    try {
-      const bloqueos = await fetchBlocks(vrboUrl);
-      await reemplazarBloqueos("vrbo", bloqueos);
-      resultados.vrbo = { ok: true, bloqueos: bloqueos.length };
-    } catch (error) {
-      resultados.vrbo = { ok: false, error: String(error) };
-    }
-  } else {
-    resultados.vrbo = { ok: false, error: "VRBO_ICAL_URL no configurada" };
-  }
-
-  // Independiente de los feeds: corre aunque Airbnb o Vrbo hayan fallado.
+  // Independiente de los feeds: corre aunque algún canal haya fallado.
   try {
     resultados.reservas_completadas = { ok: true, cantidad: await completarReservasTerminadas() };
   } catch (error) {

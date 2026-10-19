@@ -583,7 +583,7 @@ export default function MarketingPage() {
     }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filas), "Clientes potenciales");
-    XLSX.writeFile(wb, "casa-randa-clientes-potenciales.xlsx");
+    XLSX.writeFile(wb, "clientes-potenciales.xlsx");
   }
 
   function recargar() {

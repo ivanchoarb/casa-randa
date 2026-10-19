@@ -81,13 +81,13 @@ export async function POST(req: NextRequest) {
 
   try {
     await transporte.sendMail({
-      from: `"Casa Randa" <${user}>`,
+      from: `"Reservas" <${user}>`,
       to: destinatario,
-      subject: asunto || `Tu cotización de Casa Randa — ${codigo}`,
-      text: mensaje || "Adjunto encontrarás la cotización de tu estadía en Casa Randa.",
+      subject: asunto || `Tu cotización — ${codigo}`,
+      text: mensaje || "Adjunto encontrarás la cotización de tu estadía.",
       attachments: [
         {
-          filename: `casa-randa-${codigo.toLowerCase()}.pdf`,
+          filename: `cotizacion-${codigo.toLowerCase()}.pdf`,
           content: Buffer.from(pdfBase64, "base64"),
           contentType: "application/pdf",
         },
