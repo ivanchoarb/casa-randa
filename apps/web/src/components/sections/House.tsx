@@ -92,20 +92,8 @@ export function House() {
           {lang === "es" ? "De su grupo y de nadie más" : "Shared by your group only"}
         </h3>
         <ul className="amenity-list mt-5 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
-          {(lang === "es" ? COMMON_ES : COMMON_EN).map((item, i) => (
-            <li key={item} className="amenity-item flex items-start gap-3">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-9 w-9 flex-none rounded-xl bg-[var(--caoba)]/10 p-1.5 text-[var(--caoba)]"
-                aria-hidden
-              >
-                {AMENITY_ICONS[i]}
-              </svg>
+          {(lang === "es" ? COMMON_ES : COMMON_EN).map((item) => (
+            <li key={item} className="amenity-item">
               <span className="text-sm text-[var(--ink-2)]">{item}</span>
             </li>
           ))}

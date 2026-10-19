@@ -281,7 +281,6 @@ body {
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 8px !important;
     padding: 8px 4px;
     cursor: default;
     transition: flex 0.5s cubic-bezier(0.23, 1, 0.32, 1),
@@ -291,15 +290,6 @@ body {
   .amenity-item:hover {
     flex: 5 !important;
     background: color-mix(in srgb, var(--caoba) 8%, var(--panel));
-  }
-
-  .amenity-item > svg {
-    flex-shrink: 0;
-    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-  }
-
-  .amenity-item:hover > svg {
-    transform: scale(1.12);
   }
 
   .amenity-item > span {
