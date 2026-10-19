@@ -10,8 +10,8 @@ import ExcelJS from "exceljs";
 // (was always identical to "Valor recibido" — a literal duplicate, not a
 // distinct figure), "Comisión Iván", "Saldo neto" and "Estado" — the last
 // three were only ever written as empty strings, never real data, and
-// Comisión del segundo host/Saldo neto son cifras del propietario, no datos
-// que deba mostrar la liquidación del host principal.
+// Comisión Iván/Saldo neto are Iván's own figures, not something Marquelda's
+// own statement needs to show.
 interface ReservaParaLiquidacion {
   huesped_nombre: string;
   canal: string;
@@ -22,13 +22,6 @@ interface ReservaParaLiquidacion {
   comision_plataforma: number;
   recibido: number;
   comision_host1: number;
-}
-
-export interface ConfigLiquidacion {
-  nombrePropiedad: string;
-  sloganPropiedad: string;
-  nombreHost1: string;
-  rolHost1: string;
 }
 
 const MESES_LARGO = [
@@ -58,11 +51,10 @@ function capitalizar(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export async function descargarLiquidacion(
+export async function descargarLiquidacionMarquelda(
   reservasDelMes: ReservaParaLiquidacion[],
   anio: number,
   mesIndex: number, // 0-11
-  config: ConfigLiquidacion,
 ) {
   const mes = MESES_LARGO[mesIndex];
   const NUM_COLS = 9;
@@ -80,7 +72,7 @@ export async function descargarLiquidacion(
   // --- Letterhead ---
   ws.mergeCells(r, 1, r, NUM_COLS);
   const wordmark = ws.getCell(r, 1);
-  wordmark.value = config.nombrePropiedad.toUpperCase();
+  wordmark.value = "CASA RANDA";
   wordmark.font = { name: "Georgia", size: 20, bold: true, color: { argb: CREAM } };
   wordmark.alignment = { vertical: "middle", indent: 1 };
   ws.getRow(r).height = 30;
@@ -89,7 +81,7 @@ export async function descargarLiquidacion(
 
   ws.mergeCells(r, 1, r, NUM_COLS);
   const tagline = ws.getCell(r, 1);
-  tagline.value = config.sloganPropiedad;
+  tagline.value = "Diablo Heights, Ancón · Ciudad de Panamá · randahome.com";
   tagline.font = { name: "Calibri", size: 10, italic: true, color: { argb: "FFA9BCA4" } };
   tagline.alignment = { indent: 1 };
   ws.getRow(r).height = 16;
@@ -110,8 +102,8 @@ export async function descargarLiquidacion(
 
   // --- Recipient / period info block ---
   const info: [string, string][] = [
-    ["Anfitriona", config.nombreHost1],
-    ["Rol", config.rolHost1],
+    ["Anfitriona", "Marquelda"],
+    ["Rol", "Recepción de huéspedes y coordinación en sitio"],
     ["Período de liquidación", `${capitalizar(mes)} ${anio}`],
     ["Fecha de generación", formatoGenerado(new Date())],
   ];
@@ -130,7 +122,7 @@ export async function descargarLiquidacion(
   // --- Table header ---
   const headers = [
     "Cliente", "Plataforma", "Check-in", "Check-out", "Noches",
-    "Valor bruto", "Comisión plataforma", "Valor recibido", `Comisión ${config.nombreHost1}`,
+    "Valor bruto", "Comisión plataforma", "Valor recibido", "Comisión Marquelda",
   ];
   const headerRow = r;
   headers.forEach((h, i) => {
@@ -201,7 +193,7 @@ export async function descargarLiquidacion(
   // --- Headline total ---
   ws.mergeCells(r, 1, r, NUM_COLS - 2);
   const headlineLabel = ws.getCell(r, 1);
-  headlineLabel.value = `Total a liquidar a ${config.nombreHost1}`;
+  headlineLabel.value = "Total a liquidar a Marquelda";
   headlineLabel.font = { name: "Calibri", size: 13, bold: true, color: { argb: INK } };
   headlineLabel.alignment = { horizontal: "right", vertical: "middle" };
   headlineLabel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: CAOBA_TINT } };
@@ -220,7 +212,7 @@ export async function descargarLiquidacion(
   ws.mergeCells(r, 1, r, NUM_COLS);
   const nota = ws.getCell(r, 1);
   nota.value =
-    `Este documento es un resumen informativo generado automáticamente desde la intranet de ${config.nombrePropiedad} ` +
+    "Este documento es un resumen informativo generado automáticamente desde la intranet de Casa Randa " +
     "a partir de las reservas confirmadas del período. No constituye un comprobante fiscal ni un recibo de nómina.";
   nota.font = { name: "Calibri", size: 8, italic: true, color: { argb: INK_2 } };
   nota.alignment = { wrapText: true };
@@ -233,7 +225,7 @@ export async function descargarLiquidacion(
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${config.nombrePropiedad.toLowerCase().replace(/\s+/g, "-")}-host1-${mes}-${anio}.xlsx`;
+  a.download = `casa-randa-marquelda-${mes}-${anio}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 }

@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Fixed header height: compensate in anchor navigation */
+html {
+  scroll-padding-top: 60px;
+}
+@media (min-width: 768px) {
+  html {
+    scroll-padding-top: 68px;
+  }
+}
+
 /* Lenis smooth scroll (see SmoothScrollProvider.tsx) — recommended
    baseline styles so it doesn't fight the browser's own scroll-behavior
    or overscroll handling. */

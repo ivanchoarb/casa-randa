@@ -3,7 +3,6 @@
 import { useCreate, useDelete, useTable } from "@refinedev/core";
 import { useMemo, useRef, useState } from "react";
 import { importarReservasCSV, type ResultadoImport } from "@/lib/importar-reservas";
-import { LOCALE } from "@/lib/locale";
 
 type Persona = "host1" | "host2";
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
@@ -53,11 +52,6 @@ interface Gasto {
   medio_pago: string | null;
 }
 
-interface ConfiguracionCliente {
-  clave: string;
-  valor: string;
-}
-
 const CATEGORIAS: CategoriaGasto[] = [
   "reparacion",
   "fumigacion",
@@ -71,7 +65,7 @@ const CATEGORIAS: CategoriaGasto[] = [
 
 const inputClass = "rounded-md border border-line bg-ground px-2 py-1.5 text-sm";
 const money = (n: number) =>
-  `$${n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `$${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const MESES = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -105,15 +99,15 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
   const delMes = anio === anioActual ? delAnio.filter((r) => new Date(`${r.entrada}T12:00:00`).getMonth() === mes) : [];
 
   const recibidoAcumulado = delAnio.reduce((sum, r) => sum + r.recibido, 0);
-  const comisionMesHost1 = delMes.reduce((sum, r) => sum + r.comision_host1, 0);
-  const comisionMesHost2 = delMes.reduce((sum, r) => sum + r.comision_host2, 0);
-  const comisionAnualHost1 = delAnio.reduce((sum, r) => sum + r.comision_host1, 0);
-  const comisionAnualHost2 = delAnio.reduce((sum, r) => sum + r.comision_host2, 0);
+  const comisionMesMarquelda = delMes.reduce((sum, r) => sum + r.comision_host1, 0);
+  const comisionMesIvan = delMes.reduce((sum, r) => sum + r.comision_host2, 0);
+  const comisionAnualMarquelda = delAnio.reduce((sum, r) => sum + r.comision_host1, 0);
+  const comisionAnualIvan = delAnio.reduce((sum, r) => sum + r.comision_host2, 0);
   const gastosDelAnio = gastos
     .filter((g) => new Date(`${g.fecha}T12:00:00`).getFullYear() === anio)
     .reduce((sum, g) => sum + g.valor, 0);
   const saldoNetoPropietario =
-    recibidoAcumulado - (comisionAnualHost1 + comisionAnualHost2) - gastosDelAnio;
+    recibidoAcumulado - (comisionAnualMarquelda + comisionAnualIvan) - gastosDelAnio;
 
   const tarjetas = [
     {
@@ -124,15 +118,15 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
     ...(anio === anioActual
       ? [
           {
-            titulo: `${MESES[mes]} · Host 1`,
-            valor: money(comisionMesHost1),
+            titulo: `${MESES[mes]} · Marquelda`,
+            valor: money(comisionMesMarquelda),
             nota: "Comisión del mes actual",
           },
-          { titulo: `${MESES[mes]} · Host 2`, valor: money(comisionMesHost2), nota: "Comisión del mes actual" },
+          { titulo: `${MESES[mes]} · Iván`, valor: money(comisionMesIvan), nota: "Comisión del mes actual" },
         ]
       : []),
-    { titulo: `${anio} · Host 1`, valor: money(comisionAnualHost1), nota: "Acumulado anual" },
-    { titulo: `${anio} · Host 2`, valor: money(comisionAnualHost2), nota: "Acumulado anual" },
+    { titulo: `${anio} · Marquelda`, valor: money(comisionAnualMarquelda), nota: "Acumulado anual" },
+    { titulo: `${anio} · Iván`, valor: money(comisionAnualIvan), nota: "Acumulado anual" },
     {
       titulo: `Saldo neto del propietario ${anio}`,
       valor: money(saldoNetoPropietario),
@@ -169,16 +163,14 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
   );
 }
 
-// El schema limita los anticipos a las personas admitidas por
-// persona_comision; cuál se usa en esta sección viene de configuración.
-function nombrePersona(persona: Persona) {
-  return persona === "host2" ? "Host 2" : "Host 1";
-}
-
-function AnticiposComision({ reservas, persona }: { reservas: Reserva[]; persona: Persona }) {
+// Staging (staging.randahome.com/intranet/contabilidad/) solo lleva
+// anticipos de comisión para Iván — Marquelda no toma adelantos. El schema
+// sigue soportando ambas personas (persona_comision), pero esta sección
+// se fija en "ivan" para calzar con el sistema real.
+function AnticiposComision({ reservas }: { reservas: Reserva[] }) {
   const anioActual = new Date().getFullYear();
   const [anio, setAnio] = useState(anioActual);
-  const personaNombre = nombrePersona(persona);
+  const persona: Persona = "host2";
 
   const { result, tableQuery } = useTable<Anticipo>({
     resource: "anticipos_comision",
@@ -220,7 +212,7 @@ function AnticiposComision({ reservas, persona }: { reservas: Reserva[]; persona
         (r.estado === "confirmada" || r.estado === "completada") &&
         new Date(`${r.entrada}T12:00:00`).getFullYear() === anio,
     )
-    .reduce((sum, r) => sum + (persona === "host2" ? r.comision_host2 : r.comision_host1), 0);
+    .reduce((sum, r) => sum + r.comision_host2, 0);
 
   const anticiposDelAnio = anticipos.filter((a) => new Date(`${a.fecha}T12:00:00`).getFullYear() === anio);
   const anticiposPagados = anticiposDelAnio.reduce((sum, a) => sum + a.valor, 0);
@@ -230,7 +222,7 @@ function AnticiposComision({ reservas, persona }: { reservas: Reserva[]; persona
 
   return (
     <section className="mt-12">
-      <h2 className="text-lg font-bold">Anticipos de comisiones de {personaNombre}</h2>
+      <h2 className="text-lg font-bold">Anticipos de comisiones de Iván</h2>
       <p className="mt-1 text-sm text-ink-2">Control anual de pagos parciales y saldo pendiente.</p>
 
       <div className="mt-4 flex items-end gap-2">
@@ -367,10 +359,10 @@ function ImportarCSV({ onImportado }: { onImportado: () => void }) {
     <section className="mt-12">
       <h2 className="text-lg font-bold">Importar o actualizar CSV</h2>
       <p className="mt-1 text-sm text-ink-2">
-        Acepta el formato SuperHost (las mismas columnas que produce &quot;Descargar Excel&quot; más
+        Acepta el formato Casa Randa (las mismas columnas que produce &quot;Descargar Excel&quot; más
         abajo — Cliente, Plataforma, Reserva, Check-in, Check-out, Valor bruto, Comisión
         plataforma, Estado). Al volver a cargar un archivo, las reservas se actualizan por código
-        y no se duplican. Las comisiones internas se calculan solas (Host 1 y Host 2, tasas en configuración) sobre
+        y no se duplican. Las comisiones internas se calculan solas (10% Marquelda, 9% Iván sobre
         el valor recibido). Los reportes crudos de Airbnb o Vrbo (exportados directo desde su
         panel de anfitrión) todavía no están soportados — si tienes uno real, compártelo para
         agregar soporte.
@@ -588,8 +580,8 @@ function IngresosYReservas({ reservas, loading }: { reservas: Reserva[]; loading
                 <th className="px-4 py-3 font-medium">F. sal.</th>
                 <th className="px-4 py-3 text-right font-medium">Bruto</th>
                 <th className="px-4 py-3 text-right font-medium">Platf.</th>
-                <th className="px-4 py-3 text-right font-medium">H1</th>
-                <th className="px-4 py-3 text-right font-medium">H2</th>
+                <th className="px-4 py-3 text-right font-medium">Marq.</th>
+                <th className="px-4 py-3 text-right font-medium">Iván</th>
                 <th className="px-4 py-3 text-right font-medium">Neto</th>
                 <th className="px-4 py-3 font-medium">Estado</th>
               </tr>
@@ -636,19 +628,9 @@ export default function ContabilidadPage() {
     resource: "gastos",
     pagination: { pageSize: 500 },
   });
-  const { result: configuracionResult, tableQuery: configuracionQuery } = useTable<ConfiguracionCliente>({
-    resource: "configuracion_cliente",
-    filters: { permanent: [{ field: "clave", operator: "eq", value: "persona_anticipos_comision" }] },
-    pagination: { mode: "off" },
-    syncWithLocation: false,
-  });
 
   const reservas = useMemo(() => reservasResult.data ?? [], [reservasResult.data]);
   const gastos = useMemo(() => gastosResult.data ?? [], [gastosResult.data]);
-  const personaConfigurada = configuracionResult.data?.[0]?.valor;
-  const personaAnticipos: Persona | null = personaConfigurada === "host1" || personaConfigurada === "host2"
-    ? personaConfigurada
-    : null;
 
   return (
     <div>
@@ -670,12 +652,7 @@ export default function ContabilidadPage() {
           <div className="mt-6">
             <ResumenFinanciero reservas={reservas} gastos={gastos} />
           </div>
-          {personaAnticipos && <AnticiposComision reservas={reservas} persona={personaAnticipos} />}
-          {!configuracionQuery.isLoading && (configuracionQuery.isError || !personaAnticipos) && (
-            <p role="alert" className="mt-12 text-sm text-caoba">
-              No se pudo cargar una configuración válida para los anticipos de comisiones.
-            </p>
-          )}
+          <AnticiposComision reservas={reservas} />
           <ImportarCSV onImportado={() => reservasQuery.refetch()} />
           <Gastos />
           <IngresosYReservas reservas={reservas} loading={reservasQuery.isLoading} />

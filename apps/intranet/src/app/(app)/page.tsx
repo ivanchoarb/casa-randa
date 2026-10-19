@@ -4,8 +4,7 @@ import { useTable } from "@refinedev/core";
 import { useMemo, useState } from "react";
 import { usePermisos } from "@/lib/use-permisos";
 import Link from "next/link";
-import { descargarLiquidacion } from "@/lib/liquidacion";
-import { LOCALE } from "@/lib/locale";
+import { descargarLiquidacionMarquelda } from "@/lib/liquidacion";
 
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
 
@@ -31,14 +30,6 @@ interface Gasto {
   valor: number;
 }
 
-interface Propiedad {
-  id: string;
-  nombre: string;
-  slogan: string | null;
-  nombre_host1: string | null;
-  rol_host1: string | null;
-}
-
 const MESES = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
   "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
@@ -46,7 +37,7 @@ const MESES = [
 const capitalizar = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const money = (n: number) =>
-  `$${n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `$${n.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // Entrada/estado nunca se enmascaran en reservas_acceso para quien tiene el
 // permiso "reservas" (Empleado y Host lo tienen por defecto) — a diferencia
@@ -132,23 +123,9 @@ export default function InicioPage() {
     queryOptions: { enabled: can("finanzas_propietario") },
     pagination: { pageSize: 500 },
   });
-  const { result: propiedadResult, tableQuery: configuracionQuery } = useTable<Propiedad>({
-    resource: "propiedades",
-    pagination: { mode: "off" },
-    syncWithLocation: false,
-  });
 
   const reservas = reservasResult.data ?? [];
   const gastos = gastosResult.data ?? [];
-  const propiedad = propiedadResult.data?.[0];
-  const configLiquidacion = propiedad?.nombre && propiedad?.slogan && propiedad?.nombre_host1 && propiedad?.rol_host1
-    ? {
-        nombrePropiedad: propiedad.nombre,
-        sloganPropiedad: propiedad.slogan,
-        nombreHost1: propiedad.nombre_host1,
-        rolHost1: propiedad.rol_host1,
-      }
-    : null;
 
   const hoy = new Date().toISOString().slice(0, 10);
   const anio = new Date().getFullYear();
@@ -185,13 +162,13 @@ export default function InicioPage() {
   // verificado cifra por cifra contra staging el 2026-09-11.
   const ingresosDelMes = delMes.reduce((sum, r) => sum + r.recibido, 0);
   const ingresosAcumulados = delAnio.reduce((sum, r) => sum + r.recibido, 0);
-  const comisionMesHost1 = delMes.reduce((sum, r) => sum + r.comision_host1, 0);
+  const comisionMesMarquelda = delMes.reduce((sum, r) => sum + r.comision_host1, 0);
   const gastosDelAnio = gastos
     .filter((g) => new Date(`${g.fecha}T12:00:00`).getFullYear() === anioActivo)
     .reduce((sum, g) => sum + g.valor, 0);
-  const comisionAnualHost1 = delAnio.reduce((sum, r) => sum + r.comision_host1, 0);
-  const comisionAnualHost2 = delAnio.reduce((sum, r) => sum + r.comision_host2, 0);
-  const saldoNetoPropietario = ingresosAcumulados - (comisionAnualHost1 + comisionAnualHost2) - gastosDelAnio;
+  const comisionAnualMarquelda = delAnio.reduce((sum, r) => sum + r.comision_host1, 0);
+  const comisionAnualIvan = delAnio.reduce((sum, r) => sum + r.comision_host2, 0);
+  const saldoNetoPropietario = ingresosAcumulados - (comisionAnualMarquelda + comisionAnualIvan) - gastosDelAnio;
 
   // "Ingresos del mes"/"Comisión Host" son del mes calendario actual — no
   // significan nada para un año distinto al de hoy, así que se ocultan en
@@ -201,12 +178,12 @@ export default function InicioPage() {
     ...(esAnioActual
       ? [
           { permiso: "ingresos_mes" as const, titulo: `Ingresos de ${capitalizar(MESES[mes])}`, valor: money(ingresosDelMes), nota: "Después de comisión de plataforma" },
-          { permiso: "comision_host" as const, titulo: "Comisión Host 1", valor: money(comisionMesHost1), nota: `${capitalizar(MESES[mes])} ${anio}` },
+          { permiso: "comision_host" as const, titulo: "Comisión Host (Marquelda)", valor: money(comisionMesMarquelda), nota: `${capitalizar(MESES[mes])} ${anio}` },
         ]
       : []),
     { permiso: "finanzas_propietario" as const, titulo: "Ingresos acumulados", valor: money(ingresosAcumulados), nota: `Acumulado ${anioActivo}` },
-    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Host 1`, valor: money(comisionAnualHost1), nota: "Comisión acumulada del año" },
-    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Host 2`, valor: money(comisionAnualHost2), nota: "Comisión acumulada del año" },
+    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Marquelda`, valor: money(comisionAnualMarquelda), nota: "Comisión acumulada del año" },
+    { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Iván`, valor: money(comisionAnualIvan), nota: "Comisión acumulada del año" },
     {
       permiso: "finanzas_propietario" as const,
       titulo: "Saldo neto propietario",
@@ -220,7 +197,7 @@ export default function InicioPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="eyebrow">Resumen ejecutivo</p>
-          <h1 className="disp mt-1 text-3xl">Hoy en {propiedad?.nombre ?? "…"}</h1>
+          <h1 className="disp mt-1 text-3xl">Hoy en Casa Randa</h1>
           <p className="num mt-2 text-sm text-ink-2">
             {hoy} <span className="ml-1 rounded-full bg-panel-2 px-2 py-0.5 text-xs font-semibold">HOY</span>
           </p>
@@ -292,12 +269,12 @@ export default function InicioPage() {
 
               {can("liquidacion_host") && esAnioActual && (
                 <div>
-                  <p className="eyebrow">Liquidación Host 1</p>
+                  <p className="eyebrow">Liquidación Marquelda</p>
                   <p className="disp mt-1 text-xl">{capitalizar(MESES[mes])}</p>
                   <button
                     type="button"
-                    onClick={() => configLiquidacion && void descargarLiquidacion(delMes, anio, mes, configLiquidacion)}
-                    disabled={tableQuery.isLoading || configuracionQuery.isLoading || !configLiquidacion}
+                    onClick={() => void descargarLiquidacionMarquelda(delMes, anio, mes)}
+                    disabled={tableQuery.isLoading}
                     className="btn-press mt-2 rounded-md bg-caoba px-3 py-1.5 text-xs font-semibold text-panel disabled:opacity-60"
                   >
                     Descargar liquidación

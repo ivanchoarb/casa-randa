@@ -5,36 +5,12 @@ import { asegurarTareasDeReserva } from "@/lib/tareas-operacion";
 type Canal = "airbnb" | "vrbo" | "directo";
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
 
-const CLAVES_TASAS = ["comision_host1_tasa", "comision_host2_tasa"] as const;
-
-function leerTasa(valor: string | undefined, clave: string): number {
-  const tasa = Number(valor);
-  if (!Number.isFinite(tasa) || tasa < 0 || tasa > 1) {
-    throw new Error(`La configuración "${clave}" debe ser una tasa decimal entre 0 y 1.`);
-  }
-  return tasa;
-}
-
-async function cargarTasasComision() {
-  const { data, error } = await supabaseClient
-    .from("configuracion_cliente")
-    .select("clave, valor")
-    .in("clave", [...CLAVES_TASAS]);
-  if (error) throw new Error(`Error al cargar la configuración de comisiones: ${error.message}`);
-
-  const valores = new Map((data ?? []).map((fila) => [fila.clave as string, fila.valor as string]));
-  return {
-    host1: leerTasa(valores.get("comision_host1_tasa"), "comision_host1_tasa"),
-    host2: leerTasa(valores.get("comision_host2_tasa"), "comision_host2_tasa"),
-  };
-}
-
-export function calcularComisiones(recibido: number, tasas: { host1: number; host2: number }) {
-  return {
-    host1: Math.round(recibido * tasas.host1 * 100) / 100,
-    host2: Math.round(recibido * tasas.host2 * 100) / 100,
-  };
-}
+// "Las comisiones internas se calculan según las tasas configuradas" (texto
+// de staging) — verificado contra las 58 reservas reales con bruto > 0
+// importadas el 2026-09-11: comision_host1 = 10% de `recibido`,
+// comision_host2 = 9%, sin una sola excepción. No son tasas inventadas.
+const TASA_MARQUELDA = 0.1;
+const TASA_IVAN = 0.09;
 
 const CANAL_MAP: Record<string, Canal> = {
   airbnb: "airbnb",
@@ -127,7 +103,7 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
   );
   if (idxHeader === -1) {
     throw new Error(
-      'No se reconoce el archivo — se esperaban columnas "Cliente" y "Check-in" (el mismo formato que produce "Descargar Excel" en esta página). Los reportes crudos de Airbnb/Vrbo todavía no están soportados.',
+      'No se reconoce el archivo — se esperaban columnas "Cliente" y "Check-in" (formato Casa Randa, el mismo que produce "Descargar Excel" en esta página). Los reportes crudos de Airbnb/Vrbo todavía no están soportados.',
     );
   }
 
@@ -143,10 +119,8 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
   const iEstado = col("Estado");
 
   if ([iCliente, iPlataforma, iReserva, iCheckin, iCheckout, iBruto, iComPlat].some((i) => i === -1)) {
-    throw new Error("Faltan columnas obligatorias (Cliente/Plataforma/Reserva/Check-in/Check-out/Valor bruto/Comisión plataforma).");
+    throw new Error("Faltan columnas obligatorias del formato Casa Randa (Cliente/Plataforma/Reserva/Check-in/Check-out/Valor bruto/Comisión plataforma).");
   }
-
-  const tasasComision = await cargarTasasComision();
 
   const dataRows = filas
     .slice(idxHeader + 1)
@@ -192,7 +166,6 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
     }
 
     const recibido = bruto - comPlat;
-    const comisiones = calcularComisiones(recibido, tasasComision);
     filasValidas.push({
       huesped_nombre: nombre,
       canal,
@@ -203,8 +176,8 @@ export async function importarReservasCSV(file: File): Promise<ResultadoImport> 
       tarifa_noche: 0, // se recalcula abajo una vez conocidas las noches reales (columna generada)
       bruto,
       comision_plataforma: comPlat,
-      comision_host1: comisiones.host1,
-      comision_host2: comisiones.host2,
+      comision_host1: Math.round(recibido * TASA_MARQUELDA * 100) / 100,
+      comision_host2: Math.round(recibido * TASA_IVAN * 100) / 100,
       estado,
     });
   }
