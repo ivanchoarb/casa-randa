@@ -10,8 +10,8 @@ import { Reveal } from "@/components/ui/Reveal";
 // gives the amenities list a visual anchor per row instead of nine stacked
 // sentences of plain text. Hand-picked to match each fact, not decorative.
 const AMENITY_ICONS: ReactNode[] = [
-  // Cocina (campana, cucharón, estufa+horno, refrigerador)
-  <path key="cocina" d="M2 8L5.5 4H9.5L13 8H2Z M7 4V2.5 M9 4V2.5 M16 2V7 M16 8.5a1.5 1.5 0 1 0 .01 0 M2 9H13V22H2V9Z M2 13H13 M5 11a1.2 1.2 0 1 0 .01 0 M9.5 11a1.2 1.2 0 1 0 .01 0 M4 14.5H11V21H4V14.5Z M15 9H22V22H15V9Z M15 15H22 M16.5 12V13.5 M16.5 17V18.5" />,
+  // Cocina (gorro de chef — limpio y universal)
+  <path key="cocina" d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z M6 17h12" />,
   // Sala principal (sofá)
   <path key="sala" d="M4 18v-4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4M3 18h18M5 12V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4" />,
   // Segunda sala (sillón individual)
