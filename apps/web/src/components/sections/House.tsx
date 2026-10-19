@@ -10,8 +10,8 @@ import { Reveal } from "@/components/ui/Reveal";
 // gives the amenities list a visual anchor per row instead of nine stacked
 // sentences of plain text. Hand-picked to match each fact, not decorative.
 const AMENITY_ICONS: ReactNode[] = [
-  // Cocina (estufa con 4 hornillas)
-  <path key="cocina" d="M4.5 4.5h15a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1Z M9 9.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z M15 9.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z M9 15.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z M15 15.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z" />,
+  // Cocina (campana, cucharón, estufa+horno, refrigerador)
+  <path key="cocina" d="M2 8L5.5 4H9.5L13 8H2Z M7 4V2.5 M9 4V2.5 M16 2V7 M16 8.5a1.5 1.5 0 1 0 .01 0 M2 9H13V22H2V9Z M2 13H13 M5 11a1.2 1.2 0 1 0 .01 0 M9.5 11a1.2 1.2 0 1 0 .01 0 M4 14.5H11V21H4V14.5Z M15 9H22V22H15V9Z M15 15H22 M16.5 12V13.5 M16.5 17V18.5" />,
   // Sala principal (sofá)
   <path key="sala" d="M4 18v-4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4M3 18h18M5 12V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4" />,
   // Segunda sala (sillón individual)
@@ -91,9 +91,9 @@ export function House() {
         <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold">
           {lang === "es" ? "De su grupo y de nadie más" : "Shared by your group only"}
         </h3>
-        <ul className="mt-5 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
+        <ul className="amenity-list mt-5 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
           {(lang === "es" ? COMMON_ES : COMMON_EN).map((item, i) => (
-            <li key={item} className="flex items-start gap-3">
+            <li key={item} className="amenity-item flex items-start gap-3">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
