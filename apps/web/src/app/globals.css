@@ -122,29 +122,9 @@ html.lenis.lenis-stopped {
   opacity: 1;
   transform: scale(1);
 }
-
-/* Per-item stagger for amenity list items — gated on parent .is-visible so
-   the cascade only fires once the section scrolls into view. */
-.amenity-item {
-  opacity: 0;
-  transform: translateY(6px);
-  transition:
-    opacity 280ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
-  transition-delay: calc(var(--stagger, 0) * 40ms);
-}
-.is-visible .amenity-item {
-  opacity: 1;
-  transform: translateY(0);
-}
 @media (prefers-reduced-motion: reduce) {
   .reveal,
   .reveal-scale {
-    transition: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
-  .amenity-item {
     transition: none !important;
     opacity: 1 !important;
     transform: none !important;
