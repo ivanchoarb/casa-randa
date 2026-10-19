@@ -307,12 +307,15 @@ body {
     padding: 0 0.5em;
     text-align: center;
     transform: rotate(-90deg);
-    transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    opacity: 0;
+    transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1),
+                opacity   0.35s cubic-bezier(0.23, 1, 0.32, 1);
     white-space: nowrap;
   }
 
   .amenity-item:hover > span {
     transform: rotate(0deg);
+    opacity: 1;
     white-space: normal;
     min-width: 0;
     padding: 0 0.75em;
