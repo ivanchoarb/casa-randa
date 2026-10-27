@@ -1,7 +1,8 @@
 "use client";
 
-import { useCreate, useDelete, useTable } from "@refinedev/core";
+import { useCreate, useDelete, useTable, useUpdate } from "@refinedev/core";
 import { useMemo, useRef, useState } from "react";
+import { valoresGasto } from "@/lib/gasto";
 import { importarReservasCSV, type ResultadoImport } from "@/lib/importar-reservas";
 
 type Persona = "host1" | "host2";
@@ -423,20 +424,20 @@ function Gastos() {
   const [proveedor, setProveedor] = useState("");
   const [valor, setValor] = useState("");
   const [medioPago, setMedioPago] = useState("");
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   function agregar() {
-    if (!fecha || !concepto || !valor) return;
+    setError("");
+    const resultado = valoresGasto({ fecha, categoria, concepto, proveedor, valor, medioPago });
+    if (!resultado.ok) {
+      setError(resultado.error);
+      return;
+    }
     crear(
       {
         resource: "gastos",
-        values: {
-          fecha,
-          categoria,
-          concepto,
-          proveedor: proveedor || null,
-          valor: Number(valor),
-          medio_pago: medioPago || null,
-        },
+        values: resultado.values,
       },
       {
         onSuccess: () => {
@@ -446,6 +447,7 @@ function Gastos() {
           setValor("");
           setMedioPago("");
         },
+        onError: (fallo) => setError(`No se pudo guardar el gasto: ${fallo.message}`),
       },
     );
   }
@@ -508,6 +510,8 @@ function Gastos() {
         </p>
       )}
 
+      {error && <p className="mt-4 text-sm text-caoba">{error}</p>}
+
       {!tableQuery.isLoading && result.data.length > 0 && (
         <div className="mt-4 overflow-x-auto rounded-xl border border-line bg-panel">
           <table className="w-full text-left text-sm">
@@ -518,23 +522,123 @@ function Gastos() {
                 <th className="px-4 py-3 font-medium">Concepto</th>
                 <th className="px-4 py-3 font-medium">Proveedor</th>
                 <th className="px-4 py-3 text-right font-medium">Valor</th>
+                <th className="px-4 py-3 font-medium">Medio de pago</th>
+                <th className="px-4 py-3 text-right font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {result.data.map((g) => (
-                <tr key={g.id} className="border-b border-line last:border-0">
-                  <td className="px-4 py-3 tabular-nums">{g.fecha}</td>
-                  <td className="px-4 py-3 capitalize">{g.categoria.replace("_", " ")}</td>
-                  <td className="px-4 py-3">{g.concepto}</td>
-                  <td className="px-4 py-3 text-ink-2">{g.proveedor ?? "—"}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{money(g.valor)}</td>
-                </tr>
+                <GastoFila
+                  key={g.id}
+                  gasto={g}
+                  editando={editandoId === g.id}
+                  iniciarEdicion={() => {
+                    setError("");
+                    setEditandoId(g.id);
+                  }}
+                  cancelarEdicion={() => setEditandoId(null)}
+                  mostrarError={setError}
+                />
               ))}
             </tbody>
           </table>
         </div>
       )}
     </section>
+  );
+}
+
+function GastoFila({
+  gasto,
+  editando,
+  iniciarEdicion,
+  cancelarEdicion,
+  mostrarError,
+}: {
+  gasto: Gasto;
+  editando: boolean;
+  iniciarEdicion: () => void;
+  cancelarEdicion: () => void;
+  mostrarError: (mensaje: string) => void;
+}) {
+  const { mutate: actualizar, mutation: actualizando } = useUpdate<Gasto>();
+  const { mutate: eliminar, mutation: eliminando } = useDelete<Gasto>();
+  const [fecha, setFecha] = useState(gasto.fecha);
+  const [categoria, setCategoria] = useState(gasto.categoria);
+  const [concepto, setConcepto] = useState(gasto.concepto);
+  const [proveedor, setProveedor] = useState(gasto.proveedor ?? "");
+  const [valor, setValor] = useState(gasto.valor.toString());
+  const [medioPago, setMedioPago] = useState(gasto.medio_pago ?? "");
+
+  function editar() {
+    setFecha(gasto.fecha);
+    setCategoria(gasto.categoria);
+    setConcepto(gasto.concepto);
+    setProveedor(gasto.proveedor ?? "");
+    setValor(gasto.valor.toString());
+    setMedioPago(gasto.medio_pago ?? "");
+    iniciarEdicion();
+  }
+
+  function guardar() {
+    mostrarError("");
+    const resultado = valoresGasto({ fecha, categoria, concepto, proveedor, valor, medioPago });
+    if (!resultado.ok) {
+      mostrarError(resultado.error);
+      return;
+    }
+    actualizar(
+      { resource: "gastos", id: gasto.id, values: resultado.values },
+      {
+        onSuccess: cancelarEdicion,
+        onError: (fallo) => mostrarError(`No se pudo guardar el gasto: ${fallo.message}`),
+      },
+    );
+  }
+
+  function eliminarGasto() {
+    if (!window.confirm(`¿Eliminar "${gasto.concepto}" (${money(gasto.valor)})?`)) return;
+    mostrarError("");
+    eliminar(
+      { resource: "gastos", id: gasto.id },
+      { onError: (fallo) => mostrarError(`No se pudo eliminar el gasto: ${fallo.message}`) },
+    );
+  }
+
+  if (editando) {
+    return (
+      <tr className="border-b border-line last:border-0">
+        <td className="px-2 py-3"><input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={`${inputClass} w-36`} /></td>
+        <td className="px-2 py-3">
+          <select value={categoria} onChange={(e) => setCategoria(e.target.value as CategoriaGasto)} className={`${inputClass} capitalize`}>
+            {CATEGORIAS.map((opcion) => <option key={opcion} value={opcion}>{opcion.replace("_", " ")}</option>)}
+          </select>
+        </td>
+        <td className="px-2 py-3"><input value={concepto} onChange={(e) => setConcepto(e.target.value)} className={`${inputClass} min-w-40`} /></td>
+        <td className="px-2 py-3"><input value={proveedor} onChange={(e) => setProveedor(e.target.value)} className={`${inputClass} w-36`} /></td>
+        <td className="px-2 py-3"><input type="number" value={valor} onChange={(e) => setValor(e.target.value)} className={`${inputClass} w-28`} /></td>
+        <td className="px-2 py-3"><input value={medioPago} onChange={(e) => setMedioPago(e.target.value)} className={`${inputClass} w-36`} /></td>
+        <td className="px-2 py-3 text-right whitespace-nowrap">
+          <button type="button" onClick={guardar} disabled={actualizando.isPending} className="text-caoba hover:underline disabled:opacity-60">Guardar</button>
+          <button type="button" onClick={cancelarEdicion} disabled={actualizando.isPending} className="ml-3 text-ink-2 hover:underline disabled:opacity-60">Cancelar</button>
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <tr className="border-b border-line last:border-0">
+      <td className="px-4 py-3 tabular-nums">{gasto.fecha}</td>
+      <td className="px-4 py-3 capitalize">{gasto.categoria.replace("_", " ")}</td>
+      <td className="px-4 py-3">{gasto.concepto}</td>
+      <td className="px-4 py-3 text-ink-2">{gasto.proveedor ?? "—"}</td>
+      <td className="px-4 py-3 text-right tabular-nums">{money(gasto.valor)}</td>
+      <td className="px-4 py-3 text-ink-2">{gasto.medio_pago ?? "—"}</td>
+      <td className="px-4 py-3 text-right whitespace-nowrap">
+        <button type="button" onClick={editar} aria-label={`Editar ${gasto.concepto}`} className="text-caoba hover:underline">Editar</button>
+        <button type="button" onClick={eliminarGasto} disabled={eliminando.isPending} aria-label={`Eliminar ${gasto.concepto}`} className="ml-3 text-caoba hover:underline disabled:opacity-60">Eliminar</button>
+      </td>
+    </tr>
   );
 }
 
