@@ -184,11 +184,12 @@ export default function InicioPage() {
     { permiso: "finanzas_propietario" as const, titulo: "Ingresos acumulados", valor: money(ingresosAcumulados), nota: `Acumulado ${anioActivo}` },
     { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Marquelda`, valor: money(comisionAnualMarquelda), nota: "Comisión acumulada del año" },
     { permiso: "finanzas_propietario" as const, titulo: `${anioActivo} · Iván`, valor: money(comisionAnualIvan), nota: "Comisión acumulada del año" },
+    { permiso: "finanzas_propietario" as const, titulo: "Gastos y costos", valor: money(gastosDelAnio), nota: `Acumulado ${anioActivo}` },
     {
       permiso: "finanzas_propietario" as const,
       titulo: "Saldo neto propietario",
       valor: money(saldoNetoPropietario),
-      nota: `Después de comisiones y gastos de ${anioActivo}`,
+      nota: `Después de comisiones, gastos y costos de ${anioActivo}`,
     },
   ];
 
