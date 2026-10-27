@@ -4,6 +4,8 @@ import { useCreate, useDelete, useTable, useUpdate } from "@refinedev/core";
 import { useMemo, useRef, useState } from "react";
 import { valoresGasto } from "@/lib/gasto";
 import { importarReservasCSV, type ResultadoImport } from "@/lib/importar-reservas";
+import { descargarInformeContable } from "@/lib/informe-contable";
+import { supabaseClient } from "@/lib/supabase-client";
 
 type Persona = "host1" | "host2";
 type EstadoReserva = "pendiente" | "confirmada" | "completada" | "cancelada";
@@ -94,6 +96,8 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
   const [anio, setAnio] = useState(anioActual);
   const anios = Array.from({ length: 4 }, (_, i) => anioActual - 2 + i);
   const mes = new Date().getMonth();
+  const [generandoInforme, setGenerandoInforme] = useState(false);
+  const [errorInforme, setErrorInforme] = useState<string | null>(null);
 
   const activas = reservas.filter((r) => r.estado === "confirmada" || r.estado === "completada");
   const delAnio = activas.filter((r) => new Date(`${r.entrada}T12:00:00`).getFullYear() === anio);
@@ -135,22 +139,53 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
     },
   ];
 
+  async function generarInforme() {
+    setGenerandoInforme(true);
+    setErrorInforme(null);
+    try {
+      const { data, error } = await supabaseClient
+        .from("anticipos_comision")
+        .select("persona,fecha,valor,referencia,motivo")
+        .gte("fecha", `${anio}-01-01`)
+        .lte("fecha", `${anio}-12-31`);
+      if (error) throw new Error("No se pudieron consultar los anticipos de comisiones.");
+      await descargarInformeContable(reservas, gastos, data ?? [], anio);
+    } catch (fallo) {
+      setErrorInforme(fallo instanceof Error ? fallo.message : "No se pudo generar el informe contable.");
+    } finally {
+      setGenerandoInforme(false);
+    }
+  }
+
   return (
     <div>
-      <label className="mb-4 block text-xs text-ink-2">
-        Año
-        <select
-          value={anio}
-          onChange={(e) => setAnio(Number(e.target.value))}
-          className={`${inputClass} mt-1 block`}
-        >
-          {anios.map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="mb-4 flex flex-wrap items-end gap-3">
+        <label className="block text-xs text-ink-2">
+          Año
+          <select
+            value={anio}
+            onChange={(e) => setAnio(Number(e.target.value))}
+            className={`${inputClass} mt-1 block`}
+          >
+            {anios.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div>
+          <button
+            type="button"
+            onClick={generarInforme}
+            disabled={generandoInforme}
+            className="rounded-md bg-caoba px-4 py-1.5 text-sm font-semibold text-panel disabled:opacity-60"
+          >
+            {generandoInforme ? "Generando…" : "Descargar informe contable (Excel)"}
+          </button>
+          {errorInforme && <p className="mt-1 text-sm text-caoba">{errorInforme}</p>}
+        </div>
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tarjetas.map((t) => (
           <div key={t.titulo} className="rounded-xl border border-line bg-panel p-4">
