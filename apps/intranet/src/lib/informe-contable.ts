@@ -53,7 +53,7 @@ function fechaExcel(fecha: string) {
   return new Date(Date.UTC(anio, mes - 1, dia));
 }
 
-function fechaGenerada(fecha: Date) {
+export function fechaGenerada(fecha: Date) {
   const partes = new Intl.DateTimeFormat("en-GB", {
     timeZone: "America/Panama",
     day: "2-digit",
@@ -518,7 +518,7 @@ export function construirLibro(datos: DatosInformeContable, imagenes: ImagenesIn
   return wb;
 }
 
-function hoyEnPanama() {
+export function hoyEnPanama() {
   const partes = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Panama",
     year: "numeric",

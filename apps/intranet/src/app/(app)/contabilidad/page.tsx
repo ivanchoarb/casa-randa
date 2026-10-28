@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import { valoresGasto } from "@/lib/gasto";
 import { importarReservasCSV, type ResultadoImport } from "@/lib/importar-reservas";
 import { descargarInformeContable } from "@/lib/informe-contable";
+import { descargarInformeContablePdf } from "@/lib/informe-contable-pdf";
 import { supabaseClient } from "@/lib/supabase-client";
 
 type Persona = "host1" | "host2";
@@ -97,6 +98,7 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
   const anios = Array.from({ length: 4 }, (_, i) => anioActual - 2 + i);
   const mes = new Date().getMonth();
   const [generandoInforme, setGenerandoInforme] = useState(false);
+  const [formatoGenerando, setFormatoGenerando] = useState<"excel" | "pdf" | null>(null);
   const [errorInforme, setErrorInforme] = useState<string | null>(null);
 
   const activas = reservas.filter((r) => r.estado === "confirmada" || r.estado === "completada");
@@ -139,8 +141,9 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
     },
   ];
 
-  async function generarInforme() {
+  async function generarInforme(formato: "excel" | "pdf") {
     setGenerandoInforme(true);
+    setFormatoGenerando(formato);
     setErrorInforme(null);
     try {
       const { data, error } = await supabaseClient
@@ -149,11 +152,13 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
         .gte("fecha", `${anio}-01-01`)
         .lte("fecha", `${anio}-12-31`);
       if (error) throw new Error("No se pudieron consultar los anticipos de comisiones.");
-      await descargarInformeContable(reservas, gastos, data ?? [], anio);
+      if (formato === "pdf") await descargarInformeContablePdf(reservas, gastos, data ?? [], anio);
+      else await descargarInformeContable(reservas, gastos, data ?? [], anio);
     } catch (fallo) {
       setErrorInforme(fallo instanceof Error ? fallo.message : "No se pudo generar el informe contable.");
     } finally {
       setGenerandoInforme(false);
+      setFormatoGenerando(null);
     }
   }
 
@@ -175,14 +180,24 @@ function ResumenFinanciero({ reservas, gastos }: { reservas: Reserva[]; gastos: 
           </select>
         </label>
         <div>
-          <button
-            type="button"
-            onClick={generarInforme}
-            disabled={generandoInforme}
-            className="rounded-md bg-caoba px-4 py-1.5 text-sm font-semibold text-panel disabled:opacity-60"
-          >
-            {generandoInforme ? "Generando…" : "Descargar informe contable (Excel)"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => generarInforme("excel")}
+              disabled={generandoInforme}
+              className="rounded-md bg-caoba px-4 py-1.5 text-sm font-semibold text-panel disabled:opacity-60"
+            >
+              {formatoGenerando === "excel" ? "Generando…" : "Descargar informe contable (Excel)"}
+            </button>
+            <button
+              type="button"
+              onClick={() => generarInforme("pdf")}
+              disabled={generandoInforme}
+              className="rounded-md bg-caoba px-4 py-1.5 text-sm font-semibold text-panel disabled:opacity-60"
+            >
+              {formatoGenerando === "pdf" ? "Generando…" : "Descargar informe contable (PDF)"}
+            </button>
+          </div>
           {errorInforme && <p className="mt-1 text-sm text-caoba">{errorInforme}</p>}
         </div>
       </div>
