@@ -147,7 +147,11 @@ export default function InicioPage() {
   const esAnioActual = anioActivo === anio;
 
   const delAnio = activas.filter((r) => new Date(`${r.entrada}T12:00:00`).getFullYear() === anioActivo);
-  const delMes = esAnioActual ? delAnio.filter((r) => new Date(`${r.entrada}T12:00:00`).getMonth() === mes) : [];
+  const delMesIndex = (m: number) => delAnio.filter((r) => new Date(`${r.entrada}T12:00:00`).getMonth() === m);
+  const delMes = esAnioActual ? delMesIndex(mes) : [];
+  // 2026-11-04, a pedido de Ivan: la liquidación de Marquelda se puede bajar
+  // de cualquier mes del año elegido arriba, no solo del mes en curso.
+  const [mesLiquidacion, setMesLiquidacion] = useState(mes);
 
   // "Próxima reserva": la próxima llegada activa desde hoy — staging
   // muestra esto, no "la que está en curso ahora mismo". No depende del
@@ -268,13 +272,24 @@ export default function InicioPage() {
                   </div>
                 ))}
 
-              {can("liquidacion_host") && esAnioActual && (
+              {can("liquidacion_host") && (
                 <div>
                   <p className="eyebrow">Liquidación Marquelda</p>
-                  <p className="disp mt-1 text-xl">{capitalizar(MESES[mes])}</p>
+                  <select
+                    aria-label="Mes de la liquidación"
+                    value={mesLiquidacion}
+                    onChange={(e) => setMesLiquidacion(Number(e.target.value))}
+                    className="disp mt-1 block rounded-md border border-line bg-panel px-2 py-1 text-xl"
+                  >
+                    {MESES.map((m, i) => (
+                      <option key={m} value={i}>
+                        {capitalizar(m)} {anioActivo}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     type="button"
-                    onClick={() => void descargarLiquidacionMarquelda(delMes, anio, mes)}
+                    onClick={() => void descargarLiquidacionMarquelda(delMesIndex(mesLiquidacion), anioActivo, mesLiquidacion)}
                     disabled={tableQuery.isLoading}
                     className="btn-press mt-2 rounded-md bg-caoba px-3 py-1.5 text-xs font-semibold text-panel disabled:opacity-60"
                   >
