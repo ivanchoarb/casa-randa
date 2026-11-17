@@ -11,7 +11,7 @@ interface Bloqueo {
   fin: string;
   fuente: "airbnb" | "vrbo" | "directo";
   // Solo en las filas que vienen de una reserva y no de un bloqueo del feed.
-  reserva?: { huesped: string | null };
+  reserva?: { huesped: string | null; huespedes: number };
 }
 
 // Vista permisada de reservas: `canal` toma los mismos valores que
@@ -22,6 +22,7 @@ interface ReservaCalendario {
   entrada: string;
   salida: string;
   huesped_nombre: string | null;
+  huespedes: number;
 }
 
 interface ReservaProxima {
@@ -129,7 +130,7 @@ export default function CalendarioPage() {
         inicio: r.entrada,
         fin: r.salida,
         fuente: r.canal,
-        reserva: { huesped: r.huesped_nombre },
+        reserva: { huesped: r.huesped_nombre, huespedes: r.huespedes },
       }));
     const ocupaciones = [...bloqueos, ...deReservas].sort((a, b) => a.inicio.localeCompare(b.inicio));
     return { ocupaciones, deReservas };
@@ -279,7 +280,7 @@ function FilaBloqueo({ b }: { b: Bloqueo }) {
         </span>
         {b.reserva && (
           <span className="text-xs text-ink-2">
-            Reserva{b.reserva.huesped ? ` · ${b.reserva.huesped}` : ""}
+            Reserva{b.reserva.huesped ? ` · ${b.reserva.huesped}` : ""} · {b.reserva.huespedes} {b.reserva.huespedes === 1 ? "huésped" : "huéspedes"}
           </span>
         )}
       </div>
