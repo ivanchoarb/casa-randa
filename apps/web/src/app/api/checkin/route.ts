@@ -45,7 +45,7 @@ export async function POST(req: Request) {
 
   const { data: reserva, error: errorReserva } = await db
     .from("reservas")
-    .select("id, huesped_nombre")
+    .select("id, huesped_nombre, entrada, salida")
     .or(filtroCodigoReserva(codigo))
     .in("estado", ["confirmada", "completada"])
     .maybeSingle();
@@ -75,6 +75,19 @@ export async function POST(req: Request) {
     acepta_remarketing: true,
   });
   if (errorInsert) return fail("No se pudo guardar el registro.", 500);
+
+  // El huésped autorizó remarketing: entra a la base de Marketing. Si el
+  // correo ya existe (incluso si se dio de baja) no se toca — ignoreDuplicates.
+  // El registro ya quedó guardado, así que un fallo aquí no lo hace fallar.
+  await db.from("contactos_marketing").upsert(
+    {
+      nombre, apellido, email: email.toLowerCase(), telefono, pais: paisOrigen,
+      entrada: reserva.entrada, salida: reserva.salida,
+      notas: "Registrado en el formulario de check-in (autorizó remarketing).",
+      fuente: "formulario_web", consentimiento: true,
+    },
+    { onConflict: "email", ignoreDuplicates: true },
+  );
 
   if (transporteDisponible()) {
     try {
