@@ -30,25 +30,19 @@ interface ReservaProxima {
   salida: string;
   estado: string;
   huesped_nombre: string | null;
+  huespedes: number;
 }
 
 function hoyISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// El mensaje no incluye cantidad de huéspedes a propósito: `huespedes` en
-// `reservas` solo trae el default del esquema (2) para toda reserva
-// importada de Airbnb/Vrbo/CSV — ninguna fuente real de datos de este
-// proyecto trae un conteo real todavía (mismo hallazgo que llevó a
-// ocultar esa columna en Reservas, ver CLAUDE.md). Mandar "2 huéspedes"
-// para cada una sería inventar un dato, no "si es posible" — confirmado
-// contra la base real: las 10 reservas confirmadas próximas de hoy
-// tienen las 10 el mismo valor por defecto.
 function construirMensajeWhatsApp(reservas: ReservaProxima[]) {
   const lineas = ["SuperHost — Próximas reservas confirmadas", ""];
   for (const r of reservas) {
     lineas.push(`*${r.huesped_nombre ?? "Huésped"}*`);
     lineas.push(`${r.entrada} → ${r.salida} (${noches(r.entrada, r.salida)} ${noches(r.entrada, r.salida) === 1 ? "noche" : "noches"})`);
+    lineas.push(`${r.huespedes} ${r.huespedes === 1 ? "huésped" : "huéspedes"}`);
     lineas.push("");
   }
   return lineas.join("\n").trim();
@@ -196,8 +190,7 @@ export default function CalendarioPage() {
       {can("reservas") && proximasConfirmadas.length > 0 && (
         <p className="mt-1 text-xs text-ink-2">
           {proximasConfirmadas.length} reserva{proximasConfirmadas.length === 1 ? "" : "s"} confirmada
-          {proximasConfirmadas.length === 1 ? "" : "s"} próxima{proximasConfirmadas.length === 1 ? "" : "s"} — no
-          incluye cantidad de huéspedes, no hay una fuente real de ese dato todavía.
+          {proximasConfirmadas.length === 1 ? "" : "s"} próxima{proximasConfirmadas.length === 1 ? "" : "s"}.
         </p>
       )}
 
