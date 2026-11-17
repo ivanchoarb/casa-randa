@@ -302,6 +302,7 @@ interface Reserva {
   entrada: string;
   salida: string;
   noches: number;
+  huespedes: number;
   bruto: number;
   neto: number;
   estado: "pendiente" | "confirmada" | "completada" | "cancelada";
@@ -333,6 +334,7 @@ function FilaReserva({ r }: { r: Reserva }) {
       <td className="px-4 py-3">{r.entrada}</td>
       <td className="px-4 py-3">{r.salida}</td>
       <td className="px-4 py-3 text-right tabular-nums">{r.noches}</td>
+      <td className="px-4 py-3 text-right tabular-nums">{r.huespedes}</td>
       {can("contabilidad") && <td className="px-4 py-3 text-right tabular-nums">${(r.neto ?? 0).toFixed(2)}</td>}
     </tr>
   );
@@ -372,6 +374,7 @@ function GrupoEstado({
                 <th className="px-4 py-3 font-medium">Entrada</th>
                 <th className="px-4 py-3 font-medium">Salida</th>
                 <th className="px-4 py-3 text-right font-medium">Noches</th>
+                <th className="px-4 py-3 text-right font-medium">Huéspedes</th>
                 {can("contabilidad") && <th className="px-4 py-3 text-right font-medium">Neto</th>}
               </tr>
             </thead>
@@ -404,7 +407,7 @@ export default function ReservasPage() {
       // Explicit ranges avoid the REST API default row limit.
       for (let offset = 0; ; offset += 500) {
         const { data, error } = await supabaseClient.from("reservas_acceso")
-          .select("id,huesped_nombre,canal,codigo_externo,entrada,salida,noches,estado")
+          .select("id,huesped_nombre,canal,codigo_externo,entrada,salida,noches,huespedes,estado")
           .eq("estado", estado)
           .order("entrada", { ascending: false }).order("id").range(offset, offset + 499);
         if (error) throw error;
@@ -414,7 +417,7 @@ export default function ReservasPage() {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(filas.map(r => ({
         Huésped: r.huesped_nombre, Canal: r.canal, Código: r.codigo_externo,
-        Entrada: r.entrada, Salida: r.salida, Noches: r.noches, Estado: r.estado,
+        Entrada: r.entrada, Salida: r.salida, Noches: r.noches, Huéspedes: r.huespedes, Estado: r.estado,
       }))), ESTADO_LABEL[estado]);
       XLSX.writeFile(wb, `reservas-${estado}.xlsx`);
     } catch { setErrorExportar("No se pudieron descargar las reservas. Intenta de nuevo."); }
